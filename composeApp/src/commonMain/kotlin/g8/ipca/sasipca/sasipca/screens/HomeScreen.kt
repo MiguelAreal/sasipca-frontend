@@ -4,7 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -17,73 +17,22 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import g8.ipca.sasipca.sasipca.storage.*
+import g8.ipca.sasipca.sasipca.ui.components.HeaderSection
 import g8.ipca.sasipca.sasipca.ui.utils.*
 
 @Composable
-fun DashboardScreen() {
+fun HomeScreen() {
     val userName = SessionManager.currentUserName ?: "Utilizador"
 
-    Scaffold(
-        bottomBar = { BottomNavigationBar() }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF5F5F7))
-                .padding(paddingValues)
-        ) {
-            HeaderSection(userName = userName)
-            StatsSection()
-            Spacer(modifier = Modifier.height(24.dp))
-            MenuSection()
-        }
-    }
-}
-
-@Composable
-fun HeaderSection(userName: String) {
-    BoxWithConstraints(
+    Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                Color(0xFF3D4A7A),
-                shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
-            )
-            .padding(vertical = 24.dp, horizontal = 24.dp)
+            .fillMaxSize()
+            .background(Color(0xFFF5F5F7))
     ) {
-        val isCompact = maxWidth < 600.dp
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = "${getGreetingPt()}, $userName",
-                    color = Color.White,
-                    fontSize = if (isCompact) 18.sp else 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = getFormattedDatePt(),
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = if (isCompact) 12.sp else 13.sp
-                )
-            }
-
-            IconButton(
-                onClick = { /* Handle notification */ },
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Notifications,
-                    contentDescription = "Notifications",
-                    tint = Color.White
-                )
-            }
-        }
+        HeaderSection("${getGreetingPt()}, $userName",getFormattedDatePt())
+        StatsSection()
+        Spacer(modifier = Modifier.height(24.dp))
+        MenuSection()
     }
 }
 
@@ -222,46 +171,6 @@ fun MenuItem(icon: ImageVector, title: String) {
                 tint = Color(0xFFCCCCCC),
                 modifier = Modifier.size(18.dp)
             )
-        }
-    }
-}
-
-@Composable
-fun BottomNavigationBar() {
-    BoxWithConstraints {
-        val iconSize = if (maxWidth < 360.dp) 20.dp else 24.dp
-
-        NavigationBar(
-            containerColor = Color.White,
-            tonalElevation = 8.dp,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            val navItems = listOf(
-                Icons.Default.Home to "Home",
-                Icons.Default.Description to "Documentos",
-                Icons.Default.CalendarMonth to "Calendário",
-                Icons.Default.Settings to "Configurações",
-                Icons.Default.Person to "Perfil"
-            )
-
-            navItems.forEachIndexed { index, (icon, desc) ->
-                NavigationBarItem(
-                    selected = index == 0,
-                    onClick = { /* TODO */ },
-                    icon = {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = desc,
-                            modifier = Modifier.size(iconSize)
-                        )
-                    },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color(0xFF3D4A7A),
-                        unselectedIconColor = Color(0xFF999999),
-                        indicatorColor = Color(0xFFE8EAF6)
-                    )
-                )
-            }
         }
     }
 }

@@ -83,7 +83,7 @@ fun App() {
                         authRepository = authRepository,
                         onLoginSuccess = { currentScreen = Screens.DASHBOARD }
                     )
-                    Screens.DASHBOARD -> DashboardScreen()
+                    Screens.DASHBOARD -> MainScreen()
                 }
 
                 CustomSnackbarHost(

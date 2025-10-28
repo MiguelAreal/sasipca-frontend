@@ -3,7 +3,7 @@
 package g8.ipca.sasipca.sasipca.ui.utils
 
 import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalDate
 import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
@@ -91,3 +91,4 @@ private fun convertWeekdayPt(dayofWeek: DayOfWeek): String {
 
     return dayofWeekPt
 }
+

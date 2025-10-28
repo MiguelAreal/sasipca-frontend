@@ -27,6 +27,13 @@ kotlin {
             implementation(libs.ktor.client.android)
             implementation("io.ktor:ktor-client-okhttp:3.3.1")
             implementation("androidx.preference:preference-ktx:1.2.1")
+
+            implementation("com.google.mlkit:barcode-scanning:17.2.0")
+            implementation("androidx.camera:camera-camera2:1.3.4")
+            implementation("androidx.camera:camera-lifecycle:1.3.4")
+            implementation("androidx.camera:camera-view:1.3.4")
+
+
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -44,7 +51,8 @@ kotlin {
             implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.1")
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
             implementation("com.russhwolf:multiplatform-settings:1.3.0")
-            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
+            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1-0.6.x-compat")
+
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -57,6 +65,8 @@ kotlin {
             implementation(libs.ktor.client.java)
             implementation("io.ktor:ktor-client-cio:3.3.1")
             implementation("com.russhwolf:multiplatform-settings-jvm:1.3.0")
+
+
         }
     }
 }

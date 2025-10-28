@@ -1,5 +1,4 @@
 package g8.ipca.sasipca.sasipca.datamodels
-
 import kotlinx.serialization.Serializable
 
 @Serializable
