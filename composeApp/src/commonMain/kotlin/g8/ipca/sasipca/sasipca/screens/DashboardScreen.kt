@@ -1,4 +1,4 @@
-package g8.ipca.sasipca.sasipca
+package g8.ipca.sasipca.sasipca.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -159,7 +159,7 @@ fun MenuSection() {
             MenuItem(Icons.Default.Inventory, "Inventário")
             MenuItem(Icons.Default.CalendarToday, "Calendário")
             MenuItem(Icons.Default.Campaign, "Campanhas")
-            MenuItem(Icons.Default.People, "Estudantes")
+            MenuItem(Icons.Default.Person, "Estudantes")
         }
     }
 }

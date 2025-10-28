@@ -1,3 +1,5 @@
+package g8.ipca.sasipca.sasipca.screens
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -20,19 +22,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.ui.text.input.VisualTransformation
 import g8.ipca.sasipca.sasipca.repositories.*
+import g8.ipca.sasipca.sasipca.ui.components.*
 import kotlinx.coroutines.launch
 
 
 
 @Composable
-fun LoginScreen(authRepository: AuthRepository) {
+fun LoginScreen(authRepository: AuthRepository,onLoginSuccess: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val scrollState = rememberScrollState()
     var passwordVisible by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+    var isLoading by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     Box(
         modifier = Modifier
@@ -125,7 +132,16 @@ fun LoginScreen(authRepository: AuthRepository) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     shape = RoundedCornerShape(8.dp),
                     trailingIcon = {
-                        null;
+                        IconButton(
+                            onClick = { /* Handle hide and show password */ },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Notifications",
+                                tint = Color.White
+                            )
+                        }
                     }
                 )
 
@@ -144,31 +160,42 @@ fun LoginScreen(authRepository: AuthRepository) {
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
+
             }
         }
                 Button(
                     onClick = {
+                        isLoading = true
                         coroutineScope.launch {
                             val result = authRepository.login(email, password)
                             result.fold(
                                 onSuccess = { success ->
-                                    println("Logged in! userID=${success.userID}, token=${success.token}")
-                                    // Navigate or store token
+                                    println("Logged in! userID=${success.userID}, userName = ${success.userName} token=${success.token}")
+                                    onLoginSuccess()
                                 },
-                                onFailure = { error ->
-                                    println("Login failed: ${error.message}")
-                                    // Show error to user
+                                onFailure = {
+                                    SnackbarManager.show("Erro no login: ${it.message}", SnackbarType.ERROR)
                                 }
                             )
                         }
+                        isLoading = false
                     },
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
                         .padding(24.dp),
-                    colors = ButtonDefaults.buttonColors( containerColor = Color(0xFFE8EAF6), contentColor = Color(0xFF4A6FA5) )
+                    colors = ButtonDefaults.buttonColors( containerColor = Color(0xFFE8EAF6), contentColor = Color(0xFF4A6FA5) ),
+                    enabled = !isLoading
                 ) {
-                    Text("Entrar")
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            color = Color(0xFF4A6FA5),
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else {
+                        Text("Entrar")
+                    }
                 }
             }
 

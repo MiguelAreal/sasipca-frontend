@@ -1,5 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.*
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -24,7 +24,8 @@ kotlin {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.android)
-            implementation("io.ktor:ktor-client-okhttp:3.3.1") // for Android
+            implementation("io.ktor:ktor-client-okhttp:3.3.1")
+            implementation("androidx.preference:preference-ktx:1.2.1")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -37,10 +38,11 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
-            implementation(compose.materialIconsExtended)
             implementation("io.ktor:ktor-client-core:3.3.1")
             implementation("io.ktor:ktor-client-content-negotiation:3.3.1")
             implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.1")
+            implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+            implementation("com.russhwolf:multiplatform-settings:1.3.0")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -51,7 +53,8 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
             implementation(libs.ktor.client.java)
-            implementation("io.ktor:ktor-client-cio:3.3.1") // for desktop
+            implementation("io.ktor:ktor-client-cio:3.3.1")
+            implementation("com.russhwolf:multiplatform-settings-jvm:1.3.0")
         }
     }
 }

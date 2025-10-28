@@ -10,6 +10,7 @@ data class LoginRequest(
 
 @Serializable
 data class LoginSuccessResponse(
+    val userName: String,
     val userID: Int,
     val token: String
 )

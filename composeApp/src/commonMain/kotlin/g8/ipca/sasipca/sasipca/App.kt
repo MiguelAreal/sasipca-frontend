@@ -1,32 +1,28 @@
 package g8.ipca.sasipca.sasipca
 
-import LoginScreen
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MaterialTheme.typography
-import androidx.compose.material3.Text
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.platform.Font
 import androidx.compose.material3.Typography
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.sp
 import g8.ipca.sasipca.sasipca.network.ApiClient
 import g8.ipca.sasipca.sasipca.repositories.AuthRepository
+import g8.ipca.sasipca.sasipca.screens.*
+import g8.ipca.sasipca.sasipca.ui.components.CustomSnackbarHost
+import g8.ipca.sasipca.sasipca.ui.components.SnackbarMessage
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import g8.ipca.sasipca.sasipca.ui.components.SnackbarManager
+
 
 val CustomFontFamily = FontFamily(
     Font(resource = "fonts/PlusJakartaSans.ttf", weight = FontWeight.Normal),
@@ -50,6 +46,10 @@ val CustomTypography = Typography(
     )
 )
 
+enum class Screens {
+    LOGIN,
+    DASHBOARD
+}
 
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {
@@ -59,10 +59,43 @@ fun AppTheme(content: @Composable () -> Unit) {
     )
 }
 
+@Suppress("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun App() {
     val authRepository = remember { AuthRepository(ApiClient.client) }
-    AppTheme {
-        LoginScreen(authRepository = authRepository)
+    var currentScreen by remember { mutableStateOf(Screens.LOGIN) }
+
+    val snackbarState = remember { mutableStateOf<SnackbarMessage?>(null) }
+    val scope = rememberCoroutineScope()
+
+    // Inicializa o gestor global
+    LaunchedEffect(Unit) {
+        SnackbarManager.snackbarState = snackbarState
+        SnackbarManager.scope = scope
     }
+
+    AppTheme {
+        Scaffold { paddingValues ->
+            Box(modifier = Modifier.fillMaxSize()) {
+
+                // Conteúdo principal
+                when (currentScreen) {
+                    Screens.LOGIN -> LoginScreen(
+                        authRepository = authRepository,
+                        onLoginSuccess = { currentScreen = Screens.DASHBOARD }
+                    )
+                    Screens.DASHBOARD -> DashboardScreen()
+                }
+
+                CustomSnackbarHost(
+                    snackbarMessageState = snackbarState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp)
+                )
+
+            }
+        }
+    }
+
 }
