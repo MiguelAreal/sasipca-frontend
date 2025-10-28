@@ -4,10 +4,13 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.russhwolf.settings.*
 import g8.ipca.sasipca.sasipca.storage.SessionManager
+import java.util.prefs.Preferences
 
 fun main() = application {
-    /*val desktopSettings = JvmSettings("sasipca_prefs.properties")
-    SessionManager.init(desktopSettings)*/
+    // Cria um objeto PreferencesSettings
+    val desktopSettings: Settings = PreferencesSettings(Preferences.userRoot().node("sasipca"))
+
+    SessionManager.init(desktopSettings)
 
     Window(
         onCloseRequest = ::exitApplication,

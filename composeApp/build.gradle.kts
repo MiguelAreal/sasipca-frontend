@@ -14,6 +14,7 @@ kotlin {
     androidTarget {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
+
         }
     }
 
@@ -43,6 +44,7 @@ kotlin {
             implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.1")
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
             implementation("com.russhwolf:multiplatform-settings:1.3.0")
+            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -83,6 +85,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+
     }
 }
 

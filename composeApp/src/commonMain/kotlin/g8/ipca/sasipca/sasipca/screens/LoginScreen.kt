@@ -23,12 +23,13 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.text.input.VisualTransformation
 import g8.ipca.sasipca.sasipca.repositories.*
+import g8.ipca.sasipca.sasipca.storage.SessionManager
 import g8.ipca.sasipca.sasipca.ui.components.*
+import g8.ipca.sasipca.sasipca.ui.utils.SnackbarManager
 import kotlinx.coroutines.launch
 
 
@@ -159,8 +160,6 @@ fun LoginScreen(authRepository: AuthRepository, onLoginSuccess: () -> Unit) {
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
-
-        // Login Button with loading indicator
         Button(
             onClick = {
                 coroutineScope.launch {
@@ -168,6 +167,7 @@ fun LoginScreen(authRepository: AuthRepository, onLoginSuccess: () -> Unit) {
                     val result = authRepository.login(email, password)
                     result.fold(
                         onSuccess = {
+                            SessionManager.saveSession(token = it.token, userId = it.userID, userName = it.userName)
                             onLoginSuccess()
                         },
                         onFailure = {
@@ -179,7 +179,7 @@ fun LoginScreen(authRepository: AuthRepository, onLoginSuccess: () -> Unit) {
             },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth()
+                .widthIn(300.dp, 400.dp)
                 .padding(24.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFFE8EAF6),
@@ -197,6 +197,7 @@ fun LoginScreen(authRepository: AuthRepository, onLoginSuccess: () -> Unit) {
                 Text("Entrar")
             }
         }
+
     }
 }
 

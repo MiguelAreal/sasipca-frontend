@@ -11,7 +11,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.platform.Font
 import androidx.compose.material3.Typography
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.sp
 import g8.ipca.sasipca.sasipca.network.ApiClient
@@ -21,7 +20,7 @@ import g8.ipca.sasipca.sasipca.ui.components.CustomSnackbarHost
 import g8.ipca.sasipca.sasipca.ui.components.SnackbarMessage
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import g8.ipca.sasipca.sasipca.ui.components.SnackbarManager
+import g8.ipca.sasipca.sasipca.ui.utils.SnackbarManager
 
 
 val CustomFontFamily = FontFamily(

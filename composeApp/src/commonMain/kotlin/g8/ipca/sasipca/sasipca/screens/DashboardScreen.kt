@@ -14,24 +14,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Inventory
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Campaign
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.ArrowForwardIos
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.CalendarMonth
-
-
-
+import androidx.compose.material.icons.filled.*
+import g8.ipca.sasipca.sasipca.storage.*
+import g8.ipca.sasipca.sasipca.ui.utils.*
 
 @Composable
 fun DashboardScreen() {
+    val userName = SessionManager.currentUserName ?: "Utilizador"
+
     Scaffold(
         bottomBar = { BottomNavigationBar() }
     ) { paddingValues ->
@@ -41,7 +32,7 @@ fun DashboardScreen() {
                 .background(Color(0xFFF5F5F7))
                 .padding(paddingValues)
         ) {
-            HeaderSection()
+            HeaderSection(userName = userName)
             StatsSection()
             Spacer(modifier = Modifier.height(24.dp))
             MenuSection()
@@ -50,7 +41,7 @@ fun DashboardScreen() {
 }
 
 @Composable
-fun HeaderSection() {
+fun HeaderSection(userName: String) {
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
@@ -69,14 +60,14 @@ fun HeaderSection() {
         ) {
             Column {
                 Text(
-                    text = "Boa tarde, Utilizador",
+                    text = "${getGreetingPt()}, $userName",
                     color = Color.White,
                     fontSize = if (isCompact) 18.sp else 20.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Quinta-Feira, 2 Out. 2025",
+                    text = getFormattedDatePt(),
                     color = Color.White.copy(alpha = 0.7f),
                     fontSize = if (isCompact) 12.sp else 13.sp
                 )
@@ -101,15 +92,36 @@ fun StatsSection() {
     BoxWithConstraints {
         val horizontalPadding = if (maxWidth < 600.dp) 20.dp else 40.dp
 
-        Row(
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = horizontalPadding, vertical = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            shape = RoundedCornerShape(12.dp)
         ) {
-            StatCard("Entregas", "08", Modifier.weight(1f))
-            StatCard("Arrumação Volume", "15", Modifier.weight(1f))
-            StatCard("Pendentes", "03", Modifier.weight(1f))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = getCurrentMonthPt(),
+                    color = Color(0xFF3D4A7A),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    StatCard("Entregas Pendentes", "08", Modifier.weight(1f))
+                    StatCard("Doações ", "15", Modifier.weight(1f))
+                    StatCard("Entregas Realizadas", "03", Modifier.weight(1f))
+                }
+            }
         }
     }
 }

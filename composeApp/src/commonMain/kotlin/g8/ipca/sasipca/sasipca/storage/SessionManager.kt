@@ -13,9 +13,9 @@ object SessionManager {
     private const val KEY_USER_ID = "user_id"
     private const val KEY_USER_NAME = "user_name"
 
-    fun saveSession(token: String, userId: String, userName: String) {
+    fun saveSession(token: String, userId: Int, userName: String) {
         settings.putString(KEY_AUTH_TOKEN, token)
-        settings.putString(KEY_USER_ID, userId)
+        settings.putInt(KEY_USER_ID, userId)
         settings.putString(KEY_USER_NAME, userName)
     }
 
