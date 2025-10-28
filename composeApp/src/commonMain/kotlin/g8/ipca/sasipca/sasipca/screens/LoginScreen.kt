@@ -24,29 +24,29 @@ import coil3.compose.AsyncImage
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.text.input.VisualTransformation
 import g8.ipca.sasipca.sasipca.repositories.*
 import g8.ipca.sasipca.sasipca.ui.components.*
 import kotlinx.coroutines.launch
 
 
-
 @Composable
-fun LoginScreen(authRepository: AuthRepository,onLoginSuccess: () -> Unit) {
+fun LoginScreen(authRepository: AuthRepository, onLoginSuccess: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val scrollState = rememberScrollState()
     var passwordVisible by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF4A6FA5))
     ) {
-        // Background Image with 15% opacity
+        // Background Image
         AsyncImage(
             model = "https://sas.ipca.pt/wp-content/uploads/sites/2/2020/06/1.jpg",
             contentDescription = "Background",
@@ -56,7 +56,6 @@ fun LoginScreen(authRepository: AuthRepository,onLoginSuccess: () -> Unit) {
                 .graphicsLayer { alpha = 0.15f }
         )
 
-        // Centered scrollable content
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -82,7 +81,6 @@ fun LoginScreen(authRepository: AuthRepository,onLoginSuccess: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Subtitle
                 Text(
                     text = "Controlo de stock com facilidade.",
                     color = Color.White,
@@ -113,7 +111,7 @@ fun LoginScreen(authRepository: AuthRepository,onLoginSuccess: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Password
+
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
@@ -128,24 +126,23 @@ fun LoginScreen(authRepository: AuthRepository,onLoginSuccess: () -> Unit) {
                         focusedTextColor = Color.Black,
                         unfocusedTextColor = Color.Black
                     ),
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     shape = RoundedCornerShape(8.dp),
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
-                        IconButton(
-                            onClick = { /* Handle hide and show password */ },
-                            modifier = Modifier.size(40.dp)
-                        ) {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
-                                imageVector = Icons.Default.Notifications,
-                                contentDescription = "Notifications",
-                                tint = Color.White
+                                imageVector = if (passwordVisible)
+                                    Icons.Default.VisibilityOff
+                                else
+                                    Icons.Default.Visibility,
+                                contentDescription = if (passwordVisible) "Esconder Palavra-Passe" else "Mostrar Palavra-Passe",
+                                tint = Color.Gray
                             )
                         }
                     }
                 )
 
-                // Forgot password link
+                // Forgot password
                 TextButton(
                     onClick = { /* Handle forgot password */ },
                     modifier = Modifier.align(Alignment.Start)
@@ -160,44 +157,46 @@ fun LoginScreen(authRepository: AuthRepository,onLoginSuccess: () -> Unit) {
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
-
             }
         }
-                Button(
-                    onClick = {
-                        isLoading = true
-                        coroutineScope.launch {
-                            val result = authRepository.login(email, password)
-                            result.fold(
-                                onSuccess = { success ->
-                                    println("Logged in! userID=${success.userID}, userName = ${success.userName} token=${success.token}")
-                                    onLoginSuccess()
-                                },
-                                onFailure = {
-                                    SnackbarManager.show("Erro no login: ${it.message}", SnackbarType.ERROR)
-                                }
-                            )
+
+        // Login Button with loading indicator
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    isLoading = true
+                    val result = authRepository.login(email, password)
+                    result.fold(
+                        onSuccess = {
+                            onLoginSuccess()
+                        },
+                        onFailure = {
+                            SnackbarManager.show("Erro no login: ${it.message}", SnackbarType.ERROR)
                         }
-                        isLoading = false
-                    },
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    colors = ButtonDefaults.buttonColors( containerColor = Color(0xFFE8EAF6), contentColor = Color(0xFF4A6FA5) ),
-                    enabled = !isLoading
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            color = Color(0xFF4A6FA5),
-                            strokeWidth = 2.dp,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    } else {
-                        Text("Entrar")
-                    }
+                    )
+                    isLoading = false
                 }
+            },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(24.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFE8EAF6),
+                contentColor = Color(0xFF4A6FA5)
+            ),
+            enabled = !isLoading
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    color = Color(0xFF4A6FA5),
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(24.dp)
+                )
+            } else {
+                Text("Entrar")
             }
-
-
+        }
+    }
 }
+
