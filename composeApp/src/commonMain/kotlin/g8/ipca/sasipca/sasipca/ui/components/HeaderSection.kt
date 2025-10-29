@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,7 +31,7 @@ fun HeaderSection(title: String, subTitle: String) {
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                Color(0xFF3D4A7A),
+                MaterialTheme.colorScheme.primary,
                 shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
             )
             .padding(vertical = 24.dp, horizontal = 24.dp)

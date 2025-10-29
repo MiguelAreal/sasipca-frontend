@@ -1,4 +1,4 @@
-package g8.ipca.sasipca.sasipca.components
+package g8.ipca.sasipca.sasipca.ui.components
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -21,15 +21,8 @@ actual fun BarcodeInputField(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        label = { Text("Código de barras") },
-        placeholder = { Text("Insira manualmente") },
+        placeholder = { Text("Ex.: 7898765430018", color = Color(0xFF999999)) },
         singleLine = true,
-        shape = RoundedCornerShape(8.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = Color(0xFFF8F8F8),
-            unfocusedContainerColor = Color(0xFFF8F8F8),
-            focusedBorderColor = Color(0xFF3D4A7A),
-            unfocusedBorderColor = Color(0xFFE0E0E0)
-        )
+        shape = RoundedCornerShape(8.dp)
     )
 }

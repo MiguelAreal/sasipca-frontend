@@ -13,7 +13,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
-import g8.ipca.sasipca.sasipca.storage.*
 
 /** Enum para gerir separadores da BottomNavigationBar */
 sealed class BottomNavScreen(val label: String, val icon: ImageVector) {
@@ -42,7 +41,6 @@ fun MainScreen() {
     Scaffold(
         bottomBar = {
             BottomNavigationBar(currentScreen) { selected ->
-                previousScreen = currentScreen
                 currentScreen = selected
             }
         }
@@ -128,12 +126,7 @@ fun BottomNavigationBar(
                 selected = currentScreen == screen,
                 onClick = { onScreenSelected(screen) },
                 icon = { Icon(imageVector = screen.icon, contentDescription = screen.label) },
-                label = { Text(screen.label) },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color(0xFF3D4A7A),
-                    unselectedIconColor = Color(0xFF999999),
-                    indicatorColor = Color(0xFFE8EAF6)
-                )
+                label = { Text(screen.label) }
             )
         }
     }

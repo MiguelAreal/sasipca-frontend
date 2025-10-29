@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -31,6 +30,10 @@ import g8.ipca.sasipca.sasipca.storage.SessionManager
 import g8.ipca.sasipca.sasipca.ui.components.*
 import g8.ipca.sasipca.sasipca.ui.utils.SnackbarManager
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.painterResource
+import sasipca.composeapp.generated.resources.Res
+import sasipca.composeapp.generated.resources.logo
 
 
 @Composable
@@ -45,7 +48,7 @@ fun LoginScreen(authRepository: AuthRepository, onLoginSuccess: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF4A6FA5))
+            .background(Color(0xFF24804F))
     ) {
         // Background Image
         AsyncImage(
@@ -70,12 +73,13 @@ fun LoginScreen(authRepository: AuthRepository, onLoginSuccess: () -> Unit) {
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Logo
+
+                @OptIn(ExperimentalResourceApi::class)
                 Image(
-                    painter = painterResource("logo_sas.png"),
+                    painter = painterResource(Res.drawable.logo),
                     contentDescription = "IPCA Logo",
                     modifier = Modifier
-                        .sizeIn(100.dp, 150.dp, 150.dp, 200.dp)
+                        .sizeIn(130.dp, 180.dp, 150.dp, 200.dp)
                         .padding(bottom = 16.dp),
                     contentScale = ContentScale.Fit
                 )
@@ -177,19 +181,16 @@ fun LoginScreen(authRepository: AuthRepository, onLoginSuccess: () -> Unit) {
                     isLoading = false
                 }
             },
+
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .widthIn(300.dp, 400.dp)
                 .padding(24.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFE8EAF6),
-                contentColor = Color(0xFF4A6FA5)
-            ),
             enabled = !isLoading
         ) {
             if (isLoading) {
                 CircularProgressIndicator(
-                    color = Color(0xFF4A6FA5),
+                    color = Color(0xFFFFFFFF),
                     strokeWidth = 2.dp,
                     modifier = Modifier.size(24.dp)
                 )

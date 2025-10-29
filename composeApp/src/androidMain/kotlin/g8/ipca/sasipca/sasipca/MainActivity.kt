@@ -7,7 +7,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.preference.PreferenceManager
-import com.russhwolf.settings.AndroidSettings
+import com.russhwolf.settings.Settings
+import com.russhwolf.settings.SharedPreferencesSettings
 import g8.ipca.sasipca.sasipca.storage.SessionManager
 
 class MainActivity : ComponentActivity() {
@@ -15,12 +16,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        // Inicializa SessionManager com Settings Android
-        val androidSettings = AndroidSettings(
-            PreferenceManager.getDefaultSharedPreferences(this)
-        )
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        val settings: Settings = SharedPreferencesSettings(sharedPreferences)
 
-        SessionManager.init(androidSettings)
+        SessionManager.init(settings)
 
         setContent {
             App()

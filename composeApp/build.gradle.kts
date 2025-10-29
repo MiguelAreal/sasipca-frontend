@@ -109,6 +109,15 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            macOS {
+                iconFile.set(project.file("src/jvmMain/resources/icons/icon512x512.icns"))
+            }
+            windows {
+                iconFile.set(project.file("src/jvmMain/resources/icons/icon512x512.ico"))
+            }
+            linux {
+                iconFile.set(project.file("src/jvmMain/resources/icons/icon512x512.png"))
+            }
             packageName = "g8.ipca.sasipca.sasipca"
             packageVersion = "1.0.0"
         }

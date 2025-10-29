@@ -15,6 +15,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.*
 import g8.ipca.sasipca.sasipca.storage.*
 import g8.ipca.sasipca.sasipca.ui.components.HeaderSection
@@ -166,7 +167,7 @@ fun MenuItem(icon: ImageVector, title: String) {
             }
 
             Icon(
-                imageVector = Icons.Default.ArrowForwardIos,
+                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
                 contentDescription = null,
                 tint = Color(0xFFCCCCCC),
                 modifier = Modifier.size(18.dp)

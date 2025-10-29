@@ -1,4 +1,4 @@
-package g8.ipca.sasipca.sasipca.components
+package g8.ipca.sasipca.sasipca.ui.components
 
 import android.annotation.SuppressLint
 import android.util.Log

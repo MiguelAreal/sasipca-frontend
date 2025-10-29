@@ -14,7 +14,7 @@ class AuthRepository(private val client: HttpClient) {
 
     suspend fun login(email: String, password: String): Result<LoginSuccessResponse> {
         return try {
-            val response = client.post("https://localhost:7237/api/login") {
+            val response = client.post("https://192.168.1.17/api/login") {
                 contentType(ContentType.Application.Json)
                 setBody(LoginRequest(email, password))
             }

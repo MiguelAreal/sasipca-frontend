@@ -136,12 +136,6 @@ fun ReceptionScreen() {
                                 onValueChange = { productName = it },
                                 modifier = Modifier.fillMaxWidth(),
                                 placeholder = { Text("Ex: Arroz Cigala", color = Color(0xFF999999)) },
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = Color(0xFFF8F8F8),
-                                    unfocusedContainerColor = Color(0xFFF8F8F8),
-                                    focusedBorderColor = Color(0xFF3D4A7A),
-                                    unfocusedBorderColor = Color(0xFFE0E0E0)
-                                ),
                                 shape = RoundedCornerShape(8.dp),
                                 singleLine = true
                             )
@@ -171,12 +165,6 @@ fun ReceptionScreen() {
                                     trailingIcon = {
                                         ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategory)
                                     },
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedContainerColor = Color(0xFFF8F8F8),
-                                        unfocusedContainerColor = Color(0xFFF8F8F8),
-                                        focusedBorderColor = Color(0xFF3D4A7A),
-                                        unfocusedBorderColor = Color(0xFFE0E0E0)
-                                    ),
                                     shape = RoundedCornerShape(8.dp)
                                 )
                                 ExposedDropdownMenu(
@@ -225,12 +213,6 @@ fun ReceptionScreen() {
                                         trailingIcon = {
                                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedUnit)
                                         },
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedContainerColor = Color(0xFFF8F8F8),
-                                            unfocusedContainerColor = Color(0xFFF8F8F8),
-                                            focusedBorderColor = Color(0xFF3D4A7A),
-                                            unfocusedBorderColor = Color(0xFFE0E0E0)
-                                        ),
                                         shape = RoundedCornerShape(8.dp)
                                     )
                                     ExposedDropdownMenu(
@@ -266,12 +248,6 @@ fun ReceptionScreen() {
                                     modifier = Modifier.fillMaxWidth(),
                                     placeholder = { Text("Ex: 2", color = Color(0xFF999999)) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedContainerColor = Color(0xFFF8F8F8),
-                                        unfocusedContainerColor = Color(0xFFF8F8F8),
-                                        focusedBorderColor = Color(0xFF3D4A7A),
-                                        unfocusedBorderColor = Color(0xFFE0E0E0)
-                                    ),
                                     shape = RoundedCornerShape(8.dp),
                                     singleLine = true
                                 )
@@ -366,12 +342,6 @@ fun ReceptionScreen() {
                                 .fillMaxWidth()
                                 .height(120.dp),
                             placeholder = { Text("Adicione notas sobre o produto...", color = Color(0xFF999999)) },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = Color(0xFFF8F8F8),
-                                unfocusedContainerColor = Color(0xFFF8F8F8),
-                                focusedBorderColor = Color(0xFF3D4A7A),
-                                unfocusedBorderColor = Color(0xFFE0E0E0)
-                            ),
                             shape = RoundedCornerShape(8.dp),
                             maxLines = 5
                         )
@@ -386,9 +356,6 @@ fun ReceptionScreen() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF3D4A7A)
-                    ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
@@ -494,12 +461,6 @@ fun LotCard(
                     onValueChange = { onLotChange(lot.copy(lot = it)) },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Ex: LOT2025001", color = Color(0xFF999999)) },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color(0xFFF8F8F8),
-                        unfocusedContainerColor = Color(0xFFF8F8F8),
-                        focusedBorderColor = Color(0xFF3D4A7A),
-                        unfocusedBorderColor = Color(0xFFE0E0E0)
-                    ),
                     shape = RoundedCornerShape(8.dp),
                     singleLine = true
                 )
@@ -524,12 +485,6 @@ fun LotCard(
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("0", color = Color(0xFF999999)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color(0xFFF8F8F8),
-                            unfocusedContainerColor = Color(0xFFF8F8F8),
-                            focusedBorderColor = Color(0xFF3D4A7A),
-                            unfocusedBorderColor = Color(0xFFE0E0E0)
-                        ),
                         shape = RoundedCornerShape(8.dp),
                         singleLine = true
                     )
@@ -560,12 +515,7 @@ fun LotCard(
                                 modifier = Modifier.size(20.dp)
                             )
                         },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color(0xFFF8F8F8),
-                            unfocusedContainerColor = Color(0xFFF8F8F8),
-                            focusedBorderColor = Color(0xFF3D4A7A),
-                            unfocusedBorderColor = Color(0xFFE0E0E0)
-                        ),
+
                         shape = RoundedCornerShape(8.dp),
                         singleLine = true
                     )
