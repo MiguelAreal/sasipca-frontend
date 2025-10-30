@@ -108,17 +108,20 @@ compose.desktop {
         mainClass = "g8.ipca.sasipca.sasipca.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe)
+            description = "SASIPCA"
+            vendor = "G8 IPCA"
             macOS {
                 iconFile.set(project.file("src/jvmMain/resources/icons/icon512x512.icns"))
             }
             windows {
                 iconFile.set(project.file("src/jvmMain/resources/icons/icon512x512.ico"))
+                shortcut = true
             }
             linux {
                 iconFile.set(project.file("src/jvmMain/resources/icons/icon512x512.png"))
             }
-            packageName = "g8.ipca.sasipca.sasipca"
+            packageName = "sasipca"
             packageVersion = "1.0.0"
         }
     }
