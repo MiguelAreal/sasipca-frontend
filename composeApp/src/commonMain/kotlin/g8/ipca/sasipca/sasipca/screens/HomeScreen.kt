@@ -28,7 +28,6 @@ fun HomeScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F7))
     ) {
         HeaderSection("${getGreetingPt()}, $userName",getFormattedDatePt())
         StatsSection()
@@ -46,7 +45,6 @@ fun StatsSection() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = horizontalPadding, vertical = 20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
             shape = RoundedCornerShape(12.dp)
         ) {
@@ -57,7 +55,6 @@ fun StatsSection() {
             ) {
                 Text(
                     text = getCurrentMonthPt(),
-                    color = Color(0xFF3D4A7A),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 12.dp)
@@ -80,7 +77,6 @@ fun StatsSection() {
 fun StatCard(label: String, value: String, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -92,14 +88,12 @@ fun StatCard(label: String, value: String, modifier: Modifier = Modifier) {
         ) {
             Text(
                 text = label,
-                color = Color(0xFF666666),
                 fontSize = 11.sp,
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = value,
-                color = Color(0xFF3D4A7A),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -130,7 +124,6 @@ fun MenuSection() {
 fun MenuItem(icon: ImageVector, title: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(12.dp),
         onClick = { /* TODO */ }
@@ -160,7 +153,6 @@ fun MenuItem(icon: ImageVector, title: String) {
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text = title,
-                    color = Color(0xFF333333),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )

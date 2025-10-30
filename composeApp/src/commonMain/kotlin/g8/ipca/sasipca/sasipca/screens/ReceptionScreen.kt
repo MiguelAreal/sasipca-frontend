@@ -61,7 +61,6 @@ fun ReceptionScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F7))
     ) {
         HeaderSection("Receção", getFormattedDatePt())
 
@@ -76,7 +75,6 @@ fun ReceptionScreen() {
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -89,7 +87,6 @@ fun ReceptionScreen() {
                             text = "Código de Barras",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color(0xFF666666),
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
 
@@ -105,7 +102,6 @@ fun ReceptionScreen() {
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -118,8 +114,7 @@ fun ReceptionScreen() {
                         Text(
                             text = "Informações do Produto",
                             fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF333333)
+                            fontWeight = FontWeight.SemiBold
                         )
 
                         // Nome do Produto
@@ -128,14 +123,13 @@ fun ReceptionScreen() {
                                 text = "Nome do Produto",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = Color(0xFF666666),
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
                             OutlinedTextField(
                                 value = productName,
                                 onValueChange = { productName = it },
                                 modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text("Ex: Arroz Cigala", color = Color(0xFF999999)) },
+                                placeholder = { Text("Ex: Arroz Cigala") },
                                 shape = RoundedCornerShape(8.dp),
                                 singleLine = true
                             )
@@ -147,7 +141,6 @@ fun ReceptionScreen() {
                                 text = "Categoria",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = Color(0xFF666666),
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
                             ExposedDropdownMenuBox(
@@ -161,7 +154,7 @@ fun ReceptionScreen() {
                                         .fillMaxWidth()
                                         .menuAnchor(),
                                     readOnly = true,
-                                    placeholder = { Text("Selecione a categoria", color = Color(0xFF999999)) },
+                                    placeholder = { Text("Selecione a categoria") },
                                     trailingIcon = {
                                         ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategory)
                                     },
@@ -195,7 +188,6 @@ fun ReceptionScreen() {
                                     text = "Unidade",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = Color(0xFF666666),
                                     modifier = Modifier.padding(bottom = 8.dp)
                                 )
                                 ExposedDropdownMenuBox(
@@ -209,7 +201,7 @@ fun ReceptionScreen() {
                                             .fillMaxWidth()
                                             .menuAnchor(),
                                         readOnly = true,
-                                        placeholder = { Text("Un.", color = Color(0xFF999999)) },
+                                        placeholder = { Text("Un.") },
                                         trailingIcon = {
                                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedUnit)
                                         },
@@ -239,14 +231,13 @@ fun ReceptionScreen() {
                                     text = "Tamanho",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = Color(0xFF666666),
                                     modifier = Modifier.padding(bottom = 8.dp)
                                 )
                                 OutlinedTextField(
                                     value = unitSize,
                                     onValueChange = { unitSize = it },
                                     modifier = Modifier.fillMaxWidth(),
-                                    placeholder = { Text("Ex: 2", color = Color(0xFF999999)) },
+                                    placeholder = { Text("Ex: 2") },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     shape = RoundedCornerShape(8.dp),
                                     singleLine = true
@@ -261,7 +252,6 @@ fun ReceptionScreen() {
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -279,8 +269,7 @@ fun ReceptionScreen() {
                             Text(
                                 text = "Lotes",
                                 fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF333333)
+                                fontWeight = FontWeight.SemiBold
                             )
                             IconButton(
                                 onClick = {
@@ -319,7 +308,6 @@ fun ReceptionScreen() {
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -332,7 +320,6 @@ fun ReceptionScreen() {
                             text = "Observações",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color(0xFF666666),
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
                         OutlinedTextField(
@@ -341,7 +328,7 @@ fun ReceptionScreen() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(120.dp),
-                            placeholder = { Text("Adicione notas sobre o produto...", color = Color(0xFF999999)) },
+                            placeholder = { Text("Adicione notas sobre o produto...") },
                             shape = RoundedCornerShape(8.dp),
                             maxLines = 5
                         )
@@ -383,7 +370,6 @@ fun LotCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -429,8 +415,7 @@ fun LotCard(
                 Text(
                     text = "Lote ${index + 1}",
                     fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF333333)
+                    fontWeight = FontWeight.SemiBold
                 )
                 if (canRemove) {
                     IconButton(
@@ -453,14 +438,13 @@ fun LotCard(
                     text = "Número do Lote",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color(0xFF666666),
                     modifier = Modifier.padding(bottom = 6.dp)
                 )
                 OutlinedTextField(
                     value = lot.lot,
                     onValueChange = { onLotChange(lot.copy(lot = it)) },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Ex: LOT2025001", color = Color(0xFF999999)) },
+                    placeholder = { Text("Ex: LOT2025001") },
                     shape = RoundedCornerShape(8.dp),
                     singleLine = true
                 )
@@ -476,14 +460,13 @@ fun LotCard(
                         text = "Quantidade",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFF666666),
                         modifier = Modifier.padding(bottom = 6.dp)
                     )
                     OutlinedTextField(
                         value = lot.quantity,
                         onValueChange = { onLotChange(lot.copy(quantity = it)) },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("0", color = Color(0xFF999999)) },
+                        placeholder = { Text("0") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         shape = RoundedCornerShape(8.dp),
                         singleLine = true
@@ -496,7 +479,6 @@ fun LotCard(
                         text = "Validade",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFF666666),
                         modifier = Modifier.padding(bottom = 6.dp)
                     )
 
@@ -506,7 +488,7 @@ fun LotCard(
                         onValueChange = {},
                         modifier = Modifier
                             .clickable { showDatePicker = true },
-                        placeholder = { Text("DD/MM/AAAA", color = Color(0xFF999999)) },
+                        placeholder = { Text("DD/MM/AAAA") },
                         trailingIcon = {
                             Icon(
                                 Icons.Default.CalendarToday,

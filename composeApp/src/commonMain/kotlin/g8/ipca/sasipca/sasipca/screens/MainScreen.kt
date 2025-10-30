@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /** Enum para gerir separadores da BottomNavigationBar */
@@ -34,7 +35,7 @@ val bottomNavItems = listOf(
 @Suppress("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun MainScreen() {
+fun MainScreen(onThemeChanged: (Boolean) -> Unit = {}) {
     var currentScreen by remember { mutableStateOf<BottomNavScreen>(BottomNavScreen.Home) }
     var previousScreen by remember { mutableStateOf(currentScreen) }
 
@@ -48,7 +49,6 @@ fun MainScreen() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF5F5F7))
                 .padding(paddingValues)
         ) {
             AnimatedContent(
@@ -82,6 +82,9 @@ fun MainScreen() {
                     is BottomNavScreen.Home -> HomeScreen()
                     is BottomNavScreen.Stock -> StockScreen()
                     is BottomNavScreen.Calendario -> ReceptionScreen()
+                    is BottomNavScreen.Configuracoes -> SettingsScreen(
+                        onThemeChanged = onThemeChanged
+                    )
                     else -> PlaceholderScreen(screen.label)
                 }
             }
@@ -96,7 +99,7 @@ fun PlaceholderScreen(label: String) {
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF5F5F7)),
-        contentAlignment = androidx.compose.ui.Alignment.Center
+        contentAlignment = Alignment.Center
     ) {
         Text(text = "$label ainda não implementado", color = Color.Gray)
     }
@@ -109,7 +112,6 @@ fun BottomNavigationBar(
     onScreenSelected: (BottomNavScreen) -> Unit
 ) {
     NavigationBar(
-        containerColor = Color.White,
         tonalElevation = 8.dp,
         modifier = Modifier.fillMaxWidth()
     ) {

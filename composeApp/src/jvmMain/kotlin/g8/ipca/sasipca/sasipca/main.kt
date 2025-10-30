@@ -7,6 +7,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.russhwolf.settings.*
 import g8.ipca.sasipca.sasipca.storage.SessionManager
+import g8.ipca.sasipca.sasipca.storage.SettingsManager
 import org.jetbrains.compose.resources.painterResource
 import sasipca.composeapp.generated.resources.Res
 import sasipca.composeapp.generated.resources.icon512x512
@@ -19,6 +20,7 @@ fun main() = application {
     val desktopSettings: Settings = PreferencesSettings(Preferences.userRoot().node("sasipca"))
 
     SessionManager.init(desktopSettings)
+    SettingsManager.init(desktopSettings)
 
     // Load all icon sizes
     val iconPainter = painterResource(Res.drawable.icon512x512)

@@ -66,7 +66,6 @@ fun StockScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F7))
     ) {
 
         HeaderSection("Inventário",getFormattedDatePt())
@@ -87,7 +86,7 @@ fun StockScreen() {
                     .weight(1f)
                     .height(50.dp),
                 placeholder = {
-                    Text("Pesquisar", color = Color(0xFF999999))
+                    Text("Pesquisar")
                 },
                 leadingIcon = {
                     Icon(
@@ -96,12 +95,6 @@ fun StockScreen() {
                         tint = Color(0xFF999999)
                     )
                 },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedBorderColor = Color(0xFFE0E0E0),
-                    unfocusedBorderColor = Color(0xFFE0E0E0)
-                ),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true
             )
@@ -176,7 +169,6 @@ fun StockItemCard(item: StockItem) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable { /* TODO: Ação ao clicar */ },
-        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -192,13 +184,11 @@ fun StockItemCard(item: StockItem) {
             ) {
                 Text(
                     text = item.name,
-                    color = Color(0xFF333333),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
                     text = item.category,
-                    color = Color(0xFF999999),
                     fontSize = 14.sp,
                     modifier = Modifier.padding(top = 4.dp)
                 )
@@ -206,7 +196,6 @@ fun StockItemCard(item: StockItem) {
 
             Text(
                 text = "${item.quantity} ${item.unit}",
-                color = Color(0xFF3D4A7A),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -221,7 +210,6 @@ fun StockItemCardGrid(item: StockItem) {
             .fillMaxWidth()
             .aspectRatio(1f)
             .clickable { /* TODO: Ação ao clicar */ },
-        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -234,14 +222,12 @@ fun StockItemCardGrid(item: StockItem) {
             Column {
                 Text(
                     text = item.name,
-                    color = Color(0xFF333333),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 2
                 )
                 Text(
                     text = item.category,
-                    color = Color(0xFF999999),
                     fontSize = 13.sp,
                     modifier = Modifier.padding(top = 4.dp)
                 )
@@ -249,7 +235,6 @@ fun StockItemCardGrid(item: StockItem) {
 
             Text(
                 text = "${item.quantity} ${item.unit}",
-                color = Color(0xFF3D4A7A),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )

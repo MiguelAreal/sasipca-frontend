@@ -181,7 +181,10 @@ fun LoginScreen(authRepository: AuthRepository, onLoginSuccess: () -> Unit) {
                     isLoading = false
                 }
             },
-
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFFFFFFF),      // Background color
+                contentColor = MaterialTheme.colorScheme.primary,
+            ),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .widthIn(300.dp, 400.dp)

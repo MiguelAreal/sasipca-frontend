@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import g8.ipca.sasipca.sasipca.network.ApiClient
 import g8.ipca.sasipca.sasipca.repositories.AuthRepository
 import g8.ipca.sasipca.sasipca.screens.*
+import g8.ipca.sasipca.sasipca.storage.SettingsManager
 import g8.ipca.sasipca.sasipca.ui.components.CustomSnackbarHost
 import g8.ipca.sasipca.sasipca.ui.components.SnackbarMessage
 import androidx.compose.ui.Modifier
@@ -25,7 +26,7 @@ enum class Screens {
 fun App() {
     val authRepository = remember { AuthRepository(ApiClient.client) }
     var currentScreen by remember { mutableStateOf(Screens.LOGIN) }
-
+    var isDarkTheme by remember { mutableStateOf(SettingsManager.isDarkTheme()) }
     val snackbarState = remember { mutableStateOf<SnackbarMessage?>(null) }
     val scope = rememberCoroutineScope()
 
@@ -35,17 +36,18 @@ fun App() {
         SnackbarManager.scope = scope
     }
 
-    SasIpcaTheme {
+    SasIpcaTheme(darkTheme = isDarkTheme) {
         Scaffold { paddingValues ->
             Box(modifier = Modifier.fillMaxSize()) {
-
                 // Conteúdo principal
                 when (currentScreen) {
                     Screens.LOGIN -> LoginScreen(
                         authRepository = authRepository,
                         onLoginSuccess = { currentScreen = Screens.DASHBOARD }
                     )
-                    Screens.DASHBOARD -> MainScreen()
+                    Screens.DASHBOARD -> MainScreen(
+                        onThemeChanged = { isDark -> isDarkTheme = isDark }
+                    )
                 }
 
                 CustomSnackbarHost(
@@ -54,9 +56,7 @@ fun App() {
                         .fillMaxSize()
                         .padding(8.dp)
                 )
-
             }
         }
     }
-
 }
