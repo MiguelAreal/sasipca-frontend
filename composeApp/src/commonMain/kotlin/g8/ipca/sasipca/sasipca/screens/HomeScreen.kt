@@ -2,24 +2,29 @@ package g8.ipca.sasipca.sasipca.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.*
-import g8.ipca.sasipca.sasipca.storage.*
+import androidx.compose.material.icons.outlined.*
+import g8.ipca.sasipca.sasipca.navigation.NavigationService
+import g8.ipca.sasipca.sasipca.navigation.Screen
+import g8.ipca.sasipca.sasipca.storage.SessionManager
 import g8.ipca.sasipca.sasipca.ui.components.HeaderSection
-import g8.ipca.sasipca.sasipca.ui.utils.*
+import g8.ipca.sasipca.sasipca.utils.getCurrentMonthPt
+import g8.ipca.sasipca.sasipca.utils.getFormattedDatePt
+import g8.ipca.sasipca.sasipca.utils.getGreetingPt
 
 @Composable
 fun HomeScreen() {
@@ -28,140 +33,290 @@ fun HomeScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
     ) {
-        HeaderSection("${getGreetingPt()}, $userName",getFormattedDatePt())
-        StatsSection()
-        Spacer(modifier = Modifier.height(24.dp))
-        MenuSection()
+        HeaderSection("${getGreetingPt()}, $userName", getFormattedDatePt())
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+        ) {
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                text = "Ações Rápidas",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            QuickActionsSection()
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            MonthlyStatsSection()
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Mais Opções",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(bottom = 10.dp)
+            )
+
+            SecondaryActionsSection()
+
+            Spacer(modifier = Modifier.height(20.dp))
+        }
     }
 }
 
 @Composable
-fun StatsSection() {
-    BoxWithConstraints {
-        val horizontalPadding = if (maxWidth < 600.dp) 20.dp else 40.dp
+fun QuickActionsSection() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        QuickActionButton(
+            icon = Icons.Filled.Inventory2,
+            title = "Receção",
+            modifier = Modifier.weight(1f),
+            onClick = { NavigationService.navigateTo(Screen.Reception) }
+        )
 
-        Card(
+        QuickActionButton(
+            icon = Icons.Filled.LocalShipping,
+            title = "Entrega",
+            modifier = Modifier.weight(1f),
+            onClick = { NavigationService.navigateTo(Screen.Delivery) }
+        )
+
+        QuickActionButton(
+            icon = Icons.Filled.Tune,
+            title = "Ajuste",
+            modifier = Modifier.weight(1f),
+            onClick = { NavigationService.navigateTo(Screen.StockAdjustment) }
+        )
+    }
+}
+
+@Composable
+fun QuickActionButton(
+    icon: ImageVector,
+    title: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = modifier.height(100.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(16.dp),
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = title,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+    }
+}
+
+@Composable
+fun MonthlyStatsSection() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = horizontalPadding, vertical = 20.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-            shape = RoundedCornerShape(12.dp)
+                .padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = getCurrentMonthPt(),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    text = "Estatísticas de ${getCurrentMonthPt()}",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                IconButton(
+                    onClick = { /* TODO: Ver detalhes */ },
+                    modifier = Modifier.size(28.dp)
                 ) {
-                    StatCard("Entregas Pendentes", "08", Modifier.weight(1f))
-                    StatCard("Doações ", "15", Modifier.weight(1f))
-                    StatCard("Entregas Realizadas", "03", Modifier.weight(1f))
+                    Icon(
+                        imageVector = Icons.Outlined.BarChart,
+                        contentDescription = "Ver detalhes",
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                CompactStatCard(
+                    icon = Icons.Outlined.Schedule,
+                    label = "Pendentes",
+                    value = "08",
+                    modifier = Modifier.weight(1f)
+                )
+                CompactStatCard(
+                    icon = Icons.Outlined.Favorite,
+                    label = "Doações",
+                    value = "15",
+                    modifier = Modifier.weight(1f)
+                )
+                CompactStatCard(
+                    icon = Icons.Outlined.CheckCircle,
+                    label = "Realizadas",
+                    value = "03",
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }
 }
 
 @Composable
-fun StatCard(label: String, value: String, modifier: Modifier = Modifier) {
-    Card(
+fun CompactStatCard(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
         modifier = modifier,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp)
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = label,
-                fontSize = 11.sp,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = value,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(22.dp)
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = value,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Text(
+            text = label,
+            fontSize = 10.sp,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            textAlign = TextAlign.Center
+        )
     }
 }
 
 @Composable
-fun MenuSection() {
-    BoxWithConstraints {
-        val horizontalPadding = if (maxWidth < 600.dp) 20.dp else 40.dp
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = horizontalPadding),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            MenuItem(Icons.Default.Inventory, "Inventário")
-            MenuItem(Icons.Default.CalendarToday, "Calendário")
-            MenuItem(Icons.Default.Campaign, "Campanhas")
-            MenuItem(Icons.Default.Person, "Estudantes")
-        }
+fun SecondaryActionsSection() {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        CompactMenuItem(
+            icon = Icons.Outlined.Campaign,
+            title = "Campanhas",
+            onClick = { NavigationService.navigateTo(Screen.Campaigns) }
+        )
+        CompactMenuItem(
+            icon = Icons.Outlined.Person,
+            title = "Beneficiários",
+            onClick = { NavigationService.navigateTo(Screen.Beneficiaries) }
+        )
+        CompactMenuItem(
+            icon = Icons.Outlined.Person,
+            title = "Relatórios",
+            onClick = { NavigationService.navigateTo(Screen.Placeholder) }
+        )
     }
 }
 
 @Composable
-fun MenuItem(icon: ImageVector, title: String) {
+fun CompactMenuItem(
+    icon: ImageVector,
+    title: String,
+    onClick: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(12.dp),
-        onClick = { /* TODO */ }
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFF0F0F5)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = title,
-                        tint = Color(0xFF3D4A7A),
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(16.dp))
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(22.dp)
+                )
+
+                Spacer(modifier = Modifier.width(14.dp))
+
                 Text(
                     text = title,
-                    fontSize = 16.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Medium
                 )
             }
 
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                imageVector = Icons.Filled.ChevronRight,
                 contentDescription = null,
-                tint = Color(0xFFCCCCCC),
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                 modifier = Modifier.size(18.dp)
             )
         }

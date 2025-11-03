@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.sp
 import g8.ipca.sasipca.sasipca.storage.SettingsManager
 import g8.ipca.sasipca.sasipca.ui.components.HeaderSection
 import g8.ipca.sasipca.sasipca.ui.components.SnackbarType
-import g8.ipca.sasipca.sasipca.ui.utils.SnackbarManager
+import g8.ipca.sasipca.sasipca.utils.SnackbarManager
 
 @Composable
 fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {

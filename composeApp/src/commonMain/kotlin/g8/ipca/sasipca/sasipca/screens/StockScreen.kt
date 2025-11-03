@@ -24,17 +24,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import g8.ipca.sasipca.sasipca.models.StockItemDTO
 import g8.ipca.sasipca.sasipca.ui.components.HeaderSection
-import g8.ipca.sasipca.sasipca.ui.utils.getFormattedDatePt
-import java.text.SimpleDateFormat
-import java.util.*
-
-data class StockItem(
-    val name: String,
-    val category: String,
-    val quantity: String,
-    val unit: String
-)
+import g8.ipca.sasipca.sasipca.utils.getFormattedDatePt
+import g8.ipca.sasipca.sasipca.viewmodels.StockViewModel
 
 enum class ViewMode {
     LIST, GRID
@@ -43,25 +36,18 @@ enum class ViewMode {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StockScreen() {
-    var searchQuery by remember { mutableStateOf("") }
+    val viewModel = remember { StockViewModel() }
     var viewMode by remember { mutableStateOf(ViewMode.LIST) }
 
-    val stockItems = listOf(
-        StockItem("Arroz Cigala", "Alimentar", "16", "Kg"),
-        StockItem("Gel de banho Continente", "Higiene", "60", "L"),
-        StockItem("Atum Enlatado", "Alimentar", "8", "Uni"),
-        StockItem("Azeite", "Alimentar", "8", "L"),
-        StockItem("Esponjas de Loiça", "Higiene Doméstica", "6", "Uni"),
-        StockItem("Pasta de dentes", "Higiene", "4", "Uni"),
-        StockItem("Sabonete Líquido", "Higiene", "12", "L"),
-        StockItem("Detergente Roupa", "Higiene Doméstica", "5", "L"),
-        StockItem("Papel Higiénico", "Higiene", "24", "Uni"),
-        StockItem("Massa Esparguete", "Alimentar", "10", "Kg")
-    )
+    // Chamada inicial
+    LaunchedEffect(Unit) { viewModel.loadStock() }
 
-    val filteredItems = stockItems.filter {
-        it.name.contains(searchQuery, ignoreCase = true)
-    }
+    val filteredItems by remember { viewModel::filteredItems }
+    val isLoading by remember { viewModel::isLoading }
+    val errorMessage by remember { viewModel::errorMessage }
+    val searchQuery by remember { viewModel::searchQuery }
+    val currentPage by remember { viewModel::currentPage }
+    val totalPages by remember { viewModel::totalPages }
 
     Column(
         modifier = Modifier
@@ -81,7 +67,7 @@ fun StockScreen() {
             // Barra de pesquisa
             OutlinedTextField(
                 value = searchQuery,
-                onValueChange = { searchQuery = it },
+                onValueChange = { viewModel.loadStock(it) },
                 modifier = Modifier
                     .weight(1f)
                     .height(50.dp),
@@ -156,7 +142,18 @@ fun StockScreen() {
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
                 items(filteredItems) { item ->
-                    StockItemCardGrid(item)
+                    StockItemCardGrid(
+                        StockItemDTO(
+                            barcode = item.barcode,
+                            name = item.name,
+                            category = item.category,
+                            unit = item.unit,
+                            unitSize = item.unitSize,
+                            totalQuantity = item.totalQuantity,
+                            reservedQuantity = item.reservedQuantity,
+                            availableStock = item.availableStock
+                        )
+                    )
                 }
             }
         }
@@ -164,7 +161,7 @@ fun StockScreen() {
 }
 
 @Composable
-fun StockItemCard(item: StockItem) {
+fun StockItemCard(item: StockItemDTO) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -195,7 +192,7 @@ fun StockItemCard(item: StockItem) {
             }
 
             Text(
-                text = "${item.quantity} ${item.unit}",
+                text = "${item.availableStock} ${item.unit}",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -204,7 +201,7 @@ fun StockItemCard(item: StockItem) {
 }
 
 @Composable
-fun StockItemCardGrid(item: StockItem) {
+fun StockItemCardGrid(item: StockItemDTO) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -234,7 +231,7 @@ fun StockItemCardGrid(item: StockItem) {
             }
 
             Text(
-                text = "${item.quantity} ${item.unit}",
+                text = "${item.availableStock} ${item.unit}",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )

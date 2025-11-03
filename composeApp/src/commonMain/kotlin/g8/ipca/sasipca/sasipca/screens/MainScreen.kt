@@ -1,135 +1,74 @@
-package g8.ipca.sasipca.sasipca.screens
-
-import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.vector.ImageVector
+import g8.ipca.sasipca.sasipca.navigation.Screen
+import g8.ipca.sasipca.sasipca.screens.CalendarScreen
+import g8.ipca.sasipca.sasipca.screens.HomeScreen
+import g8.ipca.sasipca.sasipca.screens.ProfileScreen
+import g8.ipca.sasipca.sasipca.screens.StockScreen
+import kotlinx.coroutines.launch
 
-/** Enum para gerir separadores da BottomNavigationBar */
-sealed class BottomNavScreen(val label: String, val icon: ImageVector) {
-    object Home : BottomNavScreen("Home", Icons.Default.Home)
-    object Stock : BottomNavScreen("Stock", Icons.Default.Description)
-    object Calendario : BottomNavScreen("Calendário", Icons.Default.CalendarMonth)
-    object Configuracoes : BottomNavScreen("Configurações", Icons.Default.Settings)
-    object Perfil : BottomNavScreen("Perfil", Icons.Default.Person)
-}
-
-val bottomNavItems = listOf(
-    BottomNavScreen.Home,
-    BottomNavScreen.Stock,
-    BottomNavScreen.Calendario,
-    BottomNavScreen.Configuracoes,
-    BottomNavScreen.Perfil
-)
-
-@Suppress("UnusedMaterial3ScaffoldPaddingParameter")
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun MainScreen(onThemeChanged: (Boolean) -> Unit = {}) {
-    var currentScreen by remember { mutableStateOf<BottomNavScreen>(BottomNavScreen.Home) }
-    var previousScreen by remember { mutableStateOf(currentScreen) }
+    val tabs = listOf(Screen.Home, Screen.Stock, Screen.Calendar, Screen.Profile)
+    val pagerState = rememberPagerState(
+        initialPage = 0,
+        pageCount ={ tabs.size }
+    )
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         bottomBar = {
-            BottomNavigationBar(currentScreen) { selected ->
-                currentScreen = selected
+            NavigationBar {
+                tabs.forEachIndexed { index, screen ->
+                    NavigationBarItem(
+                        selected = pagerState.currentPage == index,
+                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
+                        icon = {
+                            val icon = when (screen) {
+                                Screen.Home -> Icons.Default.Home
+                                Screen.Stock -> Icons.Default.Inventory
+                                Screen.Calendar -> Icons.Default.CalendarMonth
+                                Screen.Profile -> Icons.Default.Person
+                                else -> Icons.Default.Home
+                            }
+                            Icon(icon, contentDescription = null)
+                        },
+                        label = {
+                            val label = when (screen) {
+                                Screen.Home -> "Home"
+                                Screen.Stock -> "Inventário"
+                                Screen.Calendar -> "Calendário"
+                                Screen.Profile -> "Perfil"
+                                else -> ""
+                            }
+                            Text(label)
+                        }
+                    )
+                }
             }
         }
     ) { paddingValues ->
-        Box(
+        HorizontalPager(
+            state = pagerState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-        ) {
-            AnimatedContent(
-                targetState = currentScreen,
-                transitionSpec = {
-                    val initialIndex = bottomNavItems.indexOf(previousScreen)
-                    val targetIndex = bottomNavItems.indexOf(currentScreen)
-
-                    if (targetIndex > initialIndex) {
-                        slideInHorizontally(
-                            initialOffsetX = { it },
-                            animationSpec = tween(300)
-                        ) + fadeIn(animationSpec = tween(300)) with
-                                slideOutHorizontally(
-                                    targetOffsetX = { -it },
-                                    animationSpec = tween(300)
-                                ) + fadeOut(animationSpec = tween(300))
-                    } else {
-                        slideInHorizontally(
-                            initialOffsetX = { -it },
-                            animationSpec = tween(300)
-                        ) + fadeIn(animationSpec = tween(300)) with
-                                slideOutHorizontally(
-                                    targetOffsetX = { it },
-                                    animationSpec = tween(300)
-                                ) + fadeOut(animationSpec = tween(300))
-                    }
-                }
-            ) { screen ->
-                when (screen) {
-                    is BottomNavScreen.Home -> HomeScreen()
-                    is BottomNavScreen.Stock -> StockScreen()
-                    is BottomNavScreen.Calendario -> ReceptionScreen()
-                    is BottomNavScreen.Configuracoes -> SettingsScreen(
-                        onThemeChanged = onThemeChanged
-                    )
-                    else -> PlaceholderScreen(screen.label)
-                }
+        ) { page ->
+            when (tabs[page]) {
+                Screen.Home -> HomeScreen()
+                Screen.Stock -> StockScreen()
+                Screen.Calendar -> CalendarScreen()
+                Screen.Profile -> ProfileScreen()
+                else -> Box(modifier = Modifier.fillMaxSize())
             }
-        }
-    }
-}
-
-/** Placeholder para separadores ainda não implementados */
-@Composable
-fun PlaceholderScreen(label: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF5F5F7)),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(text = "$label ainda não implementado", color = Color.Gray)
-    }
-}
-
-/** BottomNavigationBar adaptada para navegar entre os separadores */
-@Composable
-fun BottomNavigationBar(
-    currentScreen: BottomNavScreen,
-    onScreenSelected: (BottomNavScreen) -> Unit
-) {
-    NavigationBar(
-        tonalElevation = 8.dp,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        val navItems = listOf(
-            BottomNavScreen.Home,
-            BottomNavScreen.Stock,
-            BottomNavScreen.Calendario,
-            BottomNavScreen.Configuracoes,
-            BottomNavScreen.Perfil
-        )
-
-        navItems.forEach { screen ->
-            NavigationBarItem(
-                selected = currentScreen == screen,
-                onClick = { onScreenSelected(screen) },
-                icon = { Icon(imageVector = screen.icon, contentDescription = screen.label) },
-                label = { Text(screen.label) }
-            )
         }
     }
 }

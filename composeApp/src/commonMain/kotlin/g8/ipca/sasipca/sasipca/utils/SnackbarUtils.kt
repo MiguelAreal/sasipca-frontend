@@ -1,4 +1,4 @@
-package g8.ipca.sasipca.sasipca.ui.utils
+package g8.ipca.sasipca.sasipca.utils
 
 import androidx.compose.runtime.MutableState
 import g8.ipca.sasipca.sasipca.ui.components.SnackbarMessage

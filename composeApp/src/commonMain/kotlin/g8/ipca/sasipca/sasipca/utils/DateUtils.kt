@@ -1,9 +1,8 @@
 // shared/src/commonMain/kotlin/g8/ipca/sasipca/sasipca/utils/DateUtils.kt
 
-package g8.ipca.sasipca.sasipca.ui.utils
+package g8.ipca.sasipca.sasipca.utils
 
 import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.LocalDate
 import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number

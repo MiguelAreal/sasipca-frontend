@@ -20,18 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import g8.ipca.sasipca.sasipca.models.*
 import g8.ipca.sasipca.sasipca.ui.components.BarcodeInputField
 import g8.ipca.sasipca.sasipca.ui.components.HeaderSection
-import g8.ipca.sasipca.sasipca.ui.utils.getFormattedDatePt
 
-data class LotToEnter(
-    val lot: String,
-    val quantity: String,
-    val expiryDate: String
-)
-
-data class Category(val id: Int, val name: String)
-data class UnitType(val id: Int, val name: String)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,7 +54,10 @@ fun ReceptionScreen() {
         modifier = Modifier
             .fillMaxSize()
     ) {
-        HeaderSection("Receção", getFormattedDatePt())
+
+        HeaderSection(
+            title = "Receção de Stock"
+        )
 
         LazyColumn(
             modifier = Modifier

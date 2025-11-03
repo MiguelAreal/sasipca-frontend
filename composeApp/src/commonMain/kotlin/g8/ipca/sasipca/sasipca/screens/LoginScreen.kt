@@ -25,10 +25,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.text.input.VisualTransformation
+import g8.ipca.sasipca.sasipca.navigation.NavigationService
+import g8.ipca.sasipca.sasipca.navigation.Screen
 import g8.ipca.sasipca.sasipca.repositories.*
 import g8.ipca.sasipca.sasipca.storage.SessionManager
 import g8.ipca.sasipca.sasipca.ui.components.*
-import g8.ipca.sasipca.sasipca.ui.utils.SnackbarManager
+import g8.ipca.sasipca.sasipca.utils.SnackbarManager
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
@@ -37,7 +39,7 @@ import sasipca.composeapp.generated.resources.logo
 
 
 @Composable
-fun LoginScreen(authRepository: AuthRepository, onLoginSuccess: () -> Unit) {
+fun LoginScreen(authRepository: AuthRepository) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val scrollState = rememberScrollState()
@@ -123,6 +125,7 @@ fun LoginScreen(authRepository: AuthRepository, onLoginSuccess: () -> Unit) {
                     placeholder = { Text("Palavra-Passe") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    shape = RoundedCornerShape(8.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedContainerColor = Color.White,
                         focusedContainerColor = Color.White,
@@ -131,7 +134,6 @@ fun LoginScreen(authRepository: AuthRepository, onLoginSuccess: () -> Unit) {
                         focusedTextColor = Color.Black,
                         unfocusedTextColor = Color.Black
                     ),
-                    shape = RoundedCornerShape(8.dp),
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -172,7 +174,7 @@ fun LoginScreen(authRepository: AuthRepository, onLoginSuccess: () -> Unit) {
                     result.fold(
                         onSuccess = {
                             SessionManager.saveSession(token = it.token, userId = it.userID, userName = it.userName)
-                            onLoginSuccess()
+                            NavigationService.resetTo(Screen.Main)
                         },
                         onFailure = {
                             SnackbarManager.show("Erro no login: ${it.message}", SnackbarType.ERROR)
@@ -204,4 +206,3 @@ fun LoginScreen(authRepository: AuthRepository, onLoginSuccess: () -> Unit) {
 
     }
 }
-
