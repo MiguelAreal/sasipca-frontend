@@ -80,21 +80,21 @@ fun QuickActionsSection() {
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         QuickActionButton(
-            icon = Icons.Filled.Inventory2,
+            icon = Icons.Filled.ArrowCircleDown,
             title = "Receção",
             modifier = Modifier.weight(1f),
             onClick = { NavigationService.navigateTo(Screen.Reception) }
         )
 
         QuickActionButton(
-            icon = Icons.Filled.LocalShipping,
+            icon = Icons.Filled.ArrowCircleUp,
             title = "Entrega",
             modifier = Modifier.weight(1f),
             onClick = { NavigationService.navigateTo(Screen.Delivery) }
         )
 
         QuickActionButton(
-            icon = Icons.Filled.Tune,
+            icon = Icons.Filled.SwapHoriz,
             title = "Ajuste",
             modifier = Modifier.weight(1f),
             onClick = { NavigationService.navigateTo(Screen.StockAdjustment) }
@@ -263,14 +263,19 @@ fun SecondaryActionsSection() {
             onClick = { NavigationService.navigateTo(Screen.Campaigns) }
         )
         CompactMenuItem(
-            icon = Icons.Outlined.Person,
+            icon = Icons.Outlined.Groups,
             title = "Beneficiários",
             onClick = { NavigationService.navigateTo(Screen.Beneficiaries) }
         )
         CompactMenuItem(
-            icon = Icons.Outlined.Person,
+            icon = Icons.Outlined.FilePresent,
             title = "Relatórios",
             onClick = { NavigationService.navigateTo(Screen.Placeholder) }
+        )
+        CompactMenuItem(
+                icon = Icons.Outlined.History,
+        title = "Histórico de Movimentos",
+        onClick = { NavigationService.navigateTo(Screen.Placeholder) }
         )
     }
 }
