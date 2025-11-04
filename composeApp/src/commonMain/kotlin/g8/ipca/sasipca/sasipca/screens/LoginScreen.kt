@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.text.input.VisualTransformation
@@ -35,6 +36,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import sasipca.composeapp.generated.resources.Res
+import sasipca.composeapp.generated.resources.login_bg
 import sasipca.composeapp.generated.resources.logo
 
 
@@ -53,14 +55,18 @@ fun LoginScreen(authRepository: AuthRepository) {
             .background(Color(0xFF24804F))
     ) {
         // Background Image
-        AsyncImage(
-            model = "https://sas.ipca.pt/wp-content/uploads/sites/2/2020/06/1.jpg",
+
+        @OptIn(ExperimentalResourceApi::class)
+        Image(
+            painter = painterResource(Res.drawable.login_bg),
             contentDescription = "Background",
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer { alpha = 0.15f }
         )
+
+
 
         Column(
             modifier = Modifier
@@ -166,6 +172,24 @@ fun LoginScreen(authRepository: AuthRepository) {
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
+
+        IconButton(
+            onClick = { NavigationService.navigateTo(Screen.Settings) },
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp)
+                .statusBarsPadding()
+                .size(36.dp)
+                .background(Color.White.copy(alpha = 0.2f), shape = RoundedCornerShape(50))
+        ) {
+            Icon(
+                imageVector = Icons.Default.Settings,
+                contentDescription = "Definições",
+                tint = Color.White
+            )
+        }
+
+
         Button(
             onClick = {
                 coroutineScope.launch {
@@ -173,7 +197,6 @@ fun LoginScreen(authRepository: AuthRepository) {
                     val result = authRepository.login(email, password)
                     result.fold(
                         onSuccess = {
-                            SessionManager.saveSession(token = it.token, userId = it.userID, userName = it.userName)
                             NavigationService.resetTo(Screen.Main)
                         },
                         onFailure = {

@@ -1,6 +1,8 @@
 package g8.ipca.sasipca.sasipca.storage
 
 import com.russhwolf.settings.Settings
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 object SessionManager {
     private lateinit var settings: Settings
@@ -9,26 +11,36 @@ object SessionManager {
         settings = settingsInstance
     }
 
-    private const val KEY_AUTH_TOKEN = "auth_token"
-    private const val KEY_USER_ID = "user_id"
-    private const val KEY_USER_NAME = "user_name"
+    @OptIn(ExperimentalTime::class)
+    fun saveSession(
+        token: String,
+        refreshToken: String,
+        userID: Int,
+        userName: String,
+        expiresIn: Int
+    ) {
+        val expiryTime = Clock.System.now().toEpochMilliseconds() + expiresIn * 1000
 
-    fun saveSession(token: String, userId: Int, userName: String) {
-        settings.putString(KEY_AUTH_TOKEN, token)
-        settings.putInt(KEY_USER_ID, userId)
-        settings.putString(KEY_USER_NAME, userName)
+        settings.putString("access_token", token)
+        settings.putString("refresh_token", refreshToken)
+        settings.putInt("user_id", userID)
+        settings.putString("user_name", userName)
+        settings.putLong("token_expiry", expiryTime)
     }
 
-    fun getAuthToken(): String? = settings.getStringOrNull(KEY_AUTH_TOKEN)
+    fun getAccessToken(): String? = settings.getStringOrNull("access_token")
+    fun getRefreshToken(): String? = settings.getStringOrNull("refresh_token")
+    fun getUserId(): Int? = settings.getIntOrNull("user_id")
+    fun getUserName(): String? = settings.getStringOrNull("user_name")
 
-    fun isLoggedIn(): Boolean = getAuthToken() != null
-
-    fun clearSession() {
-        settings.remove(KEY_AUTH_TOKEN)
-        settings.remove(KEY_USER_ID)
-        settings.remove(KEY_USER_NAME)
+    @OptIn(ExperimentalTime::class)
+    fun isAccessTokenValid(): Boolean {
+        val expiry = settings.getLongOrNull("token_expiry") ?: return false
+        return Clock.System.now().toEpochMilliseconds() < expiry
     }
 
-    val currentUserID: String? get() = settings.getStringOrNull(KEY_USER_ID)
-    val currentUserName: String? get() = settings.getStringOrNull(KEY_USER_NAME)
+
+    fun clear() {
+        settings.clear()
+    }
 }

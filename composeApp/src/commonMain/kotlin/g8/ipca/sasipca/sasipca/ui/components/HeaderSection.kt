@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import g8.ipca.sasipca.sasipca.navigation.NavigationService
 import g8.ipca.sasipca.sasipca.navigation.Screen
-
 @Composable
 fun HeaderSection(
     title: String,
@@ -25,6 +24,7 @@ fun HeaderSection(
 ) {
     val currentScreen = NavigationService.currentScreen
     val showBackButton = Screen.isOverlay(currentScreen) && NavigationService.canGoBack()
+    val showSettings = Screen.isSettings(currentScreen)
 
     BoxWithConstraints(
         modifier = Modifier
@@ -33,18 +33,19 @@ fun HeaderSection(
                 MaterialTheme.colorScheme.primary,
                 shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
             )
-            .padding(vertical = 24.dp, horizontal = 24.dp)
     ) {
         val isCompact = maxWidth < 600.dp
 
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(vertical = 24.dp, horizontal = 24.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
 
-                // 🔹 Mostra botão voltar apenas se for overlay
                 if (showBackButton) {
                     IconButton(
                         onClick = { NavigationService.goBack() },
@@ -78,17 +79,18 @@ fun HeaderSection(
                 }
             }
 
-            // 🔹 Ícones laterais
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(
-                    onClick = { NavigationService.navigateTo(Screen.Settings) },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = "Definições",
-                        tint = Color.White
-                    )
+                if(showSettings) {
+                    IconButton(
+                        onClick = { NavigationService.navigateTo(Screen.Settings) },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Definições",
+                            tint = Color.White
+                        )
+                    }
                 }
 
                 IconButton(

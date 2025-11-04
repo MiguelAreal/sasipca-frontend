@@ -8,13 +8,15 @@ data class LoginRequest(
 )
 
 @Serializable
-data class LoginSuccessResponse(
-    val userName: String,
+data class AuthResponse(
+    val accessToken: String,
+    val refreshToken: String,
+    val expiresIn: Int,
     val userID: Int,
-    val token: String
+    val userName: String
 )
 
 @Serializable
-data class LoginErrorResponse(
+data class Response(
     val message: String
 )

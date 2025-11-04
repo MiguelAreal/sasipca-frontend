@@ -6,19 +6,27 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import g8.ipca.sasipca.sasipca.navigation.NavigationService
+import g8.ipca.sasipca.sasipca.navigation.Screen
+import g8.ipca.sasipca.sasipca.network.ApiClient
+import g8.ipca.sasipca.sasipca.repositories.AuthRepository
+import g8.ipca.sasipca.sasipca.storage.SessionManager
 import g8.ipca.sasipca.sasipca.storage.SettingsManager
 import g8.ipca.sasipca.sasipca.ui.components.HeaderSection
 import g8.ipca.sasipca.sasipca.ui.components.SnackbarType
 import g8.ipca.sasipca.sasipca.utils.SnackbarManager
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
@@ -26,6 +34,8 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
     var isDarkTheme by remember { mutableStateOf(SettingsManager.isDarkTheme()) }
     var showIpDialog by remember { mutableStateOf(false) }
     var tempIp by remember { mutableStateOf(serverIp) }
+    val scope = rememberCoroutineScope()
+    val authRepository = remember { AuthRepository(ApiClient.client) }
 
     Column(
         modifier = Modifier
@@ -78,6 +88,27 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
                         onClick = {
                             tempIp = serverIp
                             showIpDialog = true
+                        },
+                    )
+                }
+
+                // Logout Section
+                SectionHeader("Conta")
+                SettingsCard {
+                    SettingsClickableItem(
+                        icon = Icons.AutoMirrored.Filled.ExitToApp,
+                        title = "Terminar Sessão",
+                        description = "Sair da aplicação",
+                        onClick = {
+                            scope.launch {
+                                try {
+                                    authRepository.logout()
+                                } catch (e: Exception) {
+                                    // Ignora erros
+                                }
+                                SessionManager.clear() // Limpa sessão local
+                                NavigationService.resetTo(Screen.Login) // Vai para login
+                            }
                         }
                     )
                 }
@@ -238,7 +269,7 @@ fun SettingsToggleItem(
 
 @Composable
 fun SettingsClickableItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     title: String,
     description: String,
     onClick: () -> Unit

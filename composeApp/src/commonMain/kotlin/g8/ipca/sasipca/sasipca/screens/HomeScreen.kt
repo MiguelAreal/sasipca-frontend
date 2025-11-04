@@ -21,14 +21,17 @@ import androidx.compose.material.icons.outlined.*
 import g8.ipca.sasipca.sasipca.navigation.NavigationService
 import g8.ipca.sasipca.sasipca.navigation.Screen
 import g8.ipca.sasipca.sasipca.storage.SessionManager
+import g8.ipca.sasipca.sasipca.ui.components.CompactMenuItem
+import g8.ipca.sasipca.sasipca.ui.components.CompactStatCard
 import g8.ipca.sasipca.sasipca.ui.components.HeaderSection
+import g8.ipca.sasipca.sasipca.ui.components.QuickActionButton
 import g8.ipca.sasipca.sasipca.utils.getCurrentMonthPt
 import g8.ipca.sasipca.sasipca.utils.getFormattedDatePt
 import g8.ipca.sasipca.sasipca.utils.getGreetingPt
 
 @Composable
 fun HomeScreen() {
-    val userName = SessionManager.currentUserName ?: "Utilizador"
+    val userName = SessionManager.getUserName() ?: "Utilizador"
 
     Column(
         modifier = Modifier
@@ -103,57 +106,6 @@ fun QuickActionsSection() {
 }
 
 @Composable
-fun QuickActionButton(
-    icon: ImageVector,
-    title: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = modifier.height(100.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(16.dp),
-        onClick = onClick,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = title,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(26.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text(
-                text = title,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-        }
-    }
-}
-
-@Composable
 fun MonthlyStatsSection() {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -218,41 +170,6 @@ fun MonthlyStatsSection() {
 }
 
 @Composable
-fun CompactStatCard(
-    icon: ImageVector,
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(22.dp)
-        )
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        Text(
-            text = value,
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold
-        )
-
-        Text(
-            text = label,
-            fontSize = 10.sp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-@Composable
 fun SecondaryActionsSection() {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -280,50 +197,3 @@ fun SecondaryActionsSection() {
     }
 }
 
-@Composable
-fun CompactMenuItem(
-    icon: ImageVector,
-    title: String,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = RoundedCornerShape(12.dp),
-        onClick = onClick
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = title,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(22.dp)
-                )
-
-                Spacer(modifier = Modifier.width(14.dp))
-
-                Text(
-                    text = title,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-
-            Icon(
-                imageVector = Icons.Filled.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                modifier = Modifier.size(18.dp)
-            )
-        }
-    }
-}

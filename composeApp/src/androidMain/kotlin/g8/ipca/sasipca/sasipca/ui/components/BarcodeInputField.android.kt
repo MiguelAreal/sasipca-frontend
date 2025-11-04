@@ -1,75 +1,146 @@
 package g8.ipca.sasipca.sasipca.ui.components
 
-import android.annotation.SuppressLint
-import android.util.Log
-import androidx.camera.core.*
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
-import androidx.compose.foundation.layout.Box
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.viewinterop.AndroidView
-import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.common.InputImage
-import java.util.concurrent.Executors
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.ContextCompat
 
-@SuppressLint("UnsafeOptInUsageError")
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 actual fun BarcodeInputField(
     barcode: String,
     onBarcodeScanned: (String) -> Unit
 ) {
+    var showScanner by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
-    val scanner = remember { BarcodeScanning.getClient() }
-    val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
-    var lastScanned by remember { mutableStateOf(barcode) }
 
-    Box(modifier = Modifier) {
-        AndroidView(factory = { ctx ->
-            val previewView = PreviewView(ctx)
-            val cameraProvider = cameraProviderFuture.get()
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { granted -> if (granted) showScanner = true }
+    )
 
-            val preview = Preview.Builder().build().apply {
-                setSurfaceProvider(previewView.surfaceProvider)
+    // Campo de texto normal
+    OutlinedTextField(
+        value = barcode,
+        onValueChange = { onBarcodeScanned(it) },
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text("Ex.: 7898765430018", color = Color(0xFF999999)) },
+        singleLine = true,
+        trailingIcon = {
+            IconButton(onClick = {
+                when (PackageManager.PERMISSION_GRANTED) {
+                    ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ->
+                        showScanner = true
+                    else -> cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                }
+            }) {
+                Icon(Icons.Default.QrCodeScanner, contentDescription = "Ler código de barras")
             }
+        }
+    )
 
-            val analysis = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
-
-            analysis.setAnalyzer(cameraExecutor) { imageProxy ->
-                val mediaImage = imageProxy.image
-                if (mediaImage != null) {
-                    val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-                    scanner.process(image)
-                        .addOnSuccessListener { barcodes ->
-                            barcodes.firstOrNull()?.rawValue?.let { value ->
-                                if (value != lastScanned) {
-                                    lastScanned = value
-                                    onBarcodeScanned(value)
-                                }
-                            }
-                        }
-                        .addOnCompleteListener { imageProxy.close() }
-                        .addOnFailureListener { Log.e("BarcodeScanner", "Erro: $it") }
-                } else imageProxy.close()
-            }
-
-            try {
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
-                    context as androidx.lifecycle.LifecycleOwner,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    preview,
-                    analysis
+    // Overlay com o scanner em Dialog (50% da tela)
+    if (showScanner) {
+        Dialog(
+            onDismissRequest = { showScanner = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.5f)
+                    .fillMaxHeight(0.5f)
+                    .background(Color.Black)
+            ) {
+                BarcodeScannerView(
+                    modifier = Modifier.fillMaxSize(),
+                    onBarcodeDetected = { code ->
+                        onBarcodeScanned(code)
+                        showScanner = false
+                    }
                 )
-            } catch (e: Exception) {
-                Log.e("Camera", "Erro ao iniciar câmara", e)
-            }
 
-            previewView
-        })
+                // Moldura de guia para centralizar o código de barras
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.8f)
+                        .fillMaxHeight(0.3f)
+                        .align(Alignment.Center)
+                        .background(Color.Transparent)
+                        .padding(2.dp)
+                ) {
+                    // Bordas da moldura
+                    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                        val strokeWidth = 4.dp.toPx()
+                        val cornerLength = 40.dp.toPx()
+
+                        // Cantos da moldura
+                        drawLine(Color.White, androidx.compose.ui.geometry.Offset(0f, 0f),
+                            androidx.compose.ui.geometry.Offset(cornerLength, 0f), strokeWidth)
+                        drawLine(Color.White, androidx.compose.ui.geometry.Offset(0f, 0f),
+                            androidx.compose.ui.geometry.Offset(0f, cornerLength), strokeWidth)
+
+                        drawLine(Color.White, androidx.compose.ui.geometry.Offset(size.width, 0f),
+                            androidx.compose.ui.geometry.Offset(size.width - cornerLength, 0f), strokeWidth)
+                        drawLine(Color.White, androidx.compose.ui.geometry.Offset(size.width, 0f),
+                            androidx.compose.ui.geometry.Offset(size.width, cornerLength), strokeWidth)
+
+                        drawLine(Color.White, androidx.compose.ui.geometry.Offset(0f, size.height),
+                            androidx.compose.ui.geometry.Offset(cornerLength, size.height), strokeWidth)
+                        drawLine(Color.White, androidx.compose.ui.geometry.Offset(0f, size.height),
+                            androidx.compose.ui.geometry.Offset(0f, size.height - cornerLength), strokeWidth)
+
+                        drawLine(Color.White, androidx.compose.ui.geometry.Offset(size.width, size.height),
+                            androidx.compose.ui.geometry.Offset(size.width - cornerLength, size.height), strokeWidth)
+                        drawLine(Color.White, androidx.compose.ui.geometry.Offset(size.width, size.height),
+                            androidx.compose.ui.geometry.Offset(size.width, size.height - cornerLength), strokeWidth)
+                    }
+                }
+
+                // Texto de instrução
+                Text(
+                    text = "Aponte para o código de barras",
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 8.dp)
+                )
+
+                // Botão de fechar
+                IconButton(
+                    onClick = { showScanner = false },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .size(32.dp)
+                        .background(
+                            Color(0xAA000000),
+                            shape = androidx.compose.foundation.shape.CircleShape
+                        )
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Fechar",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
     }
 }

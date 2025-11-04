@@ -32,8 +32,9 @@ sealed class Screen {
         val bottomTabs = setOf(Home, Stock, Calendar, Profile)
 
         /** Retorna true se o ecrã for overlay (ou seja, não é uma tab principal) */
-
-        fun isOverlay(screen: Screen): Boolean = screen !in bottomTabs && screen !is Login && screen !is Main    }
+        fun isOverlay(screen: Screen): Boolean = screen !in bottomTabs && screen !is Login && screen !is Main
+        fun isSettings(screen:Screen):Boolean = screen !is Settings
+    }
 }
 
 
