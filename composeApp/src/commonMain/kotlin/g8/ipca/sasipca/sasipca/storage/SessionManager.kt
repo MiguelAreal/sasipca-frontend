@@ -39,8 +39,12 @@ object SessionManager {
         return Clock.System.now().toEpochMilliseconds() < expiry
     }
 
-
+    // Elimina apenas dados relacionados à conta.
     fun clear() {
-        settings.clear()
+        settings.remove("access_token")
+        settings.remove("refresh_token")
+        settings.remove("user_id")
+        settings.remove("user_name")
+        settings.remove("token_expiry")
     }
 }

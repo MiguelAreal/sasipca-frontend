@@ -21,7 +21,6 @@ import g8.ipca.sasipca.sasipca.navigation.NavigationService
 import g8.ipca.sasipca.sasipca.navigation.Screen
 import g8.ipca.sasipca.sasipca.network.ApiClient
 import g8.ipca.sasipca.sasipca.repositories.AuthRepository
-import g8.ipca.sasipca.sasipca.storage.SessionManager
 import g8.ipca.sasipca.sasipca.storage.SettingsManager
 import g8.ipca.sasipca.sasipca.ui.components.HeaderSection
 import g8.ipca.sasipca.sasipca.ui.components.SnackbarType
@@ -36,6 +35,7 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
     var tempIp by remember { mutableStateOf(serverIp) }
     val scope = rememberCoroutineScope()
     val authRepository = remember { AuthRepository(ApiClient.client) }
+
 
     Column(
         modifier = Modifier
@@ -106,7 +106,6 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
                                 } catch (e: Exception) {
                                     // Ignora erros
                                 }
-                                SessionManager.clear() // Limpa sessão local
                                 NavigationService.resetTo(Screen.Login) // Vai para login
                             }
                         }
