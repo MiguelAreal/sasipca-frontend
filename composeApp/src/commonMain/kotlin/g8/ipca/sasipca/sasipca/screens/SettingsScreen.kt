@@ -22,7 +22,7 @@ import g8.ipca.sasipca.sasipca.navigation.Screen
 import g8.ipca.sasipca.sasipca.network.ApiClient
 import g8.ipca.sasipca.sasipca.repositories.AuthRepository
 import g8.ipca.sasipca.sasipca.storage.SettingsManager
-import g8.ipca.sasipca.sasipca.ui.components.HeaderSection
+import g8.ipca.sasipca.sasipca.ui.components.Header
 import g8.ipca.sasipca.sasipca.ui.components.SnackbarType
 import g8.ipca.sasipca.sasipca.utils.SnackbarManager
 import kotlinx.coroutines.launch
@@ -43,7 +43,7 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
     ) {
-        HeaderSection("Definições", "Configure a aplicação")
+        Header("Definições", "Configure a aplicação")
 
         BoxWithConstraints {
             val horizontalPadding = if (maxWidth < 600.dp) 20.dp else 40.dp
@@ -128,7 +128,7 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
             text = {
                 Column {
                     Text(
-                        text = "Insira o endereço IP do servidor",
+                        text = "Insira o endereço do servidor",
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 16.dp)
@@ -136,7 +136,7 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
                     OutlinedTextField(
                         value = tempIp,
                         onValueChange = { tempIp = it },
-                        label = { Text("IP do Servidor") },
+                        label = { Text("Endereço do Servidor") },
                         placeholder = { Text("Ex: 192.168.1.100") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
@@ -160,7 +160,7 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
                             )
                         } else {
                             SnackbarManager.show(
-                                message = "IP não pode estar vazio",
+                                message = "Endereço não pode estar vazio",
                                 type = SnackbarType.ERROR
                             )
                         }

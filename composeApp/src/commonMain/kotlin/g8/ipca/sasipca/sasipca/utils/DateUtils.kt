@@ -53,7 +53,7 @@ fun getGreetingPt(): String {
  * @param month número do mês (1-12)
  * @param short se true, retorna os 3 primeiros caracteres do mês
  */
-private fun convertMonthPt(month: Int, short: Boolean = false): String {
+fun convertMonthPt(month: Int, short: Boolean = false): String {
     val monthPt = when (month) {
         1 -> "Janeiro"
         2 -> "Fevereiro"

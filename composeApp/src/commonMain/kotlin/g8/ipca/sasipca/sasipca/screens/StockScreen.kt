@@ -25,7 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import g8.ipca.sasipca.sasipca.models.StockItemDTO
-import g8.ipca.sasipca.sasipca.ui.components.HeaderSection
+import g8.ipca.sasipca.sasipca.ui.components.Header
 import g8.ipca.sasipca.sasipca.utils.getFormattedDatePt
 import g8.ipca.sasipca.sasipca.viewmodels.StockViewModel
 
@@ -54,7 +54,7 @@ fun StockScreen() {
             .fillMaxSize()
     ) {
 
-        HeaderSection("Inventário",getFormattedDatePt())
+        Header("Inventário",getFormattedDatePt())
 
         // Barra de pesquisa e botões
         Row(

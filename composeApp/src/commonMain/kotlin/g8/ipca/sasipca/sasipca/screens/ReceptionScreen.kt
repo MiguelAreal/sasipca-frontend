@@ -22,7 +22,7 @@ import g8.ipca.sasipca.sasipca.network.ApiClient
 import g8.ipca.sasipca.sasipca.repositories.OFFRepository
 import g8.ipca.sasipca.sasipca.ui.components.BarcodeInputField
 import g8.ipca.sasipca.sasipca.ui.components.DropdownSelector
-import g8.ipca.sasipca.sasipca.ui.components.HeaderSection
+import g8.ipca.sasipca.sasipca.ui.components.Header
 import g8.ipca.sasipca.sasipca.ui.components.LotCard
 import kotlinx.coroutines.launch
 
@@ -93,7 +93,7 @@ fun ReceptionScreen() {
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        HeaderSection(title = "Receção de Stock")
+        Header(title = "Receção de Stock")
 
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(

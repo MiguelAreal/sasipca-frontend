@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.sp
 import g8.ipca.sasipca.sasipca.navigation.NavigationService
 import g8.ipca.sasipca.sasipca.navigation.Screen
 @Composable
-fun HeaderSection(
+fun Header(
     title: String,
     subTitle: String = ""
 ) {

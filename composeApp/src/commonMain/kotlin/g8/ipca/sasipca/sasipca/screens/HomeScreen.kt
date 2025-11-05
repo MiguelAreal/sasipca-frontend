@@ -1,6 +1,5 @@
 package g8.ipca.sasipca.sasipca.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -9,10 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
@@ -23,7 +19,7 @@ import g8.ipca.sasipca.sasipca.navigation.Screen
 import g8.ipca.sasipca.sasipca.storage.SessionManager
 import g8.ipca.sasipca.sasipca.ui.components.CompactMenuItem
 import g8.ipca.sasipca.sasipca.ui.components.CompactStatCard
-import g8.ipca.sasipca.sasipca.ui.components.HeaderSection
+import g8.ipca.sasipca.sasipca.ui.components.Header
 import g8.ipca.sasipca.sasipca.ui.components.QuickActionButton
 import g8.ipca.sasipca.sasipca.utils.getCurrentMonthPt
 import g8.ipca.sasipca.sasipca.utils.getFormattedDatePt
@@ -38,7 +34,7 @@ fun HomeScreen() {
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        HeaderSection("${getGreetingPt()}, $userName", getFormattedDatePt())
+        Header("${getGreetingPt()}, $userName", getFormattedDatePt())
 
         Column(
             modifier = Modifier

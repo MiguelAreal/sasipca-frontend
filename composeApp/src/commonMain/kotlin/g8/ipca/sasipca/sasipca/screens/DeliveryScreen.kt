@@ -21,7 +21,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import g8.ipca.sasipca.sasipca.ui.components.BarcodeInputField
-import g8.ipca.sasipca.sasipca.ui.components.HeaderSection
+import g8.ipca.sasipca.sasipca.ui.components.Header
 import java.time.Instant
 import java.time.ZoneId
 
@@ -53,7 +53,7 @@ fun DeliveryScreen() {
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        HeaderSection("Entrega de Stock")
+        Header("Entrega de Stock")
 
         // DatePicker Dialog
         if (showDatePicker) {
