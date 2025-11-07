@@ -14,11 +14,15 @@ import g8.ipca.sasipca.sasipca.navigation.NavigationService
 import g8.ipca.sasipca.sasipca.navigation.Screen
 import g8.ipca.sasipca.sasipca.screens.*
 import g8.ipca.sasipca.sasipca.ui.components.CustomSnackbarHost
-import g8.ipca.sasipca.sasipca.ui.components.SnackbarMessage
+import g8.ipca.sasipca.sasipca.utils.SnackbarMessage
 import g8.ipca.sasipca.sasipca.ui.theme.SasIpcaTheme
 import g8.ipca.sasipca.sasipca.utils.SnackbarManager
 import g8.ipca.sasipca.sasipca.network.ApiClient
 import g8.ipca.sasipca.sasipca.repositories.AuthRepository
+import g8.ipca.sasipca.sasipca.repositories.BeneficiaryRepository
+import g8.ipca.sasipca.sasipca.repositories.ProductRepository
+import g8.ipca.sasipca.sasipca.repositories.StockRepository
+import g8.ipca.sasipca.sasipca.sasipca.screens.CalendarScreen
 import g8.ipca.sasipca.sasipca.utils.SafeBackHandler
 import g8.ipca.sasipca.sasipca.storage.SessionManager
 import g8.ipca.sasipca.sasipca.storage.SettingsManager
@@ -27,6 +31,10 @@ import g8.ipca.sasipca.sasipca.storage.SettingsManager
 @Composable
 fun App() {
     val authRepository = remember { AuthRepository(ApiClient.client) }
+    val stockRepository = remember { StockRepository(ApiClient.client) }
+    val productRepository = remember { ProductRepository(ApiClient.client) }
+    val beneficiaryRepository = remember { BeneficiaryRepository(ApiClient.client) }
+
     val snackbarState = remember { mutableStateOf<SnackbarMessage?>(null) }
     val scope = rememberCoroutineScope()
     var isDarkTheme by remember { mutableStateOf(false) }
@@ -104,19 +112,19 @@ fun App() {
         ) { screen ->
             when (screen) {
                 Screen.Login -> LoginScreen(authRepository)
-                Screen.Main -> MainScreen()
+                Screen.Main -> MainScreen(stockRepository,productRepository)
                 Screen.Reception -> ReceptionScreen()
                 Screen.Delivery -> DeliveryScreen()
                 Screen.StockAdjustment -> PlaceholderScreen()
                 Screen.Campaigns -> PlaceholderScreen()
-                Screen.Beneficiaries -> BeneficiariesScreen()
+                Screen.Beneficiaries -> BeneficiariesScreen(beneficiaryRepository)
                 Screen.Settings -> SettingsScreen { isDark -> isDarkTheme = isDark }
                 Screen.Notifications -> PlaceholderScreen()
                 Screen.Placeholder -> PlaceholderScreen()
-                Screen.Calendar -> CalendarScreen()
+                Screen.Calendar -> CalendarScreen(stockRepository)
                 Screen.Home -> HomeScreen()
                 Screen.Profile -> ProfileScreen()
-                Screen.Stock -> StockScreen()
+                Screen.Products -> ProductsScreen(productRepository)
             }
         }
 

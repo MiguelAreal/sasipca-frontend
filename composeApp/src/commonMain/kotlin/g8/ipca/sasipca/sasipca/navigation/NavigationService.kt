@@ -3,6 +3,7 @@ package g8.ipca.sasipca.sasipca.navigation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import g8.ipca.sasipca.sasipca.screens.ProductsScreen
 
 /**
  * Representa todos os ecrãs do app.
@@ -13,7 +14,7 @@ sealed class Screen {
 
     object Main : Screen()
     object Home : Screen()
-    object Stock : Screen()
+    object Products : Screen()
     object Calendar : Screen()
     object Profile : Screen()
     object Reception : Screen()
@@ -29,7 +30,7 @@ sealed class Screen {
     companion object {
 
         /** Define quais são ecrãs "principais" (tabs) */
-        val bottomTabs = setOf(Home, Stock, Calendar, Profile)
+        val bottomTabs = setOf(Home, Products, Calendar, Profile)
 
         /** Retorna true se o ecrã for overlay (ou seja, não é uma tab principal) */
         fun isOverlay(screen: Screen): Boolean = screen !in bottomTabs && screen !is Login && screen !is Main

@@ -1,5 +1,6 @@
 package g8.ipca.sasipca.sasipca.network
 
+import g8.ipca.sasipca.sasipca.repositories.AuthRepository
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -17,10 +18,9 @@ actual fun createHttpClient(): HttpClient {
     val sslContext = SSLContext.getInstance("SSL").apply {
         init(null, trustAllCerts, java.security.SecureRandom())
     }
-
     val trustManager = trustAllCerts[0] as X509TrustManager
 
-    return HttpClient(OkHttp) {
+    val client = HttpClient(OkHttp) {
         engine {
             config {
                 sslSocketFactory(sslContext.socketFactory, trustManager)
@@ -31,4 +31,7 @@ actual fun createHttpClient(): HttpClient {
             json(Json { ignoreUnknownKeys = true })
         }
     }
+
+    return client
 }
+

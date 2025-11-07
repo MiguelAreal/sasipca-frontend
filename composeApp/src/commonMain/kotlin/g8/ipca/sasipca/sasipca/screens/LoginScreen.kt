@@ -19,7 +19,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
@@ -29,9 +28,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import g8.ipca.sasipca.sasipca.navigation.NavigationService
 import g8.ipca.sasipca.sasipca.navigation.Screen
 import g8.ipca.sasipca.sasipca.repositories.*
-import g8.ipca.sasipca.sasipca.storage.SessionManager
-import g8.ipca.sasipca.sasipca.ui.components.*
 import g8.ipca.sasipca.sasipca.utils.SnackbarManager
+import g8.ipca.sasipca.sasipca.utils.SnackbarType
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource

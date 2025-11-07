@@ -16,7 +16,3 @@ data class AuthResponse(
     val userName: String
 )
 
-@Serializable
-data class Response(
-    val message: String
-)

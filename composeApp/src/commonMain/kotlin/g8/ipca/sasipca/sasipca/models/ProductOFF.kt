@@ -3,6 +3,9 @@ package g8.ipca.sasipca.sasipca.models
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * Para produto vindo do OpenFoodFacts
+ */
 @Serializable
 data class ProductOFFResponse(
     val status: Int,

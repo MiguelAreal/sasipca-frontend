@@ -1,18 +1,19 @@
 package g8.ipca.sasipca.sasipca.viewmodels
 
 import androidx.compose.runtime.*
-import g8.ipca.sasipca.sasipca.models.StockItemDTO
-import g8.ipca.sasipca.sasipca.repositories.StockRepository
+import androidx.lifecycle.ViewModel
+import g8.ipca.sasipca.sasipca.models.ProductItemDTO
+import g8.ipca.sasipca.sasipca.repositories.ProductRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class StockViewModel(private val repository: StockRepository = StockRepository()) {
+class ProductViewModel(private val repository: ProductRepository) : ViewModel() {
 
-    var stockItems by mutableStateOf<List<StockItemDTO>>(emptyList())
+    var stockItems by mutableStateOf<List<ProductItemDTO>>(emptyList())
         private set
 
-    var filteredItems by mutableStateOf<List<StockItemDTO>>(emptyList())
+    var filteredItems by mutableStateOf<List<ProductItemDTO>>(emptyList())
         private set
 
     var isLoading by mutableStateOf(false)
@@ -31,14 +32,14 @@ class StockViewModel(private val repository: StockRepository = StockRepository()
     var totalPages by mutableStateOf(1)
         private set
 
-    fun loadStock(search: String = searchQuery) {
+    fun loadProducts(search: String = searchQuery) {
         searchQuery = search
         isLoading = true
         errorMessage = null
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val allItems = repository.getStock(search)
+                val allItems = repository.getProducts(search)
                 stockItems = allItems
 
                 // Paginação manual
@@ -58,14 +59,14 @@ class StockViewModel(private val repository: StockRepository = StockRepository()
     fun goToNextPage() {
         if (currentPage < totalPages) {
             currentPage++
-            loadStock(searchQuery)
+            loadProducts(searchQuery)
         }
     }
 
     fun goToPreviousPage() {
         if (currentPage > 1) {
             currentPage--
-            loadStock(searchQuery)
+            loadProducts(searchQuery)
         }
     }
 }

@@ -14,6 +14,8 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import g8.ipca.sasipca.sasipca.utils.SnackbarMessage
+import g8.ipca.sasipca.sasipca.utils.SnackbarType
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable

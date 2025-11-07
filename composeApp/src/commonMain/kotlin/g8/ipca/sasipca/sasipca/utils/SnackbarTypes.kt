@@ -1,4 +1,4 @@
-package g8.ipca.sasipca.sasipca.ui.components
+package g8.ipca.sasipca.sasipca.utils
 
 enum class SnackbarType {
     SUCCESS, ERROR, WARNING

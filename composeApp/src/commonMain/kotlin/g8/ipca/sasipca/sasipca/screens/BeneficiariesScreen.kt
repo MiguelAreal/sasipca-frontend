@@ -19,93 +19,64 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import g8.ipca.sasipca.sasipca.models.BeneficiaryListDTO
+import g8.ipca.sasipca.sasipca.repositories.BeneficiaryRepository
 import g8.ipca.sasipca.sasipca.ui.components.Header
-
-// Data classes (adicionar ao teu projeto)
-data class BeneficiaryListItem(
-    val id: Int,
-    val name: String,
-    val email: String?
-)
-
-data class PaginatedBeneficiaries(
-    val data: List<BeneficiaryListItem>,
-    val pageNumber: Int,
-    val pageSize: Int,
-    val totalCount: Int,
-    val totalPages: Int
-)
+import g8.ipca.sasipca.sasipca.viewmodels.BeneficiariesViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BeneficiariesScreen() {
-    var searchText by remember { mutableStateOf("") }
-    var orderBy by remember { mutableStateOf("asc") }
-    var currentPage by remember { mutableStateOf(1) }
-    var showFilters by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
+fun BeneficiariesScreen(beneficiaryRepository: BeneficiaryRepository) {
+    val viewModel = remember { BeneficiariesViewModel(beneficiaryRepository) }
+    val isLoading by remember { viewModel::isLoading }
+    val errorMessage by remember { viewModel::errorMessage }
+    val beneficiaries by remember { viewModel::beneficiaries }
+    val searchTerm by remember { viewModel::searchTerm }
+    val orderBy by remember { viewModel::orderBy }
+    val currentPage by remember { viewModel::currentPage }
 
-    // Mock data - substituir por chamada à API
-    val mockBeneficiaries = remember {
-        PaginatedBeneficiaries(
-            data = listOf(
-                BeneficiaryListItem(1, "Ana Sofia Costa", "ana.costa@ipca.pt"),
-                BeneficiaryListItem(2, "Bruno Miguel Santos", "bruno.santos@ipca.pt"),
-                BeneficiaryListItem(3, "Carla Fernandes", "carla.fernandes@ipca.pt"),
-                BeneficiaryListItem(4, "Daniel Oliveira", "daniel.oliveira@ipca.pt"),
-                BeneficiaryListItem(5, "Eva Maria Silva", "eva.silva@ipca.pt"),
-                BeneficiaryListItem(6, "Fernando Pereira", null),
-                BeneficiaryListItem(7, "Gabriela Rodrigues", "gabriela.rodrigues@ipca.pt"),
-                BeneficiaryListItem(8, "Hugo Almeida", "hugo.almeida@ipca.pt")
-            ),
-            pageNumber = 1,
-            pageSize = 10,
-            totalCount = 8,
-            totalPages = 1
-        )
+    var showFilters by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Carregar dados iniciais
+    LaunchedEffect(Unit) {
+        viewModel.loadBeneficiaries()
     }
 
+    // Mostrar erros em snackbar
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearError()
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             Surface(
                 shadowElevation = 2.dp,
                 color = MaterialTheme.colorScheme.surface
             ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-
-                    Header("Lista de Beneficiários")
+                Column {
+                    Header("Beneficiários")
 
                     // Barra de pesquisa
                     OutlinedTextField(
-                        value = searchText,
+                        value = searchTerm,
                         onValueChange = {
-                            searchText = it
-                            currentPage = 1
-                            // TODO: Chamar API com novo searchText
+                            viewModel.loadBeneficiaries(search = it, page = 1)
                         },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp)
-                            .padding(bottom = 16.dp),
+                            .padding(bottom = 12.dp),
                         placeholder = { Text("Pesquisar por nome...") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Search,
-                                contentDescription = "Pesquisar"
-                            )
-                        },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                         trailingIcon = {
-                            if (searchText.isNotEmpty()) {
-                                IconButton(onClick = {
-                                    searchText = ""
-                                    currentPage = 1
-                                    // TODO: Chamar API sem filtro
-                                }) {
-                                    Icon(
-                                        Icons.Default.Clear,
-                                        contentDescription = "Limpar"
-                                    )
+                            if (searchTerm.isNotEmpty()) {
+                                IconButton(onClick = { viewModel.loadBeneficiaries(search = "") }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Limpar")
                                 }
                             }
                         },
@@ -113,6 +84,7 @@ fun BeneficiariesScreen() {
                         singleLine = true
                     )
 
+                    // Botão para filtros
                     IconButton(onClick = { showFilters = !showFilters }) {
                         Icon(
                             imageVector = if (showFilters)
@@ -132,9 +104,8 @@ fun BeneficiariesScreen() {
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp)
-                                .padding(bottom = 16.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            elevation = CardDefaults.cardElevation(1.dp),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Column(
@@ -143,23 +114,16 @@ fun BeneficiariesScreen() {
                                     .padding(16.dp)
                             ) {
                                 Text(
-                                    text = "Ordenação",
+                                    "Ordenação",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     modifier = Modifier.padding(bottom = 8.dp)
                                 )
 
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     FilterChip(
                                         selected = orderBy == "asc",
-                                        onClick = {
-                                            orderBy = "asc"
-                                            currentPage = 1
-                                            // TODO: Chamar API com orderBy = "asc"
-                                        },
+                                        onClick = { viewModel.loadBeneficiaries(order = "asc") },
                                         label = { Text("A-Z") },
                                         leadingIcon = {
                                             Icon(
@@ -171,11 +135,7 @@ fun BeneficiariesScreen() {
                                     )
                                     FilterChip(
                                         selected = orderBy == "desc",
-                                        onClick = {
-                                            orderBy = "desc"
-                                            currentPage = 1
-                                            // TODO: Chamar API com orderBy = "desc"
-                                        },
+                                        onClick = { viewModel.loadBeneficiaries(order = "desc") },
                                         label = { Text("Z-A") },
                                         leadingIcon = {
                                             Icon(
@@ -194,15 +154,11 @@ fun BeneficiariesScreen() {
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = TODO(),
+                onClick = { /* TODO: Navegar para ecrã de adicionar beneficiário */ },
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
             ) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = "Adicionar beneficiário",
-                    modifier = Modifier.size(28.dp)
-                )
+                Icon(Icons.Default.Add, contentDescription = "Adicionar")
             }
         }
     ) { paddingValues ->
@@ -211,88 +167,72 @@ fun BeneficiariesScreen() {
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            if (isLoading) {
-                // Loading state
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else if (mockBeneficiaries.data.isEmpty()) {
-                // Empty state
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.PersonOff,
-                            contentDescription = null,
-                            modifier = Modifier.size(80.dp),
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                        )
-                        Text(
-                            text = "Nenhum beneficiário encontrado",
-                            fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                        if (searchText.isNotEmpty()) {
-                            TextButton(onClick = {
-                                searchText = ""
-                                currentPage = 1
-                            }) {
-                                Text("Limpar filtros")
-                            }
-                        }
+            when {
+                isLoading -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
                     }
                 }
-            } else {
-                // Lista de beneficiários
-                Column(modifier = Modifier.fillMaxSize()) {
-                    // Contador de resultados
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "${mockBeneficiaries.totalCount} beneficiários",
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                        Text(
-                            text = "Página ${mockBeneficiaries.pageNumber} de ${mockBeneficiaries.totalPages}",
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                        )
-                    }
 
-                    LazyColumn(
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(mockBeneficiaries.data) { beneficiary ->
-                            BeneficiaryListItemCard(
-                                beneficiary = beneficiary,
-                                onClick = { TODO() }
+                beneficiaries == null -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Sem dados disponíveis")
+                    }
+                }
+
+                beneficiaries!!.data.isEmpty() -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Outlined.PersonOff,
+                                contentDescription = null,
+                                modifier = Modifier.size(80.dp),
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                            )
+                            Text(
+                                "Nenhum beneficiário encontrado",
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                             )
                         }
                     }
+                }
 
-                    // Paginação
-                    if (mockBeneficiaries.totalPages > 1) {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shadowElevation = 8.dp,
-                            color = MaterialTheme.colorScheme.surface
+                else -> {
+                    val list = beneficiaries!!
+                    Column(Modifier.fillMaxSize()) {
+                        // Cabeçalho com contagem
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
+                            Text(
+                                "${list.totalCount} beneficiários",
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                            Text(
+                                "Página ${list.pageNumber} de ${list.totalPages}",
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                        }
+
+                        LazyColumn(
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(list.data) { beneficiary ->
+                                BeneficiaryListItemCard(beneficiary) { /* TODO: abrir detalhe */ }
+                            }
+                        }
+
+                        // Paginação
+                        if (list.totalPages > 1) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -302,38 +242,28 @@ fun BeneficiariesScreen() {
                             ) {
                                 IconButton(
                                     onClick = {
-                                        if (currentPage > 1) {
-                                            currentPage--
-                                            // TODO: Chamar API com nova página
-                                        }
+                                        if (currentPage > 1)
+                                            viewModel.loadBeneficiaries(page = currentPage - 1)
                                     },
                                     enabled = currentPage > 1
                                 ) {
-                                    Icon(
-                                        Icons.Default.ChevronLeft,
-                                        contentDescription = "Página anterior"
-                                    )
+                                    Icon(Icons.Default.ChevronLeft, contentDescription = "Anterior")
                                 }
 
                                 Text(
-                                    text = "Página $currentPage de ${mockBeneficiaries.totalPages}",
+                                    "Página $currentPage de ${list.totalPages}",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium
                                 )
 
                                 IconButton(
                                     onClick = {
-                                        if (currentPage < mockBeneficiaries.totalPages) {
-                                            currentPage++
-                                            // TODO: Chamar API com nova página
-                                        }
+                                        if (currentPage < list.totalPages)
+                                            viewModel.loadBeneficiaries(page = currentPage + 1)
                                     },
-                                    enabled = currentPage < mockBeneficiaries.totalPages
+                                    enabled = currentPage < list.totalPages
                                 ) {
-                                    Icon(
-                                        Icons.Default.ChevronRight,
-                                        contentDescription = "Próxima página"
-                                    )
+                                    Icon(Icons.Default.ChevronRight, contentDescription = "Seguinte")
                                 }
                             }
                         }
@@ -346,14 +276,14 @@ fun BeneficiariesScreen() {
 
 @Composable
 fun BeneficiaryListItemCard(
-    beneficiary: BeneficiaryListItem,
+    beneficiary: BeneficiaryListDTO,
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(1.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -362,7 +292,7 @@ fun BeneficiaryListItemCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar com inicial
+            // Avatar inicial
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -380,10 +310,8 @@ fun BeneficiaryListItemCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Informações
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            // Info
+            Column(Modifier.weight(1f)) {
                 Text(
                     text = beneficiary.name,
                     fontSize = 16.sp,
@@ -391,20 +319,17 @@ fun BeneficiaryListItemCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (beneficiary.email != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                beneficiary.email?.let {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Icons.Outlined.Email,
+                            Icons.Outlined.Email,
                             contentDescription = null,
                             modifier = Modifier.size(14.dp),
                             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(Modifier.width(6.dp))
                         Text(
-                            text = beneficiary.email,
+                            text = it,
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             maxLines = 1,
@@ -415,10 +340,9 @@ fun BeneficiaryListItemCard(
             }
 
             Icon(
-                imageVector = Icons.Default.ChevronRight,
+                Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                modifier = Modifier.size(20.dp)
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
             )
         }
     }

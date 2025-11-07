@@ -1,34 +1,80 @@
 package g8.ipca.sasipca.sasipca.repositories
 
-import g8.ipca.sasipca.sasipca.models.StockItemDTO
-import g8.ipca.sasipca.sasipca.network.ApiClient
+import g8.ipca.sasipca.sasipca.models.DeliveryCreationDTO
+import g8.ipca.sasipca.sasipca.models.DeliveryUpdateDTO
+import g8.ipca.sasipca.sasipca.models.DeliveryQueryDTO
+import g8.ipca.sasipca.sasipca.models.Resposta
+import g8.ipca.sasipca.sasipca.models.VDeliveryDTO
 import g8.ipca.sasipca.sasipca.storage.ApiConfig
-import g8.ipca.sasipca.sasipca.storage.SessionManager
+import g8.ipca.sasipca.sasipca.storage.authorizedRequest
 import io.ktor.client.*
-import io.ktor.client.call.*
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import io.ktor.http.*
 
-class StockRepository(private val client: HttpClient = ApiClient.client) {
-    val token = SessionManager.getAccessToken() ?: throw Exception("Token não disponível")
+/**
+ * Repository responsável por gerir operações de stock e entregas.
+ */
+class StockRepository(private val client: HttpClient) {
 
-    suspend fun getStock(
-        search: String = "",
-        pageNumber: Int = 1,
-        pageSize: Int = 10,
-        orderBy: String = "asc"
-    ): List<StockItemDTO> {
+    /**
+     * Consulta entregas com filtros opcionais
+     */
+    suspend fun getDeliveries(query: DeliveryQueryDTO? = null): List<VDeliveryDTO> {
 
-        val response: HttpResponse = client.get(("${ApiConfig.baseUrl()}/products")) {
-            header("Authorization", "Bearer $token")
-            parameter("searchTerm", search)
+        return client.authorizedRequest<List<VDeliveryDTO>>(
+            url = "${ApiConfig.baseUrl()}/stock/delivery",
+            method = HttpMethod.Get
+        ) {
+            query?.let {
+                parameter("StatusId", it.statusId)
+                parameter("BeneficiaryId", it.beneficiaryId)
+                parameter("DateFrom", it.dateFrom)
+                parameter("DateTo", it.dateTo)
+            }
         }
 
-        if (!response.status.isSuccess()) {
-            throw Exception("Erro ao buscar stock: ${response.status}")
-        }
-
-        return response.body() // retornará List<StockItemDTO>
     }
+
+
+    /**
+     * Cria/Agenda uma nova entrega para uma data específica
+     */
+    suspend fun scheduleDelivery(dto: DeliveryCreationDTO): VDeliveryDTO {
+        return client.authorizedRequest(
+            url = "${ApiConfig.baseUrl()}/stock/delivery/schedule",
+            method = HttpMethod.Post
+        ) {
+            contentType(ContentType.Application.Json)
+            setBody(dto)
+        }
+    }
+
+
+    /**
+     * Atualiza uma entrega existente (ex: data, status, itens)
+     * Apenas se estiver 'Agendada'
+     */
+    suspend fun updateDelivery(deliveryId: Int, dto: DeliveryUpdateDTO): VDeliveryDTO {
+        return client.authorizedRequest<VDeliveryDTO>(
+            url = "${ApiConfig.baseUrl()}/stock/delivery/$deliveryId",
+            method = HttpMethod.Put
+        ) {
+            contentType(ContentType.Application.Json)
+            setBody(dto)
+        }
+    }
+
+    /**
+     * Elimina uma entrega existinte (Apenas se tiver 'Agendada')
+     */
+    suspend fun deleteDelivery(deliveryId: Int): Resposta {
+        return client.authorizedRequest<Resposta>(
+            url = "${ApiConfig.baseUrl()}/stock/delivery/$deliveryId",
+            method = HttpMethod.Delete
+        ) {
+            contentType(ContentType.Application.Json)
+        }
+    }
+
+
 }

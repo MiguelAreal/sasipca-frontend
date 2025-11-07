@@ -33,6 +33,11 @@ object SessionManager {
     fun getUserId(): Int? = settings.getIntOrNull("user_id")
     fun getUserName(): String? = settings.getStringOrNull("user_name")
 
+    fun updateAccessToken(newToken: String) {
+        settings.putString("access_token", newToken)
+    }
+
+
     @OptIn(ExperimentalTime::class)
     fun isAccessTokenValid(): Boolean {
         val expiry = settings.getLongOrNull("token_expiry") ?: return false

@@ -1,8 +1,6 @@
 package g8.ipca.sasipca.sasipca.utils
 
 import androidx.compose.runtime.MutableState
-import g8.ipca.sasipca.sasipca.ui.components.SnackbarMessage
-import g8.ipca.sasipca.sasipca.ui.components.SnackbarType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

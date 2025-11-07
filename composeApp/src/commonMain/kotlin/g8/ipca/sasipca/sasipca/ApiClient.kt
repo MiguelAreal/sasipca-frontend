@@ -7,3 +7,4 @@ expect fun createHttpClient(): HttpClient
 object ApiClient {
     val client: HttpClient by lazy { createHttpClient() }
 }
+

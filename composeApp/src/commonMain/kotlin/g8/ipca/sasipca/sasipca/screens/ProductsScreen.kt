@@ -24,10 +24,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import g8.ipca.sasipca.sasipca.models.StockItemDTO
+import g8.ipca.sasipca.sasipca.models.Product
+import g8.ipca.sasipca.sasipca.models.ProductItemDTO
+import g8.ipca.sasipca.sasipca.repositories.ProductRepository
+import g8.ipca.sasipca.sasipca.repositories.StockRepository
 import g8.ipca.sasipca.sasipca.ui.components.Header
 import g8.ipca.sasipca.sasipca.utils.getFormattedDatePt
-import g8.ipca.sasipca.sasipca.viewmodels.StockViewModel
+import g8.ipca.sasipca.sasipca.viewmodels.ProductViewModel
 
 enum class ViewMode {
     LIST, GRID
@@ -35,12 +38,12 @@ enum class ViewMode {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StockScreen() {
-    val viewModel = remember { StockViewModel() }
+fun ProductsScreen(productRepository: ProductRepository) {
+    val viewModel = remember { ProductViewModel(productRepository) }
     var viewMode by remember { mutableStateOf(ViewMode.LIST) }
 
     // Chamada inicial
-    LaunchedEffect(Unit) { viewModel.loadStock() }
+    LaunchedEffect(Unit) { viewModel.loadProducts() }
 
     val filteredItems by remember { viewModel::filteredItems }
     val isLoading by remember { viewModel::isLoading }
@@ -67,7 +70,7 @@ fun StockScreen() {
             // Barra de pesquisa
             OutlinedTextField(
                 value = searchQuery,
-                onValueChange = { viewModel.loadStock(it) },
+                onValueChange = { viewModel.loadProducts(it) },
                 modifier = Modifier
                     .weight(1f)
                     .height(50.dp),
@@ -142,8 +145,8 @@ fun StockScreen() {
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
                 items(filteredItems) { item ->
-                    StockItemCardGrid(
-                        StockItemDTO(
+                    ProductItemCardGrid(
+                        ProductItemDTO(
                             barcode = item.barcode,
                             name = item.name,
                             category = item.category,
@@ -161,7 +164,7 @@ fun StockScreen() {
 }
 
 @Composable
-fun StockItemCard(item: StockItemDTO) {
+fun StockItemCard(item: ProductItemDTO) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -201,7 +204,7 @@ fun StockItemCard(item: StockItemDTO) {
 }
 
 @Composable
-fun StockItemCardGrid(item: StockItemDTO) {
+fun ProductItemCardGrid(item: ProductItemDTO) {
     Card(
         modifier = Modifier
             .fillMaxWidth()

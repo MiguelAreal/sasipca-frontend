@@ -23,7 +23,7 @@ import g8.ipca.sasipca.sasipca.network.ApiClient
 import g8.ipca.sasipca.sasipca.repositories.AuthRepository
 import g8.ipca.sasipca.sasipca.storage.SettingsManager
 import g8.ipca.sasipca.sasipca.ui.components.Header
-import g8.ipca.sasipca.sasipca.ui.components.SnackbarType
+import g8.ipca.sasipca.sasipca.utils.SnackbarType
 import g8.ipca.sasipca.sasipca.utils.SnackbarManager
 import kotlinx.coroutines.launch
 

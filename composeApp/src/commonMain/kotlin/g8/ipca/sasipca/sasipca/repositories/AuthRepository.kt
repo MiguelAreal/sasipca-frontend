@@ -57,8 +57,8 @@ class AuthRepository(private val client: HttpClient) {
                     Result.success(successResponse)
                 }
                 HttpStatusCode.BadRequest, HttpStatusCode.Unauthorized -> {
-                    val errorResponse: Response = response.body()
-                    Result.failure(Exception(errorResponse.message))
+                    val errorResposta: Resposta = response.body()
+                    Result.failure(Exception(errorResposta.message))
                 }
                 else -> Result.failure(Exception("Unexpected error: ${response.status.value}"))
             }
@@ -67,17 +67,17 @@ class AuthRepository(private val client: HttpClient) {
         }
     }
 
-    suspend fun logout(): Result<Response> {
+    suspend fun logout(): Result<Resposta> {
         return try {
             // Faz a request autorizada
-            val response: Response = client.authorizedRequest(
+            val resposta: Resposta = client.authorizedRequest(
                 url = "${ApiConfig.baseUrl()}/logout",
                 method = HttpMethod.Post
             )
 
             // Limpa sessão apenas após sucesso
             SessionManager.clear()
-            Result.success(response)
+            Result.success(resposta)
 
         } catch (e: Exception) {
             Result.failure(e)

@@ -6,6 +6,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -26,7 +28,8 @@ import java.time.YearMonth
 fun CalendarHeader(
     month: YearMonth,
     onPrev: () -> Unit,
-    onNext: () -> Unit
+    onNext: () -> Unit,
+    onToday: () -> Unit
 ) {
     BoxWithConstraints(
         modifier = Modifier
@@ -49,12 +52,18 @@ fun CalendarHeader(
 
             // Esquerda: navegação entre meses
             Row(verticalAlignment = Alignment.CenterVertically) {
+                Button(
+                    onClick = onToday,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.15f))
+                ) {
+                    Text("Hoje", color = Color.White)
+                }
                 IconButton(
                     onClick = onPrev,
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        imageVector = Icons.Filled.ArrowUpward,
                         contentDescription = "Mês anterior",
                         tint = Color.White
                     )
@@ -64,7 +73,7 @@ fun CalendarHeader(
                     modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        imageVector = Icons.Filled.ArrowDownward,
                         contentDescription = "Próximo mês",
                         tint = Color.White
                     )

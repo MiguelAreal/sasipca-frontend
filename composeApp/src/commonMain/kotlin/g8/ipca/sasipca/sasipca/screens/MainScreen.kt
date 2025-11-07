@@ -10,15 +10,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import g8.ipca.sasipca.sasipca.navigation.Screen
-import g8.ipca.sasipca.sasipca.screens.CalendarScreen
+import g8.ipca.sasipca.sasipca.repositories.ProductRepository
+import g8.ipca.sasipca.sasipca.repositories.StockRepository
+import g8.ipca.sasipca.sasipca.sasipca.screens.CalendarScreen
 import g8.ipca.sasipca.sasipca.screens.HomeScreen
+import g8.ipca.sasipca.sasipca.screens.ProductsScreen
 import g8.ipca.sasipca.sasipca.screens.ProfileScreen
-import g8.ipca.sasipca.sasipca.screens.StockScreen
 import kotlinx.coroutines.launch
 
 @Composable
-fun MainScreen(onThemeChanged: (Boolean) -> Unit = {}) {
-    val tabs = listOf(Screen.Home, Screen.Stock, Screen.Calendar, Screen.Profile)
+fun MainScreen(stockRepository: StockRepository, productRepository: ProductRepository) {
+    val tabs = listOf(Screen.Home, Screen.Products, Screen.Calendar, Screen.Profile)
     val pagerState = rememberPagerState(
         initialPage = 0,
         pageCount ={ tabs.size }
@@ -36,7 +38,7 @@ fun MainScreen(onThemeChanged: (Boolean) -> Unit = {}) {
                         icon = {
                             val icon = when (screen) {
                                 Screen.Home -> Icons.Default.Home
-                                Screen.Stock -> Icons.Default.Inventory
+                                Screen.Products -> Icons.Default.Inventory
                                 Screen.Calendar -> Icons.Default.CalendarMonth
                                 Screen.Profile -> Icons.Default.Person
                                 else -> Icons.Default.Home
@@ -46,7 +48,7 @@ fun MainScreen(onThemeChanged: (Boolean) -> Unit = {}) {
                         label = {
                             val label = when (screen) {
                                 Screen.Home -> "Home"
-                                Screen.Stock -> "Inventário"
+                                Screen.Products -> "Inventário"
                                 Screen.Calendar -> "Calendário"
                                 Screen.Profile -> "Perfil"
                                 else -> ""
@@ -66,8 +68,8 @@ fun MainScreen(onThemeChanged: (Boolean) -> Unit = {}) {
         ) { page ->
             when (tabs[page]) {
                 Screen.Home -> HomeScreen()
-                Screen.Stock -> StockScreen()
-                Screen.Calendar -> CalendarScreen()
+                Screen.Products -> ProductsScreen(productRepository)
+                Screen.Calendar -> CalendarScreen(stockRepository)
                 Screen.Profile -> ProfileScreen()
                 else -> Box(modifier = Modifier.fillMaxSize())
             }

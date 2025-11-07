@@ -1,5 +1,6 @@
 package g8.ipca.sasipca.sasipca.network
 
+import g8.ipca.sasipca.sasipca.repositories.AuthRepository
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -9,7 +10,7 @@ import javax.net.ssl.X509TrustManager
 import java.security.cert.X509Certificate
 
 actual fun createHttpClient(): HttpClient {
-    return HttpClient(CIO) {
+    val client = HttpClient(CIO) {
         engine {
             https {
                 trustManager = object : X509TrustManager {
@@ -23,4 +24,8 @@ actual fun createHttpClient(): HttpClient {
             json(Json { ignoreUnknownKeys = true })
         }
     }
+
+
+    return client
 }
+
