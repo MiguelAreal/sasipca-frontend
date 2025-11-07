@@ -4,11 +4,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,18 +29,29 @@ import sasipca.repositories.BeneficiaryRepository
 import sasipca.ui.components.Header
 import sasipca.viewmodels.BeneficiariesViewModel
 
+enum class BeneficiaryViewMode {
+    LIST, GRID
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BeneficiariesScreen(beneficiaryRepository: BeneficiaryRepository) {
+fun BeneficiariesScreen(
+    beneficiaryRepository: BeneficiaryRepository,
+    onAddBeneficiary: () -> Unit = {},
+    onOpenBeneficiary: (Int) -> Unit = {}
+) {
     val viewModel = remember { BeneficiariesViewModel(beneficiaryRepository) }
+
+    var viewMode by remember { mutableStateOf(BeneficiaryViewMode.LIST) }
+    var showFilters by remember { mutableStateOf(false) }
+
     val isLoading by remember { viewModel::isLoading }
     val errorMessage by remember { viewModel::errorMessage }
     val beneficiaries by remember { viewModel::beneficiaries }
     val searchTerm by remember { viewModel::searchTerm }
-    val orderBy by remember { viewModel::orderBy }
     val currentPage by remember { viewModel::currentPage }
+    val orderBy by remember { viewModel::orderBy }
 
-    var showFilters by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Carregar dados iniciais
@@ -43,7 +59,7 @@ fun BeneficiariesScreen(beneficiaryRepository: BeneficiaryRepository) {
         viewModel.loadBeneficiaries()
     }
 
-    // Mostrar erros em snackbar
+    // Mostrar erros
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
             snackbarHostState.showSnackbar(it)
@@ -53,120 +69,109 @@ fun BeneficiariesScreen(beneficiaryRepository: BeneficiaryRepository) {
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            Surface(
-                shadowElevation = 2.dp,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                Column {
-                    Header("Beneficiários")
-
-                    // Barra de pesquisa
-                    OutlinedTextField(
-                        value = searchTerm,
-                        onValueChange = {
-                            viewModel.loadBeneficiaries(search = it, page = 1)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                            .padding(bottom = 12.dp),
-                        placeholder = { Text("Pesquisar por nome...") },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                        trailingIcon = {
-                            if (searchTerm.isNotEmpty()) {
-                                IconButton(onClick = { viewModel.loadBeneficiaries(search = "") }) {
-                                    Icon(Icons.Default.Clear, contentDescription = "Limpar")
-                                }
-                            }
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        singleLine = true
-                    )
-
-                    // Botão para filtros
-                    IconButton(onClick = { showFilters = !showFilters }) {
-                        Icon(
-                            imageVector = if (showFilters)
-                                Icons.Filled.FilterAlt
-                            else
-                                Icons.Outlined.FilterAlt,
-                            contentDescription = "Filtros",
-                            tint = if (showFilters)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    // Filtros expansíveis
-                    if (showFilters) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            elevation = CardDefaults.cardElevation(1.dp),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp)
-                            ) {
-                                Text(
-                                    "Ordenação",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                                )
-
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    FilterChip(
-                                        selected = orderBy == "asc",
-                                        onClick = { viewModel.loadBeneficiaries(order = "asc") },
-                                        label = { Text("A-Z") },
-                                        leadingIcon = {
-                                            Icon(
-                                                Icons.Default.ArrowUpward,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                        }
-                                    )
-                                    FilterChip(
-                                        selected = orderBy == "desc",
-                                        onClick = { viewModel.loadBeneficiaries(order = "desc") },
-                                        label = { Text("Z-A") },
-                                        leadingIcon = {
-                                            Icon(
-                                                Icons.Default.ArrowDownward,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { /* TODO: Navegar para ecrã de adicionar beneficiário */ },
+                onClick = onAddBeneficiary,
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Adicionar")
+                Icon(Icons.Default.Add, contentDescription = "Adicionar beneficiário")
             }
         }
     ) { paddingValues ->
-        Box(
+
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            Header("Beneficiários")
+
+            // Barra de pesquisa + botões
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = searchTerm,
+                    onValueChange = { viewModel.loadBeneficiaries(search = it, page = 1) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp),
+                    placeholder = { Text("Pesquisar beneficiário...") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = "Pesquisar")
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true
+                )
+
+                // Filtro (abre/fecha painel)
+                IconButton(
+                    onClick = { showFilters = !showFilters },
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface)
+                ) {
+                    Icon(
+                        Icons.Outlined.FilterList,
+                        contentDescription = "Filtrar"
+                    )
+                }
+
+                // Alternar visualização (Lista / Grelha)
+                IconButton(
+                    onClick = {
+                        viewMode = if (viewMode == BeneficiaryViewMode.LIST)
+                            BeneficiaryViewMode.GRID else BeneficiaryViewMode.LIST
+                    },
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface)
+                ) {
+                    Icon(
+                        if (viewMode == BeneficiaryViewMode.LIST)
+                            Icons.Outlined.GridView
+                        else
+                            Icons.Outlined.ViewList,
+                        contentDescription = "Alternar visualização"
+                    )
+                }
+            }
+
+            // Painel de filtros
+            if (showFilters) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = orderBy == "asc",
+                        onClick = { viewModel.loadBeneficiaries(order = "asc") },
+                        label = { Text("A-Z") },
+                        leadingIcon = {
+                            Icon(Icons.Outlined.ArrowUpward, contentDescription = null)
+                        }
+                    )
+                    FilterChip(
+                        selected = orderBy == "desc",
+                        onClick = { viewModel.loadBeneficiaries(order = "desc") },
+                        label = { Text("Z-A") },
+                        leadingIcon = {
+                            Icon(Icons.Outlined.ArrowDownward, contentDescription = null)
+                        }
+                    )
+                }
+            }
+
             when {
                 isLoading -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -182,89 +187,43 @@ fun BeneficiariesScreen(beneficiaryRepository: BeneficiaryRepository) {
 
                 beneficiaries!!.data.isEmpty() -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Outlined.PersonOff,
-                                contentDescription = null,
-                                modifier = Modifier.size(80.dp),
-                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                            )
-                            Text(
-                                "Nenhum beneficiário encontrado",
-                                fontSize = 16.sp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                            )
-                        }
+                        Text("Nenhum beneficiário encontrado")
                     }
                 }
 
                 else -> {
-                    val list = beneficiaries!!
-                    Column(Modifier.fillMaxSize()) {
-                        // Cabeçalho com contagem
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "${list.totalCount} beneficiários",
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                            )
-                            Text(
-                                "Página ${list.pageNumber} de ${list.totalPages}",
-                                fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                            )
-                        }
+                    val list = beneficiaries!!.data
 
+                    if (viewMode == BeneficiaryViewMode.LIST) {
                         LazyColumn(
-                            modifier = Modifier.weight(1f),
-                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 20.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(bottom = 80.dp)
                         ) {
-                            items(list.data) { beneficiary ->
-                                BeneficiaryListItemCard(beneficiary) { /* TODO: abrir detalhe */ }
+                            items(list) { beneficiary ->
+                                BeneficiaryListItemCard(
+                                    beneficiary = beneficiary,
+                                    onClick = { onOpenBeneficiary(beneficiary.beneficiaryId) }
+                                )
                             }
                         }
-
-                        // Paginação
-                        if (list.totalPages > 1) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                IconButton(
-                                    onClick = {
-                                        if (currentPage > 1)
-                                            viewModel.loadBeneficiaries(page = currentPage - 1)
-                                    },
-                                    enabled = currentPage > 1
-                                ) {
-                                    Icon(Icons.Default.ChevronLeft, contentDescription = "Anterior")
-                                }
-
-                                Text(
-                                    "Página $currentPage de ${list.totalPages}",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
+                    } else {
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(minSize = 200.dp),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 20.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(bottom = 80.dp)
+                        ) {
+                            items(list) { beneficiary ->
+                                BeneficiaryGridItemCard(
+                                    beneficiary = beneficiary,
+                                    onClick = { onOpenBeneficiary(beneficiary.beneficiaryId) }
                                 )
-
-                                IconButton(
-                                    onClick = {
-                                        if (currentPage < list.totalPages)
-                                            viewModel.loadBeneficiaries(page = currentPage + 1)
-                                    },
-                                    enabled = currentPage < list.totalPages
-                                ) {
-                                    Icon(Icons.Default.ChevronRight, contentDescription = "Seguinte")
-                                }
                             }
                         }
                     }
@@ -280,9 +239,9 @@ fun BeneficiaryListItemCard(
     onClick: () -> Unit
 ) {
     Card(
+        onClick = onClick,
         modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .fillMaxWidth(),
         elevation = CardDefaults.cardElevation(1.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -292,7 +251,6 @@ fun BeneficiaryListItemCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar inicial
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -310,7 +268,6 @@ fun BeneficiaryListItemCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Info
             Column(Modifier.weight(1f)) {
                 Text(
                     text = beneficiary.name,
@@ -320,22 +277,13 @@ fun BeneficiaryListItemCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 beneficiary.email?.let {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Outlined.Email,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            text = it,
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+                    Text(
+                        text = it,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
 
@@ -344,6 +292,62 @@ fun BeneficiaryListItemCard(
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
             )
+        }
+    }
+}
+
+@Composable
+fun BeneficiaryGridItemCard(
+    beneficiary: BeneficiaryListDTO,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(1.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text(
+                    text = beneficiary.name,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                beneficiary.email?.let {
+                    Text(
+                        text = it,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = beneficiary.name.firstOrNull()?.uppercase() ?: "?",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
         }
     }
 }

@@ -21,6 +21,7 @@ sealed class Screen {
     object StockAdjustment : Screen()
     object Campaigns : Screen()
     object Beneficiaries : Screen()
+    object Beneficiary : Screen()
     object Settings : Screen()
     object Notifications : Screen()
 

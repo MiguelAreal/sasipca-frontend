@@ -11,8 +11,10 @@ data class BeneficiaryPostDTO(
     val name: String,
     val email: String,
     val contact: String,
-    val course: String,
-    val curricularYear: Int,
+    val course: String? = null,
+    val curricularYear: Int?,
+    val studentNum: Int? = null,
+    val nif: Int? = null,
     val globalObs: String? = null,
     val particularObs: String? = null,
     val street: String? = null,
@@ -41,8 +43,13 @@ data class BeneficiaryGetDTO(
     val name: String,
     val email: String,
     val contact: String,
-    val course: String,
+    val course: String? = null,
     val curricularYear: Int? = null,
     val studentNum: Int? = null,
-    val nif: Int? = null
+    val nif: Int? = null,
+    val globalObs: String? = null,
+    val particularObs: String? = null,
+    val street: String? = null,
+    val number: Int? = null,
+    val postalCode: String?
 )

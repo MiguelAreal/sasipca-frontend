@@ -26,6 +26,7 @@ import sasipca.utils.SafeBackHandler
 import sasipca.storage.SessionManager
 import sasipca.storage.SettingsManager
 import sasipca.screens.BeneficiariesScreen
+import sasipca.screens.BeneficiaryScreen
 import sasipca.screens.DeliveryScreen
 import sasipca.screens.HomeScreen
 import sasipca.screens.LoginScreen
@@ -47,6 +48,9 @@ fun App() {
     val scope = rememberCoroutineScope()
     var isDarkTheme by remember { mutableStateOf(false) }
     var initialized by remember { mutableStateOf(false) }
+
+    // Armazenar o beneficiário selecionado
+    var selectedBeneficiaryId by remember { mutableStateOf<Int?>(null) }
 
     // Inicializa Snackbar global
     LaunchedEffect(Unit) {
@@ -125,7 +129,22 @@ fun App() {
                 Screen.Delivery -> DeliveryScreen()
                 Screen.StockAdjustment -> PlaceholderScreen()
                 Screen.Campaigns -> PlaceholderScreen()
-                Screen.Beneficiaries -> BeneficiariesScreen(beneficiaryRepository)
+                Screen.Beneficiaries -> BeneficiariesScreen(
+                    beneficiaryRepository,
+                    onOpenBeneficiary = { id ->
+                        selectedBeneficiaryId = id
+                        NavigationService.navigateTo(Screen.Beneficiary)
+                    }
+                )
+
+                Screen.Beneficiary -> {
+                    selectedBeneficiaryId?.let { id ->
+                        BeneficiaryScreen(
+                            beneficiaryId = id,
+                            repository = beneficiaryRepository
+                        )
+                    }
+                }
                 Screen.Settings -> SettingsScreen { isDark -> isDarkTheme = isDark }
                 Screen.Notifications -> PlaceholderScreen()
                 Screen.Placeholder -> PlaceholderScreen()

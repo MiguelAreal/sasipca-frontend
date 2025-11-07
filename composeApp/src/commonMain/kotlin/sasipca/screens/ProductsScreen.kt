@@ -78,8 +78,7 @@ fun ProductsScreen(productRepository: ProductRepository) {
                 leadingIcon = {
                     Icon(
                         Icons.Default.Search,
-                        contentDescription = "Pesquisar",
-                        tint = Color(0xFF999999)
+                        contentDescription = "Pesquisar"
                     )
                 },
                 shape = RoundedCornerShape(12.dp),
@@ -96,8 +95,7 @@ fun ProductsScreen(productRepository: ProductRepository) {
             ) {
                 Icon(
                     Icons.Outlined.FilterList,
-                    contentDescription = "Filtrar",
-                    tint = Color(0xFF3D4A7A)
+                    contentDescription = "Filtrar"
                 )
             }
 
@@ -113,8 +111,7 @@ fun ProductsScreen(productRepository: ProductRepository) {
             ) {
                 Icon(
                     if (viewMode == ViewMode.LIST) Icons.Outlined.GridView else Icons.Outlined.ViewList,
-                    contentDescription = "Alternar visualização",
-                    tint = Color(0xFF3D4A7A)
+                    contentDescription = "Alternar visualização"
                 )
             }
         }
