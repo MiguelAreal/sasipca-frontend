@@ -72,11 +72,11 @@ kotlin {
 }
 
 android {
-    namespace = "g8.ipca.sasipca.sasipca"
+    namespace = "sasipca"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "g8.ipca.sasipca.sasipca"
+        applicationId = "sasipca"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
@@ -105,7 +105,7 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "g8.ipca.sasipca.sasipca.MainKt"
+        mainClass = "sasipca.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe)
