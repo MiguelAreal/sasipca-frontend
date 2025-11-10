@@ -1,4 +1,4 @@
-package sasipca.ui.components
+package sasipca.ui.components.calendar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

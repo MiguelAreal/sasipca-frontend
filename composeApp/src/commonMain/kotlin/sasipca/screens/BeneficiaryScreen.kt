@@ -39,6 +39,11 @@ fun BeneficiaryScreen(
     var editName by remember { mutableStateOf("") }
     var editEmail by remember { mutableStateOf("") }
     var editContact by remember { mutableStateOf("") }
+    var editNif by remember { mutableStateOf("") }
+    var editStreet by remember { mutableStateOf("") }
+    var editNumber by remember { mutableStateOf("") }
+    var editPostalcode by remember { mutableStateOf("") }
+    var editStudentnum by remember { mutableStateOf("") }
     var editCourse by remember { mutableStateOf("") }
     var editCurricularYear by remember { mutableStateOf("") }
     var editGlobalObs by remember { mutableStateOf("") }
@@ -53,17 +58,22 @@ fun BeneficiaryScreen(
     LaunchedEffect(beneficiary) {
         beneficiary?.let {
             editName = it.name
-            editEmail = it.email ?: ""
-            editContact = it.contact ?: ""
-            editCourse = it.course ?: ""
+            editEmail = it.email
+            editContact = it.contact
+            editNif = it.nif?.toString() ?: ""
+            editStreet = it.street?: ""
+            editNumber = it.number?.toString() ?: ""
+            editPostalcode = it.postalCode?: ""
+            editStudentnum = it.studentNum?.toString() ?: ""
+            editCourse = it.course?: ""
             editCurricularYear = it.curricularYear?.toString() ?: ""
-            editGlobalObs = it.globalObs ?: ""
-            editParticularObs = it.particularObs ?: ""
+            editGlobalObs = it.globalObs?: ""
+            editParticularObs = it.particularObs?: ""
         }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Header(title = "Beneficiário",subTitle = editName)
+        Header(title = "Editar Beneficiário",subTitle = editName)
 
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
@@ -124,6 +134,70 @@ fun BeneficiaryScreen(
                                 singleLine = true,
                                 shape = RoundedCornerShape(8.dp)
                             )
+
+                            OutlinedTextField(
+                                value = editNif,
+                                onValueChange = { editNif = it },
+                                label = { Text("NIF") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        }
+                    }
+                }
+
+                /** Informações de Morada **/
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                "Morada",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+
+                            OutlinedTextField(
+                                value = editStreet,
+                                onValueChange = { editStreet = it },
+                                label = { Text("Rua") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+
+                            OutlinedTextField(
+                                value = editNumber,
+                                onValueChange = { editNumber = it },
+                                label = { Text("Número da Porta") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+
+                            OutlinedTextField(
+                                value = editPostalcode,
+                                onValueChange = { editPostalcode = it },
+                                label = { Text("Código-Postal") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+
                         }
                     }
                 }
@@ -149,7 +223,15 @@ fun BeneficiaryScreen(
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
-
+                            OutlinedTextField(
+                                value = editStudentnum,
+                                onValueChange = { editStudentnum = it },
+                                label = { Text("Número de estudante") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                shape = RoundedCornerShape(8.dp)
+                            )
                             OutlinedTextField(
                                 value = editCourse,
                                 onValueChange = { editCourse = it },
@@ -227,6 +309,11 @@ fun BeneficiaryScreen(
                                 name = editName,
                                 email = editEmail,
                                 contact = editContact,
+                                nif = editNif.toIntOrNull(),
+                                street =  editStreet,
+                                number = editNumber.toIntOrNull(),
+                                postalCode = editPostalcode,
+                                studentNum = editStudentnum.toIntOrNull(),
                                 course = editCourse,
                                 curricularYear = editCurricularYear.toIntOrNull(),
                                 globalObs = editGlobalObs,
@@ -242,9 +329,6 @@ fun BeneficiaryScreen(
                             .fillMaxWidth()
                             .height(56.dp),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF3D4A7A)
-                        )
                     ) {
                         Icon(Icons.Outlined.Check, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))

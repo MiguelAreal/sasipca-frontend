@@ -23,9 +23,9 @@ import sasipca.viewmodels.CalendarViewModel
 import sasipca.models.DeliveryCreationDTO
 import sasipca.models.DeliveryUpdateDTO
 import sasipca.models.VDeliveryDTO
-import sasipca.ui.components.CalendarHeader
-import sasipca.ui.components.WeekCalendar
-import sasipca.ui.components.WeekCalendarController
+import sasipca.ui.components.calendar.CalendarHeader
+import sasipca.ui.components.calendar.Calendar
+import sasipca.ui.components.calendar.WeekCalendarController
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -198,7 +198,7 @@ fun CompactLayout(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
             )
         } else {
-            WeekCalendar(
+            Calendar(
                 month = month,
                 startDate = selectedDate,
                 deliveries = deliveries,
@@ -240,7 +240,7 @@ fun WideLayout(
         Spacer(modifier = Modifier.height(12.dp))
 
         Row(modifier = Modifier.fillMaxWidth()) {
-            WeekCalendar(
+            Calendar(
                 month = month,
                 startDate = selectedDate,
                 deliveries = deliveries,

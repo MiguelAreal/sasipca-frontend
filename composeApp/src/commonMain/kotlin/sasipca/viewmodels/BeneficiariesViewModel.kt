@@ -8,13 +8,18 @@ import sasipca.repositories.BeneficiaryRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import sasipca.models.BeneficiaryPostDTO
+import sasipca.utils.NotFoundException
+import sasipca.utils.RepositoryException
+import sasipca.utils.SnackbarManager
+import sasipca.utils.SnackbarType
 
 /**
  * ViewModel responsável por gerir o estado da lista de beneficiários
  * (filtragem, paginação, loading e erros)
  */
 
-class BeneficiariesViewModel(private val repository: BeneficiaryRepository) : ViewModel() {
+class BeneficiariesViewModel(val repository: BeneficiaryRepository) : ViewModel() {
 
     // region States observáveis
     var isLoading by mutableStateOf(false)
@@ -78,13 +83,19 @@ class BeneficiariesViewModel(private val repository: BeneficiaryRepository) : Vi
                 currentPage = page
                 searchTerm = search
                 orderBy = order
+            } catch (e: NotFoundException) {
+                beneficiaries = PaginatedResponse(emptyList(), 1, pageSize, 0, 0)
+            } catch (e: RepositoryException) {
+                SnackbarManager.show(e.message ?: "Erro de comunicação com o servidor.", SnackbarType.ERROR)
             } catch (e: Exception) {
-                errorMessage = e.message ?: "Erro ao carregar beneficiários."
+                SnackbarManager.show("Erro inesperado: ${e.message}", SnackbarType.ERROR)
             } finally {
                 isLoading = false
             }
         }
     }
+
+
 
     fun clearError() {
         errorMessage = null

@@ -16,11 +16,6 @@ import sasipca.ui.components.CustomSnackbarHost
 import sasipca.utils.SnackbarMessage
 import sasipca.ui.theme.SasIpcaTheme
 import sasipca.utils.SnackbarManager
-import sasipca.ApiClient
-import sasipca.repositories.AuthRepository
-import sasipca.repositories.BeneficiaryRepository
-import sasipca.repositories.ProductRepository
-import sasipca.repositories.StockRepository
 import sasipca.screens.CalendarScreen
 import sasipca.utils.SafeBackHandler
 import sasipca.storage.SessionManager
@@ -39,10 +34,11 @@ import sasipca.screens.SettingsScreen
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun App() {
-    val authRepository = remember { AuthRepository(ApiClient.client) }
-    val stockRepository = remember { StockRepository(ApiClient.client) }
-    val productRepository = remember { ProductRepository(ApiClient.client) }
-    val beneficiaryRepository = remember { BeneficiaryRepository(ApiClient.client) }
+
+    val authRepository = ApiClient.authRepository
+    val stockRepository = ApiClient.stockRepository
+    val productRepository = ApiClient.productRepository
+    val beneficiaryRepository = ApiClient.beneficiaryRepository
 
     val snackbarState = remember { mutableStateOf<SnackbarMessage?>(null) }
     val scope = rememberCoroutineScope()
@@ -52,35 +48,32 @@ fun App() {
     // Armazenar o beneficiário selecionado
     var selectedBeneficiaryId by remember { mutableStateOf<Int?>(null) }
 
+
     // Inicializa Snackbar global
     LaunchedEffect(Unit) {
         SnackbarManager.snackbarState = snackbarState
         SnackbarManager.scope = scope
     }
 
-    // 🚀 Verifica sessão ao iniciar
+    // ⭐ MUDANÇA 2: Lógica de inicialização simplificada
     LaunchedEffect(Unit) {
+        // 1. O ApiAuth.init() foi REMOVIDO.
+        // O ApiClient.init() na MainActivity já tratou de tudo.
 
         isDarkTheme = SettingsManager.isDarkTheme()
-        val hasValidToken = SessionManager.isAccessTokenValid()
+
+        // Apenas precisamos de saber se existe um refresh token.
+        // Se existir, o utilizador está "logado".
         val refreshToken = SessionManager.getRefreshToken()
 
-        if (hasValidToken) {
+        if (refreshToken != null) {
+            // Navega para Main.
+            // Se o access token estiver expirado, a PRIMEIRA chamada de API
+            // (ex: carregar stocks) irá falhar, o Ktor Auth irá
+            // intercetar, fazer o refresh, e tentar de novo automaticamente.
             NavigationService.resetTo(Screen.Main)
-        } else if (refreshToken != null) {
-
-            // tentar renovar token
-            val result = authRepository.refreshToken()
-            result.fold(
-                onSuccess = {
-                    NavigationService.resetTo(Screen.Main)
-                },
-                onFailure = {
-                    SessionManager.clear()
-                    NavigationService.resetTo(Screen.Login)
-                }
-            )
         } else {
+            // Se não há refresh token, tem de fazer login.
             NavigationService.resetTo(Screen.Login)
         }
 
@@ -122,15 +115,16 @@ fun App() {
             },
             label = "navigation_transition"
         ) { screen ->
+            // ⭐ MUDANÇA 3: Passar os repositórios corretos
             when (screen) {
-                Screen.Login -> LoginScreen(authRepository)
-                Screen.Main -> MainScreen(stockRepository, productRepository)
+                Screen.Login -> LoginScreen(authRepository) // Passa o singleton
+                Screen.Main -> MainScreen(stockRepository, productRepository) // Passa o singleton
                 Screen.Reception -> ReceptionScreen()
                 Screen.Delivery -> DeliveryScreen()
                 Screen.StockAdjustment -> PlaceholderScreen()
                 Screen.Campaigns -> PlaceholderScreen()
                 Screen.Beneficiaries -> BeneficiariesScreen(
-                    beneficiaryRepository,
+                    beneficiaryRepository, // Passa o singleton
                     onOpenBeneficiary = { id ->
                         selectedBeneficiaryId = id
                         NavigationService.navigateTo(Screen.Beneficiary)
@@ -141,17 +135,17 @@ fun App() {
                     selectedBeneficiaryId?.let { id ->
                         BeneficiaryScreen(
                             beneficiaryId = id,
-                            repository = beneficiaryRepository
+                            repository = beneficiaryRepository // Passa o singleton
                         )
                     }
                 }
                 Screen.Settings -> SettingsScreen { isDark -> isDarkTheme = isDark }
                 Screen.Notifications -> PlaceholderScreen()
                 Screen.Placeholder -> PlaceholderScreen()
-                Screen.Calendar -> CalendarScreen(stockRepository)
+                Screen.Calendar -> CalendarScreen(stockRepository) // Passa o singleton
                 Screen.Home -> HomeScreen()
                 Screen.Profile -> ProfileScreen()
-                Screen.Products -> ProductsScreen(productRepository)
+                Screen.Products -> ProductsScreen(productRepository) // Passa o singleton
             }
         }
 

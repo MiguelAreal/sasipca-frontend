@@ -33,7 +33,7 @@ object SessionManager {
     fun getUserId(): Int? = settings.getIntOrNull("user_id")
     fun getUserName(): String? = settings.getStringOrNull("user_name")
 
-    fun updateAccessToken(newToken: String) {
+    fun setAccessToken(newToken: String) {
         settings.putString("access_token", newToken)
     }
 

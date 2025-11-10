@@ -1,7 +1,6 @@
 package sasipca.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -12,7 +11,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -20,13 +18,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import sasipca.models.BeneficiaryListDTO
 import sasipca.repositories.BeneficiaryRepository
+import sasipca.ui.components.CreateBeneficiaryPopup
 import sasipca.ui.components.Header
+import sasipca.ui.components.beneficiaries.*
 import sasipca.viewmodels.BeneficiariesViewModel
 
 enum class BeneficiaryViewMode {
@@ -48,34 +46,38 @@ fun BeneficiariesScreen(
     val isLoading by remember { viewModel::isLoading }
     val errorMessage by remember { viewModel::errorMessage }
     val beneficiaries by remember { viewModel::beneficiaries }
-    val searchTerm by remember { viewModel::searchTerm }
     val currentPage by remember { viewModel::currentPage }
+    var searchTerm by remember { mutableStateOf("") } // texto local da pesquisa
     val orderBy by remember { viewModel::orderBy }
 
-    val snackbarHostState = remember { SnackbarHostState() }
+    var showCreatePopup by remember { mutableStateOf(false) }
 
     // Carregar dados iniciais
     LaunchedEffect(Unit) {
         viewModel.loadBeneficiaries()
     }
 
-    // Mostrar erros
-    LaunchedEffect(errorMessage) {
-        errorMessage?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.clearError()
-        }
+    // Debounce de 500ms: só pesquisa depois de parar de digitar
+    LaunchedEffect(searchTerm) {
+        kotlinx.coroutines.delay(500) // intervalo entre digitação e pesquisa
+        viewModel.loadBeneficiaries(search = searchTerm, page = 1)
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onAddBeneficiary,
+                onClick = { showCreatePopup = true },
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Adicionar beneficiário")
+            }
+            if (showCreatePopup) {
+                CreateBeneficiaryPopup(
+                    repository = beneficiaryRepository,
+                    onDismiss = { showCreatePopup = false },
+                    onCreated = { viewModel.loadBeneficiaries() } // recarrega a lista após criar
+                )
             }
         }
     ) { paddingValues ->
@@ -97,7 +99,7 @@ fun BeneficiariesScreen(
             ) {
                 OutlinedTextField(
                     value = searchTerm,
-                    onValueChange = { viewModel.loadBeneficiaries(search = it, page = 1) },
+                    onValueChange = { searchTerm = it },
                     modifier = Modifier
                         .weight(1f)
                         .height(50.dp),
@@ -106,7 +108,11 @@ fun BeneficiariesScreen(
                         Icon(Icons.Default.Search, contentDescription = "Pesquisar")
                     },
                     shape = RoundedCornerShape(12.dp),
-                    singleLine = true
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        fontSize = 14.sp,
+                        lineHeight = 18.sp
+                    )
                 )
 
                 // Filtro (abre/fecha painel)
@@ -187,7 +193,7 @@ fun BeneficiariesScreen(
 
                 beneficiaries!!.data.isEmpty() -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Nenhum beneficiário encontrado")
+                        Text("Nenhum beneficiário encontrado :(")
                     }
                 }
 
@@ -228,125 +234,6 @@ fun BeneficiariesScreen(
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun BeneficiaryListItemCard(
-    beneficiary: BeneficiaryListDTO,
-    onClick: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(1.dp),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = beneficiary.name.firstOrNull()?.uppercase() ?: "?",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = beneficiary.name,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                beneficiary.email?.let {
-                    Text(
-                        text = it,
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-            )
-        }
-    }
-}
-
-@Composable
-fun BeneficiaryGridItemCard(
-    beneficiary: BeneficiaryListDTO,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(1.dp),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text(
-                    text = beneficiary.name,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                beneficiary.email?.let {
-                    Text(
-                        text = it,
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = beneficiary.name.firstOrNull()?.uppercase() ?: "?",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
             }
         }
     }
