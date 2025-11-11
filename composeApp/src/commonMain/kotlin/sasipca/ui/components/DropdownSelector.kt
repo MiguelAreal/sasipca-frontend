@@ -1,5 +1,6 @@
 package sasipca.ui.components
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,10 +27,12 @@ fun <T : NamedItem> DropdownSelector(
         onExpandedChange = { expanded = it },
         modifier = modifier
     ) {
+        // CORREÇÃO: Usar ExposedDropdownMenuDefaults.TextFieldDecorationBox para imitar o estilo OutlinedTextField
         OutlinedTextField(
+            // O componente que atua como âncora do menu
+            modifier = Modifier.menuAnchor().fillMaxWidth(),
             value = selectedItem?.name ?: "",
             onValueChange = {},
-            modifier = Modifier.menuAnchor(),
             readOnly = true,
             label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },

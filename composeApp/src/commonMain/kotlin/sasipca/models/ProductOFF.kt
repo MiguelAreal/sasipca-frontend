@@ -19,5 +19,6 @@ data class Product(
     val product_name: String? = null,
     val product_quantity: Int? = null,
     val product_quantity_unit: String? = null,
+    val image_url: String? = null,
     val brands: String? = null
 )
