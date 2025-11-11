@@ -12,7 +12,7 @@ class OFFRepository(private val client: HttpClient) {
         ignoreUnknownKeys = true
         isLenient = true
     }
-    private val baseUrl = "https://world.openfoodfacts.org/api/v2/product"
+    private val oofUrl = "https://world.openfoodfacts.org/api/v2/product"
 
     /**
      * Pesquisa produto pelo código de barras (EAN-13)
@@ -20,7 +20,7 @@ class OFFRepository(private val client: HttpClient) {
      */
     suspend fun getProductByBarcode(barcode: String): ProductOFFResponse? {
         return try {
-            val response: HttpResponse = client.get("https://world.openfoodfacts.org/api/v2/product/$barcode")
+            val response: HttpResponse = client.get("${oofUrl}/$barcode")
 
             if (response.status == HttpStatusCode.OK) {
                 val body = response.bodyAsText()

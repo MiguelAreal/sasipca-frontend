@@ -14,7 +14,7 @@ import sasipca.models.VDeliveryDTO
 import java.time.LocalDate
 import java.time.YearMonth
 
-class CalendarViewModel(private val stockRepository: StockRepository) : ViewModel() {
+class DeliveriesViewModel(private val stockRepository: StockRepository) : ViewModel() {
 
     private val _month = MutableStateFlow(YearMonth.now())
     val month: StateFlow<YearMonth> = _month
@@ -28,7 +28,33 @@ class CalendarViewModel(private val stockRepository: StockRepository) : ViewMode
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
-    fun loadDeliveries(month: YearMonth = _month.value) {
+    /**
+     * Get all deliveries done to a specific beneficiary.
+     * Used for beneficiary profile.
+     */
+    fun loadBeneficiaryDeliveries(beneficiaryId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isLoading.value = true
+            runCatching {
+                stockRepository.getDeliveries(
+                    DeliveryQueryDTO(
+                        beneficiaryId = beneficiaryId
+                    )
+                )
+            }.onSuccess {
+                _deliveries.value = it
+            }.onFailure {
+                println("Erro ao carregar entregas do beneficiário: $it")
+            }
+            _isLoading.value = false
+        }
+    }
+
+    /**
+     * Get all deliveries planned for a specific month time-period.
+     * Used by calendar widget.
+     */
+    fun loadMonthDeliveries(month: YearMonth = _month.value) {
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
             runCatching {
@@ -48,29 +74,35 @@ class CalendarViewModel(private val stockRepository: StockRepository) : ViewMode
     }
 
 
+    /**
+     * Schedule a new delivery.
+     */
     fun scheduleDelivery(dto: DeliveryCreationDTO) {
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 stockRepository.scheduleDelivery(dto)
             }.onSuccess {
-                loadDeliveries(_month.value)
+                loadMonthDeliveries(_month.value)
             }
         }
     }
 
+    /**
+     * Update an existing delivery.
+     */
     fun updateDelivery(deliveryId: Int, dto: DeliveryUpdateDTO) {
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 stockRepository.updateDelivery(deliveryId, dto)
             }.onSuccess {
-                loadDeliveries(_month.value)
+                loadMonthDeliveries(_month.value)
             }
         }
     }
 
     fun selectMonth(newMonth: YearMonth) {
         _month.value = newMonth
-        loadDeliveries(newMonth)
+        loadMonthDeliveries(newMonth)
     }
 
     fun selectDate(newDate: LocalDate) {

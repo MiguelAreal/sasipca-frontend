@@ -1,5 +1,3 @@
-// androidMain/sasipca/createHttpClient.kt
-
 package sasipca
 
 import io.ktor.client.*
@@ -7,18 +5,20 @@ import io.ktor.client.engine.okhttp.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
-import sasipca.models.AuthResponse // <-- Importar
-import sasipca.repositories.AuthRepository // <-- Remover (não é mais necessário aqui)
-import sasipca.storage.SessionManager // <-- Importar
+import sasipca.models.AuthResponse
+import sasipca.storage.SessionManager
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
-import io.ktor.client.plugins.auth.* // <-- Importar
-import io.ktor.client.plugins.auth.providers.* // <-- Importar
+import io.ktor.client.plugins.auth.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.auth.providers.*
+import io.ktor.client.request.header
+import io.ktor.http.HttpHeaders
 import io.ktor.http.encodedPath
 
 actual fun createHttpClient(
-    refreshLogic: suspend () -> Result<AuthResponse> // <-- Assinatura atualizada
+    refreshLogic: suspend () -> Result<AuthResponse>
 ): HttpClient {
     val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
         override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
@@ -41,6 +41,15 @@ actual fun createHttpClient(
 
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
+        }
+
+        install(DefaultRequest) {
+            val token = SessionManager.getAccessToken()
+            if (!token.isNullOrBlank()) {
+                headers.remove(HttpHeaders.Authorization)
+                header(HttpHeaders.Authorization, "Bearer $token")
+                println(">>> [DefaultRequest] Using token: $token")
+            }
         }
 
         install(Auth) {

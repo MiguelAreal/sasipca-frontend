@@ -22,8 +22,9 @@ class BeneficiaryDetailViewModel(
     var isLoading by mutableStateOf(false)
         private set
 
-    var beneficiary by mutableStateOf<BeneficiaryGetDTO?>(null)
+    var getBeneficiary by mutableStateOf<BeneficiaryGetDTO?>(null)
         private set
+
 
     /**
      * Carrega um beneficiário existente pelo ID.
@@ -32,7 +33,7 @@ class BeneficiaryDetailViewModel(
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 isLoading = true
-                beneficiary = repository.getProfile(id)
+                getBeneficiary = repository.getProfile(id)
             } catch (e: Exception) {
                 SnackbarManager.show(
                     message = e.message ?: "Erro ao carregar beneficiário.",

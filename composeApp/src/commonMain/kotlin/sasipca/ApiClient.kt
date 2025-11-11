@@ -1,17 +1,13 @@
-// commonMain/sasipca/ApiClient.kt
-
 package sasipca
 
 import io.ktor.client.*
-import sasipca.models.AuthResponse // Importe o AuthResponse
+import sasipca.models.AuthResponse
 import sasipca.repositories.AuthRepository
 import sasipca.repositories.BeneficiaryRepository
 import sasipca.repositories.ProductRepository
 import sasipca.repositories.StockRepository
 
-expect fun createHttpClient(
-    refreshLogic: suspend () -> Result<AuthResponse>
-): HttpClient
+expect fun createHttpClient(): HttpClient
 
 object ApiClient {
     lateinit var client: HttpClient
@@ -27,17 +23,20 @@ object ApiClient {
         private set
 
     fun init() {
-        val refreshLogic: suspend () -> Result<AuthResponse> = {
-            authRepository.refreshToken()
-        }
+        // 1️⃣ Criar HttpClient sem lógica de refresh automática
+        client = createHttpClient()
 
-        // 1. Criar o client
-        client = createHttpClient(refreshLogic)
-
-        // 2. Inicializar todos os repositórios com o mesmo client
+        // 2️⃣ Criar o AuthRepository com o client
         authRepository = AuthRepository(client)
+
+        // 3️⃣ Criar os restantes repositórios
         stockRepository = StockRepository(client)
         productRepository = ProductRepository(client)
         beneficiaryRepository = BeneficiaryRepository(client)
+    }
+
+    suspend fun refreshToken(): Result<AuthResponse> {
+        // Delegar para o AuthRepository
+        return authRepository.refreshToken()
     }
 }

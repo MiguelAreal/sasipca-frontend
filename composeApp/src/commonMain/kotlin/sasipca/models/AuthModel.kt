@@ -11,7 +11,6 @@ data class LoginRequest(
 data class AuthResponse(
     val accessToken: String,
     val refreshToken: String,
-    val expiresIn: Int,
     val userID: Int,
     val userName: String
 )

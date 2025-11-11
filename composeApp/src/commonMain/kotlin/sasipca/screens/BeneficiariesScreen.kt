@@ -44,18 +44,12 @@ fun BeneficiariesScreen(
     var showFilters by remember { mutableStateOf(false) }
 
     val isLoading by remember { viewModel::isLoading }
-    val errorMessage by remember { viewModel::errorMessage }
     val beneficiaries by remember { viewModel::beneficiaries }
     val currentPage by remember { viewModel::currentPage }
     var searchTerm by remember { mutableStateOf("") } // texto local da pesquisa
     val orderBy by remember { viewModel::orderBy }
 
     var showCreatePopup by remember { mutableStateOf(false) }
-
-    // Carregar dados iniciais
-    LaunchedEffect(Unit) {
-        viewModel.loadBeneficiaries()
-    }
 
     // Debounce de 500ms: só pesquisa depois de parar de digitar
     LaunchedEffect(searchTerm) {

@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import sasipca.repositories.StockRepository
-import sasipca.viewmodels.CalendarViewModel
+import sasipca.viewmodels.DeliveriesViewModel
 import sasipca.models.DeliveryCreationDTO
 import sasipca.models.DeliveryUpdateDTO
 import sasipca.models.VDeliveryDTO
@@ -32,7 +32,7 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun CalendarScreen(stockRepository: StockRepository) {
-    val viewModel = remember { CalendarViewModel(stockRepository) }
+    val viewModel = remember { DeliveriesViewModel(stockRepository) }
 
     val month by viewModel.month.collectAsState()
     val selectedDate by viewModel.selectedDate.collectAsState()
@@ -45,7 +45,7 @@ fun CalendarScreen(stockRepository: StockRepository) {
     var showFutureDeliveries by remember { mutableStateOf(false) }
 
     LaunchedEffect(month) {
-        viewModel.loadDeliveries(month)
+        viewModel.loadMonthDeliveries(month)
     }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
@@ -151,7 +151,7 @@ fun CompactLayout(
     month: YearMonth,
     selectedDate: LocalDate,
     deliveries: List<VDeliveryDTO>,
-    viewModel: CalendarViewModel,
+    viewModel: DeliveriesViewModel,
     pickerState: Pair<LocalDate, List<VDeliveryDTO>>?,
     onPickerStateChange: (Pair<LocalDate, List<VDeliveryDTO>>?) -> Unit,
     editorState: VDeliveryDTO?,
@@ -220,7 +220,7 @@ fun WideLayout(
     month: YearMonth,
     selectedDate: LocalDate,
     deliveries: List<VDeliveryDTO>,
-    viewModel: CalendarViewModel,
+    viewModel: DeliveriesViewModel,
     pickerState: Pair<LocalDate, List<VDeliveryDTO>>?,
     onPickerStateChange: (Pair<LocalDate, List<VDeliveryDTO>>?) -> Unit,
     editorState: VDeliveryDTO?,

@@ -135,7 +135,8 @@ fun App() {
                     selectedBeneficiaryId?.let { id ->
                         BeneficiaryScreen(
                             beneficiaryId = id,
-                            repository = beneficiaryRepository // Passa o singleton
+                            repository = beneficiaryRepository,
+                            stockRepository = stockRepository
                         )
                     }
                 }

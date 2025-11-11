@@ -7,6 +7,7 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import sasipca.storage.requestWithAuth
 import sasipca.models.*
 import sasipca.storage.markAsRefreshTokenRequest
 
@@ -16,46 +17,39 @@ class AuthRepository(private val client: HttpClient) {
      * Renova o access token usando o refresh token
      */
     suspend fun refreshToken(): Result<AuthResponse> {
-
-        // ⬇️ ESTA É A LÓGICA CORRIGIDA (PROBLEMA 2) ⬇️
         val response: HttpResponse
         try {
-            response = client.post("${ApiConfig.baseUrl()}/refresh") {
+            val expiredAccessToken = SessionManager.getAccessToken()
+                ?: return Result.failure(Exception("Access token ausente"))
 
+            response = client.post("${ApiConfig.baseUrl()}/auth/refresh") {
                 markAsRefreshTokenRequest()
-                header(HttpHeaders.Authorization, "Bearer ${SessionManager.getAccessToken()}")
                 header(HttpHeaders.Cookie, "refreshToken=${SessionManager.getRefreshToken()}")
+                header(HttpHeaders.Authorization, "Bearer $expiredAccessToken")
                 contentType(ContentType.Application.Json)
             }
         } catch (e: Exception) {
-            // Falha de rede, sem internet, etc.
             SessionManager.clear()
             return Result.failure(e)
         }
 
-        // Agora verificamos o status ANTES de tentar ler o .body()
         return when (response.status) {
             HttpStatusCode.OK -> {
-                // Sucesso, o corpo é AuthResponse
                 val successResponse: AuthResponse = response.body()
-                // Atualiza session local
                 SessionManager.saveSession(
                     token = successResponse.accessToken,
                     refreshToken = successResponse.refreshToken,
                     userID = successResponse.userID,
-                    userName = successResponse.userName,
-                    expiresIn = successResponse.expiresIn
+                    userName = successResponse.userName
                 )
                 Result.success(successResponse)
             }
             else -> {
-                // Falha (401, 400, etc), o refresh token é inválido.
-                // O corpo é um objeto de Erro (ex: Resposta)
                 SessionManager.clear()
                 val errorMessage = try {
                     response.body<Resposta>().message
                 } catch (e: Exception) {
-                    "Falha ao renovar token: ${response.status}"
+                    "Failed to refresh token: ${response.status}"
                 }
                 Result.failure(Exception(errorMessage))
             }
@@ -67,7 +61,7 @@ class AuthRepository(private val client: HttpClient) {
      */
     suspend fun login(email: String, password: String): Result<AuthResponse> {
         return try {
-            val response = client.post("${ApiConfig.baseUrl()}/login") {
+            val response = client.post("${ApiConfig.baseUrl()}/auth/login") {
                 contentType(ContentType.Application.Json)
                 setBody(LoginRequest(email, password))
             }
@@ -76,12 +70,12 @@ class AuthRepository(private val client: HttpClient) {
                 HttpStatusCode.OK -> {
                     val successResponse: AuthResponse = response.body()
                     // Armazena sessão
+
                     SessionManager.saveSession(
                         token = successResponse.accessToken,
                         refreshToken = successResponse.refreshToken,
                         userID = successResponse.userID,
-                        userName = successResponse.userName,
-                        expiresIn = successResponse.expiresIn
+                        userName = successResponse.userName
                     )
                     Result.success(successResponse)
                 }
@@ -101,7 +95,10 @@ class AuthRepository(private val client: HttpClient) {
      */
     suspend fun logout(): Result<Resposta> {
         return try {
-            val resposta: Resposta = client.post("${ApiConfig.baseUrl()}/logout").body()
+            val resposta: Resposta = client.requestWithAuth(
+                method = HttpMethod.Post,
+                url = "${ApiConfig.baseUrl()}/auth/logout"
+            )
 
             // Limpa sessão após sucesso
             SessionManager.clear()
@@ -110,4 +107,5 @@ class AuthRepository(private val client: HttpClient) {
             Result.failure(e)
         }
     }
+
 }

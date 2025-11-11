@@ -4,10 +4,8 @@ import sasipca.models.PaginatedResponse
 import sasipca.models.ProductItemDTO
 import sasipca.storage.ApiConfig
 import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import io.ktor.http.*
+import sasipca.storage.requestWithAuth
 
 class ProductRepository(private val client: HttpClient) {
 
@@ -18,17 +16,9 @@ class ProductRepository(private val client: HttpClient) {
         orderBy: String = "asc"
     ): PaginatedResponse<ProductItemDTO> {
 
-        val response: HttpResponse = client.get("${ApiConfig.baseUrl()}/products") {
-            parameter("searchTerm", search)
-            parameter("pageNumber", pageNumber)
-            parameter("pageSize", pageSize)
-            parameter("orderBy", orderBy)
-        }
-
-        if (!response.status.isSuccess()) {
-            throw Exception("Erro ao buscar produtos: ${response.status}")
-        }
-
-        return response.body()
+        return client.requestWithAuth(
+            method = HttpMethod.Get,
+            url = "${ApiConfig.baseUrl()}/products?searchTerm=$search&pageNumber=$pageNumber&pageSize=$pageSize&orderBy=$orderBy"
+        )
     }
 }

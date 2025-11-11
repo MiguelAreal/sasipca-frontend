@@ -50,6 +50,7 @@ kotlin {
             implementation("io.ktor:ktor-client-content-negotiation:3.3.2")
             implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.2")
             implementation("io.ktor:ktor-client-auth:3.3.2")
+            implementation("io.ktor:ktor-client-logging:3.3.2")
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
             implementation("com.russhwolf:multiplatform-settings:1.3.0")
             implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1-0.6.x-compat")
@@ -66,6 +67,7 @@ kotlin {
             implementation(libs.ktor.client.java)
             implementation("io.ktor:ktor-client-cio:3.3.1")
             implementation("com.russhwolf:multiplatform-settings-jvm:1.3.0")
+            implementation("org.slf4j:slf4j-simple:2.0.17")
 
 
         }
