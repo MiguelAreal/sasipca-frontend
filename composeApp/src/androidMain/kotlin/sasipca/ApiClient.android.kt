@@ -17,9 +17,7 @@ import io.ktor.client.request.header
 import io.ktor.http.HttpHeaders
 import io.ktor.http.encodedPath
 
-actual fun createHttpClient(
-    refreshLogic: suspend () -> Result<AuthResponse>
-): HttpClient {
+actual fun createHttpClient(): HttpClient {
     val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
         override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
         override fun checkServerTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
@@ -43,42 +41,5 @@ actual fun createHttpClient(
             json(Json { ignoreUnknownKeys = true })
         }
 
-        install(DefaultRequest) {
-            val token = SessionManager.getAccessToken()
-            if (!token.isNullOrBlank()) {
-                headers.remove(HttpHeaders.Authorization)
-                header(HttpHeaders.Authorization, "Bearer $token")
-                println(">>> [DefaultRequest] Using token: $token")
-            }
-        }
-
-        install(Auth) {
-            bearer {
-                loadTokens {
-                    val accessToken = SessionManager.getAccessToken()
-                    val refreshToken = SessionManager.getRefreshToken()
-                    if (accessToken != null && refreshToken != null) {
-                        BearerTokens(accessToken, refreshToken)
-                    } else null
-                }
-
-                refreshTokens {
-                    // No access to the request or attributes here anymore
-                    val result = refreshLogic()
-                    if (result.isSuccess) {
-                        val authResponse = result.getOrThrow()
-                        BearerTokens(authResponse.accessToken, authResponse.refreshToken)
-                    } else {
-                        SessionManager.clear()
-                        null
-                    }
-                }
-
-                sendWithoutRequest { request ->
-                    val path = request.url.encodedPath
-                    path.endsWith("/login") || path.endsWith("/refresh")
-                }
-            }
-        }
-    }
+   }
 }

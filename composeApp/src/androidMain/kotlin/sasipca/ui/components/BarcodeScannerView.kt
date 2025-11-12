@@ -1,6 +1,7 @@
 package sasipca.ui.components
 
 import android.util.Log
+import androidx.annotation.OptIn
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -12,14 +13,20 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
+import sasipca.utils.SnackbarManager
+import sasipca.utils.SnackbarMessage
+import sasipca.utils.SnackbarType
 import java.util.concurrent.Executors
 
+/**
+ * Widget apenas para android que mostra a câmara para ler o código de barras
+ */
+@OptIn(ExperimentalGetImage::class)
 @Composable
 fun BarcodeScannerView(
     modifier: Modifier = Modifier,
     onBarcodeDetected: (String) -> Unit
 ) {
-    val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scanner = remember { BarcodeScanning.getClient() }
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
@@ -80,7 +87,7 @@ fun BarcodeScannerView(
                         analysis
                     )
                 } catch (e: Exception) {
-                    Log.e("Camera", "Erro ao iniciar câmara", e)
+                    SnackbarManager.show("Erro ao iniciar a câmara", SnackbarType.ERROR)
                 }
             }, ContextCompat.getMainExecutor(ctx))
 

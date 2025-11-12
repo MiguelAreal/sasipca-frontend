@@ -40,7 +40,7 @@ import sasipca.models.Category
 import sasipca.models.LotToEnter
 import sasipca.models.UnitType
 import sasipca.ui.components.NamedItem
-import sasipca.ui.components.products.LotCardWithDatePicker
+import sasipca.ui.components.products.LotCard
 import kotlin.collections.plus
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -317,7 +317,7 @@ fun ReceptionScreen() {
                                         verticalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
                                         lots.forEachIndexed { index, lot ->
-                                            LotCardWithDatePicker(
+                                            LotCard(
                                                 lot = lot,
                                                 index = index,
                                                 onLotChange = { updatedLot ->
@@ -390,6 +390,21 @@ fun ProductInfoSection(
     isWideScreen: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val categoryList = remember { mutableStateListOf(*categories.toTypedArray()) }
+    val unitList = remember { mutableStateListOf(*units.toTypedArray()) }
+
+    val addCategory: (String) -> Unit = { newName ->
+        val newCategory = Category(-1, newName)
+        categoryList.add(newCategory)
+        onCategorySelect(newCategory)
+    }
+
+    val addUnit: (String) -> Unit = { newName ->
+        val newUnit = UnitType(-1, newName)
+        unitList.add(newUnit)
+        onUnitSelect(newUnit)
+    }
+
     if (isWideScreen) {
         Column(
             modifier = modifier,
@@ -679,7 +694,7 @@ fun LotsSection(
                         contentPadding = PaddingValues(bottom = 8.dp) // Added bottom padding for last item
                     ) {
                         itemsIndexed(lots) { index, lot ->
-                            LotCardWithDatePicker(
+                            LotCard(
                                 lot = lot,
                                 index = index,
                                 onLotChange = { onLotChange(index, it) },

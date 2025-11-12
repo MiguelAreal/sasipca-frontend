@@ -17,10 +17,16 @@ import sasipca.screens.HomeScreen
 import sasipca.screens.ProductsScreen
 import sasipca.screens.ProfileScreen
 import kotlinx.coroutines.launch
+import sasipca.repositories.BeneficiaryRepository
+import sasipca.screens.BeneficiariesScreen
 
 @Composable
-fun MainScreen(stockRepository: StockRepository, productRepository: ProductRepository) {
-    val tabs = listOf(Screen.Home, Screen.Products, Screen.Calendar, Screen.Profile)
+fun MainScreen(stockRepository: StockRepository,
+               productRepository: ProductRepository,
+               beneficiaryRepository: BeneficiaryRepository,
+               onOpenBeneficiary: (Int) -> Unit = {})
+{
+    val tabs = listOf(Screen.Home, Screen.Products, Screen.Calendar, Screen.Beneficiaries)
     val pagerState = rememberPagerState(
         initialPage = 0,
         pageCount ={ tabs.size }
@@ -40,7 +46,7 @@ fun MainScreen(stockRepository: StockRepository, productRepository: ProductRepos
                                 Screen.Home -> Icons.Default.Home
                                 Screen.Products -> Icons.Default.Inventory
                                 Screen.Calendar -> Icons.Default.CalendarMonth
-                                Screen.Profile -> Icons.Default.Person
+                                Screen.Beneficiaries -> Icons.Default.People
                                 else -> Icons.Default.Home
                             }
                             Icon(icon, contentDescription = null)
@@ -50,7 +56,7 @@ fun MainScreen(stockRepository: StockRepository, productRepository: ProductRepos
                                 Screen.Home -> "Home"
                                 Screen.Products -> "Inventário"
                                 Screen.Calendar -> "Calendário"
-                                Screen.Profile -> "Perfil"
+                                Screen.Beneficiaries -> "Beneficiários"
                                 else -> ""
                             }
                             Text(label)
@@ -70,7 +76,10 @@ fun MainScreen(stockRepository: StockRepository, productRepository: ProductRepos
                 Screen.Home -> HomeScreen()
                 Screen.Products -> ProductsScreen(productRepository)
                 Screen.Calendar -> CalendarScreen(stockRepository)
-                Screen.Profile -> ProfileScreen()
+                Screen.Beneficiaries -> BeneficiariesScreen(
+                    beneficiaryRepository = beneficiaryRepository,
+                    onOpenBeneficiary = onOpenBeneficiary
+                )
                 else -> Box(modifier = Modifier.fillMaxSize())
             }
         }

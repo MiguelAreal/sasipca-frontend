@@ -71,9 +71,9 @@ fun ProductsScreen(productRepository: ProductRepository) {
                 onValueChange = { viewModel.loadProducts(it) },
                 modifier = Modifier
                     .weight(1f)
-                    .height(50.dp),
+                    .height(65.dp),
                 placeholder = {
-                    Text("Pesquisar")
+                    Text("Pesquisar produto...")
                 },
                 leadingIcon = {
                     Icon(
@@ -91,7 +91,7 @@ fun ProductsScreen(productRepository: ProductRepository) {
                 modifier = Modifier
                     .size(50.dp)
                     .clip(CircleShape)
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.surface)
             ) {
                 Icon(
                     Icons.Outlined.FilterList,
@@ -107,7 +107,7 @@ fun ProductsScreen(productRepository: ProductRepository) {
                 modifier = Modifier
                     .size(50.dp)
                     .clip(CircleShape)
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.surface)
             ) {
                 Icon(
                     if (viewMode == ViewMode.LIST) Icons.Outlined.GridView else Icons.Outlined.ViewList,

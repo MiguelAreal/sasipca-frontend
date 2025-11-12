@@ -39,7 +39,7 @@ import sasipca.models.LotToEnter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LotCardWithDatePicker(
+fun LotCard(
     lot: LotToEnter,
     index: Int,
     onLotChange: (LotToEnter) -> Unit,

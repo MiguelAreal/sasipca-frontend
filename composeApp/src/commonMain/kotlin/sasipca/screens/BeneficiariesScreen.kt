@@ -22,7 +22,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import sasipca.repositories.BeneficiaryRepository
-import sasipca.ui.components.CreateBeneficiaryPopup
+import sasipca.ui.components.beneficiaries.CreateBeneficiaryPopup
 import sasipca.ui.components.Header
 import sasipca.ui.components.beneficiaries.*
 import sasipca.viewmodels.BeneficiariesViewModel
@@ -96,7 +96,7 @@ fun BeneficiariesScreen(
                     onValueChange = { searchTerm = it },
                     modifier = Modifier
                         .weight(1f)
-                        .height(50.dp),
+                        .height(65.dp),
                     placeholder = { Text("Pesquisar beneficiário...") },
                     leadingIcon = {
                         Icon(Icons.Default.Search, contentDescription = "Pesquisar")

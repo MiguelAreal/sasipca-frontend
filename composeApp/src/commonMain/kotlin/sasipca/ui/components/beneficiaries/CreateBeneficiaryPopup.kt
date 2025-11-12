@@ -1,4 +1,4 @@
-package sasipca.ui.components
+package sasipca.ui.components.beneficiaries
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape

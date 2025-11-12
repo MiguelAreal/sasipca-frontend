@@ -138,27 +138,27 @@ fun MonthlyStatsSection() {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(
+            // ✅ FlowRow para ajuste automático em ecrãs pequenos
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                maxItemsInEachRow = 3 // Máximo de 3 cards por linha
             ) {
                 CompactStatCard(
                     icon = Icons.Outlined.Schedule,
                     label = "Pendentes",
-                    value = "08",
-                    modifier = Modifier.weight(1f)
+                    value = "08"
                 )
                 CompactStatCard(
                     icon = Icons.Outlined.Favorite,
                     label = "Doações",
-                    value = "15",
-                    modifier = Modifier.weight(1f)
+                    value = "15"
                 )
                 CompactStatCard(
                     icon = Icons.Outlined.CheckCircle,
                     label = "Realizadas",
-                    value = "03",
-                    modifier = Modifier.weight(1f)
+                    value = "03"
                 )
             }
         }
@@ -174,11 +174,6 @@ fun SecondaryActionsSection() {
             icon = Icons.Outlined.Campaign,
             title = "Campanhas",
             onClick = { NavigationService.navigateTo(Screen.Campaigns) }
-        )
-        CompactMenuItem(
-            icon = Icons.Outlined.Groups,
-            title = "Beneficiários",
-            onClick = { NavigationService.navigateTo(Screen.Beneficiaries) }
         )
         CompactMenuItem(
             icon = Icons.Outlined.FilePresent,

@@ -30,7 +30,7 @@ sealed class Screen {
     companion object {
 
         /** Define quais são ecrãs "principais" (tabs) */
-        val bottomTabs = setOf(Home, Products, Calendar, Profile)
+        val bottomTabs = setOf(Home, Products, Calendar, Beneficiaries)
 
         /** Retorna true se o ecrã for overlay (ou seja, não é uma tab principal) */
         fun isOverlay(screen: Screen): Boolean = screen !in bottomTabs && screen !is Login && screen !is Main

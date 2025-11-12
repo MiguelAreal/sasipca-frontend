@@ -7,10 +7,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Scanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -52,7 +50,7 @@ actual fun BarcodeInputField(
                     else -> cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                 }
             }) {
-                Icon(Icons.Default.QrCodeScanner, contentDescription = "Ler código de barras")
+                Icon(Icons.Default.Scanner, contentDescription = "Ler código de barras")
             }
         }
     )
@@ -80,7 +78,7 @@ actual fun BarcodeInputField(
                 // Moldura de guia para centralizar o código de barras
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(0.8f)
+                        .fillMaxWidth()
                         .fillMaxHeight(0.3f)
                         .align(Alignment.Center)
                         .background(Color.Transparent)
@@ -123,26 +121,6 @@ actual fun BarcodeInputField(
                         .align(Alignment.TopCenter)
                         .padding(top = 8.dp)
                 )
-
-                // Botão de fechar
-                IconButton(
-                    onClick = { showScanner = false },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(8.dp)
-                        .size(32.dp)
-                        .background(
-                            Color(0xAA000000),
-                            shape = CircleShape
-                        )
-                ) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Fechar",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
             }
         }
     }

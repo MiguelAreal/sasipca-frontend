@@ -55,25 +55,14 @@ fun App() {
         SnackbarManager.scope = scope
     }
 
-    // ⭐ MUDANÇA 2: Lógica de inicialização simplificada
     LaunchedEffect(Unit) {
-        // 1. O ApiAuth.init() foi REMOVIDO.
-        // O ApiClient.init() na MainActivity já tratou de tudo.
 
         isDarkTheme = SettingsManager.isDarkTheme()
-
-        // Apenas precisamos de saber se existe um refresh token.
-        // Se existir, o utilizador está "logado".
         val refreshToken = SessionManager.getRefreshToken()
 
         if (refreshToken != null) {
-            // Navega para Main.
-            // Se o access token estiver expirado, a PRIMEIRA chamada de API
-            // (ex: carregar stocks) irá falhar, o Ktor Auth irá
-            // intercetar, fazer o refresh, e tentar de novo automaticamente.
             NavigationService.resetTo(Screen.Main)
         } else {
-            // Se não há refresh token, tem de fazer login.
             NavigationService.resetTo(Screen.Login)
         }
 
@@ -115,22 +104,27 @@ fun App() {
             },
             label = "navigation_transition"
         ) { screen ->
-            // ⭐ MUDANÇA 3: Passar os repositórios corretos
             when (screen) {
                 Screen.Login -> LoginScreen(authRepository) // Passa o singleton
-                Screen.Main -> MainScreen(stockRepository, productRepository) // Passa o singleton
+                Screen.Main -> MainScreen(stockRepository,
+                    productRepository,
+                    beneficiaryRepository,
+                    onOpenBeneficiary = { id ->
+                        selectedBeneficiaryId = id
+                        NavigationService.navigateTo(Screen.Beneficiary)
+                    })
+
                 Screen.Reception -> ReceptionScreen()
                 Screen.Delivery -> DeliveryScreen()
                 Screen.StockAdjustment -> PlaceholderScreen()
                 Screen.Campaigns -> PlaceholderScreen()
                 Screen.Beneficiaries -> BeneficiariesScreen(
-                    beneficiaryRepository, // Passa o singleton
+                    beneficiaryRepository,
                     onOpenBeneficiary = { id ->
                         selectedBeneficiaryId = id
                         NavigationService.navigateTo(Screen.Beneficiary)
                     }
                 )
-
                 Screen.Beneficiary -> {
                     selectedBeneficiaryId?.let { id ->
                         BeneficiaryScreen(
@@ -143,10 +137,10 @@ fun App() {
                 Screen.Settings -> SettingsScreen { isDark -> isDarkTheme = isDark }
                 Screen.Notifications -> PlaceholderScreen()
                 Screen.Placeholder -> PlaceholderScreen()
-                Screen.Calendar -> CalendarScreen(stockRepository) // Passa o singleton
+                Screen.Calendar -> CalendarScreen(stockRepository)
                 Screen.Home -> HomeScreen()
                 Screen.Profile -> ProfileScreen()
-                Screen.Products -> ProductsScreen(productRepository) // Passa o singleton
+                Screen.Products -> ProductsScreen(productRepository)
             }
         }
 

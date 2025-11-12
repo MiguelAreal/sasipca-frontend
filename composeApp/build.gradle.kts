@@ -75,11 +75,11 @@ kotlin {
 }
 
 android {
-    namespace = "sasipca"
+    namespace = "app.sasipca"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "sasipca"
+        applicationId = "app.sasipca"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1

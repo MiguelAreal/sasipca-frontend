@@ -27,8 +27,8 @@ fun Header(
     subTitle: String = ""
 ) {
     val currentScreen = NavigationService.currentScreen
-    val showBackButton = Screen.Companion.isOverlay(currentScreen) && NavigationService.canGoBack()
-    val showSettings = Screen.Companion.isSettings(currentScreen)
+    val showBackButton = Screen.isOverlay(currentScreen) && NavigationService.canGoBack()
+    val showSettings = Screen.isSettings(currentScreen)
 
     BoxWithConstraints(
         modifier = Modifier
