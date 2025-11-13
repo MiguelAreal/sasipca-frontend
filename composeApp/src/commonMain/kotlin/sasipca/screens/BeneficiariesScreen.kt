@@ -25,6 +25,7 @@ import sasipca.repositories.BeneficiaryRepository
 import sasipca.ui.components.beneficiaries.CreateBeneficiaryPopup
 import sasipca.ui.components.Header
 import sasipca.ui.components.beneficiaries.*
+import sasipca.utils.getFormattedDatePt
 import sasipca.viewmodels.BeneficiariesViewModel
 
 enum class BeneficiaryViewMode {
@@ -79,9 +80,8 @@ fun BeneficiariesScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
         ) {
-            Header("Beneficiários")
+            Header("Beneficiários",getFormattedDatePt())
 
             // Barra de pesquisa + botões
             Row(

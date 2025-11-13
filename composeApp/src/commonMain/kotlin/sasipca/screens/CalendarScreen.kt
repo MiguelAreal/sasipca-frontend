@@ -23,6 +23,8 @@ import sasipca.viewmodels.DeliveriesViewModel
 import sasipca.models.DeliveryCreationDTO
 import sasipca.models.DeliveryUpdateDTO
 import sasipca.models.VDeliveryDTO
+import sasipca.storage.ScreenSizeManager.isLargeScreen
+import sasipca.storage.ScreenSizeManager.isSmallScreen
 import sasipca.ui.components.calendar.CalendarHeader
 import sasipca.ui.components.calendar.Calendar
 import sasipca.ui.components.calendar.WeekCalendarController
@@ -33,7 +35,6 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun CalendarScreen(stockRepository: StockRepository) {
     val viewModel = remember { DeliveriesViewModel(stockRepository) }
-
     val month by viewModel.month.collectAsState()
     val selectedDate by viewModel.selectedDate.collectAsState()
     val deliveries by viewModel.deliveries.collectAsState()
@@ -53,9 +54,8 @@ fun CalendarScreen(stockRepository: StockRepository) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
 
-        val isCompact = maxWidth < 800.dp
 
-        if (isCompact) {
+        if (isSmallScreen()) {
             CompactLayout(
                 month = month,
                 selectedDate = selectedDate,
@@ -272,12 +272,14 @@ fun FutureDeliveriesList(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
+        if (isLargeScreen()){
         Text(
             text = "Entregas Futuras",
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
         )
+            }
 
         if (deliveries.isEmpty()) {
             Box(

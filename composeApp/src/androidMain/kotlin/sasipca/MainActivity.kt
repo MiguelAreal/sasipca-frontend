@@ -9,6 +9,8 @@ import com.russhwolf.settings.SharedPreferencesSettings
 import sasipca.storage.SessionManager
 import sasipca.storage.SettingsManager
 import sasipca.ui.theme.SasIpcaTheme
+import sasipca.utils.ObserveScreenSize
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,6 +23,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             SasIpcaTheme {
+                ObserveScreenSize()
                 App()
             }
         }
