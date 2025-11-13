@@ -28,10 +28,11 @@ import sasipca.storage.ScreenSizeManager.isSmallScreen
 import sasipca.ui.components.calendar.CalendarHeader
 import sasipca.ui.components.calendar.Calendar
 import sasipca.ui.components.calendar.WeekCalendarController
+import sasipca.utils.getFormattedDatePt
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
 
+@Suppress("UnusedBoxWithConstraintsScope")
 @Composable
 fun CalendarScreen(stockRepository: StockRepository) {
     val viewModel = remember { DeliveriesViewModel(stockRepository) }
@@ -316,7 +317,7 @@ fun EventPickerDialog(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "Entregas em ${date.format(DateTimeFormatter.ofPattern("dd MMM yyyy"))}",
+                    text = "Entregas em ${getFormattedDatePt()}",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 18.sp
                 )
@@ -324,7 +325,7 @@ fun EventPickerDialog(
                 Spacer(Modifier.height(8.dp))
 
                 if (deliveries.isEmpty()) {
-                    Text("Sem entregas — criar nova?")
+                    Text("Sem entregas - Criar nova?")
                 } else {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -390,7 +391,7 @@ fun EventEditorDialog(
             modifier = Modifier
                 .widthIn(max = 520.dp)
                 .fillMaxWidth(0.95f)
-                .fillMaxHeight(0.9f)
+                .fillMaxHeight(0.5f)
         ) {
             Column(
                 modifier = Modifier
@@ -408,6 +409,7 @@ fun EventEditorDialog(
                         fontSize = 18.sp
                     )
 
+                    // Se estivermos a editar uma entrega, mostra botão de eliminar.
                     if (initial.deliveryId != 0) {
                         IconButton(
                             onClick = { onDelete(initial) },

@@ -7,11 +7,9 @@ import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.ExperimentalTime
 
-
-
 /**
- * Retorna data atual no formato
- * Terça-Feira, 28 Out. 2025
+ * Retorna data atual no formato '(dia da semana), (mês curto). (ano)'.
+ * - Ex: Terça-Feira, 28 Out. 2025
  */
 @OptIn(ExperimentalTime::class)
 fun getFormattedDatePt(): String {
@@ -21,7 +19,7 @@ fun getFormattedDatePt(): String {
 
 /**
  * Retorna mês atual, em português
- * Terça-Feira, 28 Out. 2025
+ * - Ex: Outubro
  */
 @OptIn(ExperimentalTime::class)
 fun getCurrentMonthPt(): String {
@@ -47,7 +45,7 @@ fun getGreetingPt(): String {
 }
 
 /**
- * Retorna apenas o mês atual em português.
+ * Função auxiliar. Retorna apenas o mês atual em português.
  * @param month número do mês (1-12)
  * @param short se true, retorna os 3 primeiros caracteres do mês
  */
@@ -72,8 +70,8 @@ fun convertMonthPt(month: Int, short: Boolean = false): String {
 }
 
 /**
- * Retorna apenas o mês atual em português.
- * @param dayofWeek Enum dia da semana
+ * Função auxiliar. Retorna apenas o mês atual em português.
+ * @param dayofWeek Enum de dia da semana
  */
 private fun convertWeekdayPt(dayofWeek: DayOfWeek): String {
     val dayofWeekPt = when (dayofWeek) {

@@ -26,6 +26,7 @@ import sasipca.ui.components.Header
 import sasipca.utils.SnackbarType
 import sasipca.utils.SnackbarManager
 import kotlinx.coroutines.launch
+import sasipca.storage.SessionManager
 
 @Composable
 fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
@@ -54,9 +55,11 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
                     .padding(horizontal = horizontalPadding, vertical = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Appearance Section
-                SectionHeader("Aparência")
 
+                /**
+                 * Secção de alteração de tema.
+                 */
+                SectionHeader("Aparência")
                 SettingsCard {
                     SettingsToggleItem(
                         icon = Icons.Default.DarkMode,
@@ -77,9 +80,10 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Network Section
+                /**
+                 * Secção de definições de rede.
+                 */
                 SectionHeader("Rede")
-
                 SettingsCard {
                     SettingsClickableItem(
                         icon = Icons.Default.Storage,
@@ -92,24 +96,29 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
                     )
                 }
 
-                // Logout Section
-                SectionHeader("Conta")
-                SettingsCard {
-                    SettingsClickableItem(
-                        icon = Icons.AutoMirrored.Filled.ExitToApp,
-                        title = "Terminar Sessão",
-                        description = "Sair da aplicação",
-                        onClick = {
-                            scope.launch {
-                                try {
-                                    authRepository.logout()
-                                } catch (e: Exception) {
-                                    // Ignora erros
+                /**
+                 * Secção de Logout.
+                 * Apenas mostra secção se o utilizador estiver com sessão iniciada.
+                 */
+                if (SessionManager.isLoggedInNow()){
+                    SectionHeader("Conta")
+                    SettingsCard {
+                        SettingsClickableItem(
+                            icon = Icons.AutoMirrored.Filled.ExitToApp,
+                            title = "Terminar Sessão",
+                            description = "Sair da aplicação",
+                            onClick = {
+                                scope.launch {
+                                    try {
+                                        authRepository.logout()
+                                    } catch (e: Exception) {
+                                    }
+
+                                    NavigationService.resetTo(Screen.Login)
                                 }
-                                NavigationService.resetTo(Screen.Login) // Vai para login
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }

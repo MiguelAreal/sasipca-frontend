@@ -17,9 +17,13 @@ object ScreenSizeManager {
         _screenHeight.value = heightDp
     }
 
-    /** Returns true if the screen width is considered small. */
+    /**
+     * Retorna true se o tamanho do ecrã é considerado pequeno.
+     */
     fun isSmallScreen(): Boolean = _screenWidth.value < 800.dp
 
-    /** Returns true if the screen width is considered large. */
+    /**
+     * Retorna true se o tamanho do ecrã é considerado grande.
+     */
     fun isLargeScreen(): Boolean = _screenWidth.value >= 800.dp
 }
