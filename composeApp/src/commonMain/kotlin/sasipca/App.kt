@@ -4,14 +4,13 @@ import MainScreen
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import sasipca.navigation.NavigationService
 import sasipca.navigation.Screen
+import sasipca.repositories.ListsRepository
 import sasipca.screens.*
 import sasipca.storage.SessionManager
 import sasipca.storage.SettingsManager
@@ -21,6 +20,7 @@ import sasipca.ui.theme.SasIpcaTheme
 import sasipca.utils.HandleBackNavigation
 import sasipca.utils.SnackbarManager
 import sasipca.utils.SnackbarMessage
+import sasipca.utils.SnackbarType
 
 /**
  * Método de inicialização da app.
@@ -81,6 +81,8 @@ private fun InitializeApp(
     snackbarState: MutableState<SnackbarMessage?>,
     scope: CoroutineScope
 ) {
+    val listsRepository = ApiClient.listsRepository
+
     // Inicializar Snackbar
     LaunchedEffect(Unit) {
         SnackbarManager.snackbarState = snackbarState
@@ -90,6 +92,13 @@ private fun InitializeApp(
     // Inicializar sessão e tema
     LaunchedEffect(Unit) {
         onThemeLoaded(SettingsManager.isDarkTheme())
+
+        try {
+            listsRepository.loadLists()
+        } catch (e: Exception) {
+            SnackbarManager.show("Falha ao carregar listas.", SnackbarType.ERROR)
+        }
+
 
         val refreshToken = SessionManager.getRefreshToken()
         if (refreshToken != null) {

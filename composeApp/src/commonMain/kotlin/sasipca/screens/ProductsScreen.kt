@@ -20,11 +20,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import sasipca.models.ProductItemDTO
+import sasipca.models.ProductItemUI
 import sasipca.repositories.ProductRepository
 import sasipca.ui.components.Header
 import sasipca.utils.getFormattedDatePt
@@ -140,18 +139,8 @@ fun ProductsScreen(productRepository: ProductRepository) {
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
                 items(filteredItems) { item ->
-                    ProductItemCardGrid(
-                        ProductItemDTO(
-                            barcode = item.barcode,
-                            name = item.name,
-                            category = item.category,
-                            unit = item.unit,
-                            unitSize = item.unitSize,
-                            totalQuantity = item.totalQuantity,
-                            reservedQuantity = item.reservedQuantity,
-                            availableStock = item.availableStock
-                        )
-                    )
+                    ProductItemCardGrid(item)
+
                 }
             }
         }
@@ -159,7 +148,7 @@ fun ProductsScreen(productRepository: ProductRepository) {
 }
 
 @Composable
-fun StockItemCard(item: ProductItemDTO) {
+fun StockItemCard(item: ProductItemUI) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -183,14 +172,14 @@ fun StockItemCard(item: ProductItemDTO) {
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = item.category,
+                    text = item.categoryName, // antes era categoryId.toString()
                     fontSize = 14.sp,
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
 
             Text(
-                text = "${item.availableStock} ${item.unit}",
+                text = "${item.availableStock} ${item.unitName}", // antes era unitId
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -199,7 +188,7 @@ fun StockItemCard(item: ProductItemDTO) {
 }
 
 @Composable
-fun ProductItemCardGrid(item: ProductItemDTO) {
+fun ProductItemCardGrid(item: ProductItemUI) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -222,14 +211,14 @@ fun ProductItemCardGrid(item: ProductItemDTO) {
                     maxLines = 2
                 )
                 Text(
-                    text = item.category,
+                    text = item.categoryName, // antes categoryId.toString()
                     fontSize = 13.sp,
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
 
             Text(
-                text = "${item.availableStock} ${item.unit}",
+                text = "${item.availableStock} ${item.unitName}", // antes unitId
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )

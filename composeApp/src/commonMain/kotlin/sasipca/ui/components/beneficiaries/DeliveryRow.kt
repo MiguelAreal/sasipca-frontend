@@ -45,7 +45,7 @@ fun DeliveryRow(
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
-            text = delivery.status ?: "N/A",
+            text = delivery.statusId.toString() ?: "N/A",
             modifier = Modifier.weight(0.3f),
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurface

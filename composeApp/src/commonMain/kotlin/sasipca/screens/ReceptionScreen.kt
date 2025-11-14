@@ -35,19 +35,20 @@ import kotlinx.coroutines.launch
 import sasipca.models.Category
 import sasipca.models.LotToEnter
 import sasipca.models.UnitType
-import sasipca.storage.ScreenSizeManager
 import sasipca.storage.ScreenSizeManager.isLargeScreen
 import sasipca.ui.components.ImagePopup
 import sasipca.ui.components.LoadingWidget
 import sasipca.ui.components.products.LotCard
 import kotlin.collections.plus
+import sasipca.storage.ListsStore
+import sasipca.ui.components.products.ProductImagesCarousel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReceptionScreen() {
     var barcode by remember { mutableStateOf("") }
     var productName by remember { mutableStateOf("") }
-    var imageUrl by remember { mutableStateOf<String?>(null) }
+    var images by remember { mutableStateOf(listOf<String>()) }
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var selectedUnit by remember { mutableStateOf<UnitType?>(null) }
     var unitSize by remember { mutableStateOf("") }
@@ -59,18 +60,17 @@ fun ReceptionScreen() {
     var lotsExpanded by remember { mutableStateOf(true) }
 
 
-    // Dummies, assume they come from a ViewModel or similar
-    val categories = listOf(
-        Category(1, "Alimento"),
-        Category(2, "Higiene"),
-        Category(3, "Higiene Doméstica")
-    )
+    val categories: List<Category> by remember {
+        derivedStateOf {
+            ListsStore.categories.map { Category(it.id, it.type) }
+        }
+    }
 
-    val units = listOf(
-        UnitType(1, "g"),
-        UnitType(2, "un"),
-        UnitType(3, "ml")
-    )
+    val units: List<UnitType> by remember {
+        derivedStateOf {
+            ListsStore.unitTypes.map { UnitType(it.id, it.type) }
+        }
+    }
 
     val offRepository = remember { OFFRepository(ApiClient.client) }
     val scope = rememberCoroutineScope()
@@ -79,7 +79,7 @@ fun ReceptionScreen() {
         // Reset product info when barcode changes
         if (barcode.length > 0) {
             productName = ""
-            imageUrl = null
+            images = emptyList()
             selectedCategory = null
             selectedUnit = null
             unitSize = ""
@@ -93,13 +93,12 @@ fun ReceptionScreen() {
 
                         if (product != null) {
                             productName = product.product_name ?: ""
-                            imageUrl = product.image_url
+                            images = product.images
                             unitSize = product.product_quantity?.toString() ?: ""
                             unitType = product.product_quantity_unit ?: ""
 
-                            selectedUnit = units.find {
-                                it.name.equals(unitType, ignoreCase = true)
-                            }
+                            selectedUnit = units.find { it.name.equals(unitType, ignoreCase = true) }
+
                         }
                     } finally {
                         isLoading = false
@@ -161,7 +160,7 @@ fun ReceptionScreen() {
                             ProductInfoSection(
                                 productName = productName,
                                 onProductNameChange = { productName = it },
-                                imageUrl = imageUrl,
+                                images = images,
                                 selectedCategory = selectedCategory,
                                 onCategorySelect = { selectedCategory = it },
                                 categories = categories,
@@ -239,7 +238,7 @@ fun ReceptionScreen() {
                             ProductInfoSection(
                                 productName = productName,
                                 onProductNameChange = { productName = it },
-                                imageUrl = imageUrl,
+                                images = images,
                                 selectedCategory = selectedCategory,
                                 onCategorySelect = { selectedCategory = it },
                                 categories = categories,
@@ -361,7 +360,7 @@ fun ReceptionScreen() {
 fun ProductInfoSection(
     productName: String,
     onProductNameChange: (String) -> Unit,
-    imageUrl: String?,
+    images: List<String>,
     selectedCategory: Category?,
     onCategorySelect: (Category?) -> Unit,
     categories: List<Category>,
@@ -420,23 +419,18 @@ fun ProductInfoSection(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         verticalAlignment = Alignment.Top
                     ) {
-                        if (imageUrl != null) {
-                            Card(
+                        if (images.isNotEmpty()) {
+                            ProductImagesCarousel(
+                                images = images,
                                 modifier = Modifier
-                                    .weight(1f)
-                                    .height(200.dp)
-                            ) {
-                                AsyncImage(
-                                    model = imageUrl,
-                                    contentDescription = "Imagem do produto",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
-                            }
+                                    .weight(1f)  // ocupa proporcionalmente
+                                    .height(250.dp) // controla a altura
+                            )
                         }
 
+
                         Column(
-                            modifier = if (imageUrl != null) Modifier.weight(2f) else Modifier.fillMaxWidth(),
+                            modifier = if (images.isNotEmpty()) Modifier.weight(2f) else Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             OutlinedTextField(
@@ -530,29 +524,10 @@ fun ProductInfoSection(
                         fontSize = 16.sp
                     )
 
-                    if (imageUrl != null) {
-                        // Container clicável para abrir popup
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp)
-                                .clickable { showImagePopup = true } // Abre popup ao clicar
-                        ) {
-                            AsyncImage(
-                                model = imageUrl,
-                                contentDescription = "Imagem do produto",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-
-                        // Mostrar popup se clicado
-                        if (showImagePopup) {
-                            ImagePopup(
-                                imageUrl = imageUrl,
-                                onDismiss = { showImagePopup = false }
-                            )
-                        }
+                    if (images.isNotEmpty()) {
+                        ProductImagesCarousel(images = images,Modifier
+                            .fillMaxWidth()
+                            .height(200.dp))
                     }
 
 

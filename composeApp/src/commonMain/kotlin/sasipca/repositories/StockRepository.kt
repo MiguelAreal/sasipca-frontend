@@ -11,7 +11,7 @@ class StockRepository(private val client: HttpClient) {
     /**
      * Consulta entregas com filtros opcionais
      */
-    suspend fun getDeliveries(query: DeliveryQueryDTO? = null): List<VDeliveryDTO> {
+    suspend fun getDeliveries(query: DeliveryGetDTO? = null): List<VDeliveryDTO> {
         val url = buildString {
             append("${ApiConfig.baseUrl()}/stock/delivery")
             query?.let {
@@ -26,12 +26,14 @@ class StockRepository(private val client: HttpClient) {
     }
 
     /**
-     * Cria/Agenda uma nova entrega para uma data específica
+     * Agenda uma nova entrega para uma data específica.
+     *
+     * Cria uma entrega imediata.
      */
-    suspend fun scheduleDelivery(dto: DeliveryCreationDTO): VDeliveryDTO {
+    suspend fun scheduleDelivery(dto: DeliveryCreationDTO, instant: Boolean): VDeliveryDTO {
         return client.requestWithAuth(
             method = HttpMethod.Post,
-            url = "${ApiConfig.baseUrl()}/stock/delivery/schedule",
+            url = "${ApiConfig.baseUrl()}/stock/delivery",
             body = dto
         )
     }

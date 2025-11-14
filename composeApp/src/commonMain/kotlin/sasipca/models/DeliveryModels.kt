@@ -13,7 +13,7 @@ data class DeliveryCreationDTO(
 @Serializable
 data class DeliveryUpdateDTO(
     val scheduledDate: String? = null,
-    val newStatus: Int? = null, // 1=Agendada, 2=Entregue, 3=Cancelada
+    val newStatusId: Int? = null, // 1=Agendada, 2=Entregue, 3=Cancelada
     val note: String? = null,
     val itemsToDeliver: List<DeliveryItemDTO>
 )
@@ -26,7 +26,7 @@ data class DeliveryItemDTO(
 )
 
 @Serializable
-data class DeliveryQueryDTO(
+data class DeliveryGetDTO(
     val statusId: Int? = null,
     val beneficiaryId: Int? = null,
     val dateFrom: String? = null, // formato ISO "2025-01-01"
@@ -34,13 +34,13 @@ data class DeliveryQueryDTO(
 )
 
 /**
- * Representa uma entrega devolvida pela API (View VDelivery)
+ * Representa uma entrega vinda da API (View VDelivery)
  */
 @Serializable
 data class VDeliveryDTO(
     val deliveryId: Int,
     val scheduledDate: String,
-    val status: String,
+    val statusId: Int,
     val note: String? = null,
     val userId: Int,
     val userName: String? = null,

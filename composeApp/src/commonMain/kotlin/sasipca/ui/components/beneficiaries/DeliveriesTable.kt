@@ -56,7 +56,7 @@ fun DeliveriesTable(
     val sortedDeliveries = remember(deliveries, sortColumn, sortDirection) {
         val sorted = when (sortColumn) {
             SortColumn.USERNAME -> deliveries.sortedBy { it.userName ?: "" }
-            SortColumn.STATUS -> deliveries.sortedBy { it.status }
+            SortColumn.STATUS -> deliveries.sortedBy { it.statusId }
             SortColumn.SCHEDULED_DATE -> deliveries.sortedBy { it.scheduledDate }
         }
         if (sortDirection == SortDirection.DESCENDING) sorted.reversed() else sorted

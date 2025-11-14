@@ -1,10 +1,10 @@
 package sasipca.repositories
 
 import sasipca.models.PaginatedResponse
-import sasipca.models.ProductItemDTO
 import sasipca.storage.ApiConfig
 import io.ktor.client.*
 import io.ktor.http.*
+import sasipca.models.ProductItem
 import sasipca.storage.requestWithAuth
 
 class ProductRepository(private val client: HttpClient) {
@@ -14,7 +14,7 @@ class ProductRepository(private val client: HttpClient) {
         pageNumber: Int = 1,
         pageSize: Int = 10,
         orderBy: String = "asc"
-    ): PaginatedResponse<ProductItemDTO> {
+    ): PaginatedResponse<ProductItem> {
 
         return client.requestWithAuth(
             method = HttpMethod.Get,

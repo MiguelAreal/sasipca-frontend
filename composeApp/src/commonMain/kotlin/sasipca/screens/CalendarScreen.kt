@@ -97,7 +97,7 @@ fun CalendarScreen(stockRepository: StockRepository) {
                         beneficiaryId = 0,
                         beneficiaryName = null,
                         scheduledDate = date.toString(),
-                        status = "Agendada",
+                        statusId = 1,
                         note = null,
                         userId = 0,
                         userName = null
@@ -121,7 +121,8 @@ fun CalendarScreen(stockRepository: StockRepository) {
                                 scheduledDate = updated.scheduledDate, // já é String ISO
                                 note = updated.note,
                                 itemsToDeliver = emptyList() // TODO: substituir por itens reais quando disponível
-                            )
+                            ),
+                            true
                         )
                     } else {
                         // Atualizar entrega existente
@@ -129,11 +130,7 @@ fun CalendarScreen(stockRepository: StockRepository) {
                             updated.deliveryId,
                             DeliveryUpdateDTO(
                                 scheduledDate = updated.scheduledDate,
-                                newStatus = when (updated.status.lowercase()) {
-                                    "entregue" -> 2
-                                    "cancelada" -> 3
-                                    else -> 1
-                                },
+                                newStatusId = updated.statusId,
                                 note = updated.note,
                                 itemsToDeliver = emptyList() // TODO: substituir por itens reais quando disponível
                             )
@@ -346,7 +343,7 @@ fun EventPickerDialog(
                                         fontWeight = FontWeight.Medium
                                     )
                                     Text(
-                                        dto.status ?: "Agendada",
+                                        dto.statusId.toString() ?: "Agendada",
                                         fontSize = 12.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -383,7 +380,7 @@ fun EventEditorDialog(
     var beneficiaryId by remember { mutableStateOf(initial.beneficiaryId.toString()) }
     var date by remember { mutableStateOf(initial.scheduledDate) }
     var note by remember { mutableStateOf(initial.note ?: "") }
-    var status by remember { mutableStateOf(initial.status) }
+    var statusId by remember { mutableStateOf(initial.statusId) }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -457,9 +454,11 @@ fun EventEditorDialog(
 
                 // Campo de estado textual (Agendada, Entregue, Cancelada)
                 OutlinedTextField(
-                    value = status,
-                    onValueChange = { status = it },
-                    label = { Text("Estado") },
+                    value = statusId.toString(),
+                    onValueChange = { input ->
+                        statusId = input.filter(Char::isDigit).toIntOrNull() ?: statusId
+                    },
+                    label = { Text("Estado (ID)") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -477,7 +476,7 @@ fun EventEditorDialog(
                             beneficiaryId = beneficiaryId.toIntOrNull() ?: 0,
                             scheduledDate = date,
                             note = note.ifBlank { null },
-                            status = status
+                            statusId = statusId
                         )
                         onSave(updated)
                     }) {

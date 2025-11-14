@@ -4,6 +4,7 @@ import io.ktor.client.*
 import sasipca.models.AuthResponse
 import sasipca.repositories.AuthRepository
 import sasipca.repositories.BeneficiaryRepository
+import sasipca.repositories.ListsRepository
 import sasipca.repositories.ProductRepository
 import sasipca.repositories.StockRepository
 
@@ -22,17 +23,21 @@ object ApiClient {
     lateinit var beneficiaryRepository: BeneficiaryRepository
         private set
 
+    lateinit var listsRepository: ListsRepository
+        private set
+
     fun init() {
-        // 1️⃣ Criar HttpClient sem lógica de refresh automática
+        // Criar HttpClient sem lógica de refresh automática
         client = createHttpClient()
 
-        // 2️⃣ Criar o AuthRepository com o client
+        // Criar o AuthRepository com o client
         authRepository = AuthRepository(client)
 
-        // 3️⃣ Criar os restantes repositórios
+        // Criar os restantes repositórios
         stockRepository = StockRepository(client)
         productRepository = ProductRepository(client)
         beneficiaryRepository = BeneficiaryRepository(client)
+        listsRepository = ListsRepository(client)
     }
 
     suspend fun refreshToken(): Result<AuthResponse> {

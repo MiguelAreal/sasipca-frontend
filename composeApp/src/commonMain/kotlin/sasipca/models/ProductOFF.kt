@@ -20,6 +20,15 @@ data class Product(
     var product_quantity: Double? = null,
     var product_quantity_unit: String? = null,
     val image_url: String? = null,
-
+    val image_front_url: String? = null,
+    val image_ingredients_url: String? = null,
+    val image_packaging_url: String? = null,
     val brands: String? = null
-)
+) {
+    // Lista de imagens que junta todas as imagens do objeto
+    val images: List<String>
+        get() = listOfNotNull(image_front_url, image_url, image_ingredients_url, image_packaging_url)
+}
+
+
+

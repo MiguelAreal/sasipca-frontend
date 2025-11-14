@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import sasipca.models.DeliveryCreationDTO
-import sasipca.models.DeliveryQueryDTO
+import sasipca.models.DeliveryGetDTO
 import sasipca.models.DeliveryUpdateDTO
 import sasipca.models.VDeliveryDTO
 import java.time.LocalDate
@@ -29,15 +29,16 @@ class DeliveriesViewModel(private val stockRepository: StockRepository) : ViewMo
     val isLoading: StateFlow<Boolean> = _isLoading
 
     /**
-     * Get all deliveries done to a specific beneficiary.
-     * Used for beneficiary profile.
+     * Busca todas as entregas feitas a um beneficiário.
+     *
+     * Usado pelo beneficiary profile.
      */
     fun loadBeneficiaryDeliveries(beneficiaryId: Int) {
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
             runCatching {
                 stockRepository.getDeliveries(
-                    DeliveryQueryDTO(
+                    DeliveryGetDTO(
                         beneficiaryId = beneficiaryId
                     )
                 )
@@ -51,15 +52,16 @@ class DeliveriesViewModel(private val stockRepository: StockRepository) : ViewMo
     }
 
     /**
-     * Get all deliveries planned for a specific month time-period.
-     * Used by calendar widget.
+     * Busca todas as entregas planeadas para um período de meses específico.
+     *
+     * Usado pelo calendar widget.
      */
     fun loadMonthDeliveries(month: YearMonth = _month.value) {
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
             runCatching {
                 stockRepository.getDeliveries(
-                    DeliveryQueryDTO(
+                    DeliveryGetDTO(
                         dateFrom = month.atDay(1).toString(),
                         dateTo = month.atEndOfMonth().toString()
                     )
@@ -75,12 +77,14 @@ class DeliveriesViewModel(private val stockRepository: StockRepository) : ViewMo
 
 
     /**
-     * Schedule a new delivery.
+     * Agenda nova entrega (instant = false)
+     *
+     * Executa nova entrega imediatamente (instant = true)
      */
-    fun scheduleDelivery(dto: DeliveryCreationDTO) {
+    fun scheduleDelivery(dto: DeliveryCreationDTO, instant: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                stockRepository.scheduleDelivery(dto)
+                stockRepository.scheduleDelivery(dto,instant)
             }.onSuccess {
                 loadMonthDeliveries(_month.value)
             }
@@ -88,7 +92,7 @@ class DeliveriesViewModel(private val stockRepository: StockRepository) : ViewMo
     }
 
     /**
-     * Update an existing delivery.
+     * Update a entrega agendada existente.
      */
     fun updateDelivery(deliveryId: Int, dto: DeliveryUpdateDTO) {
         viewModelScope.launch(Dispatchers.IO) {
