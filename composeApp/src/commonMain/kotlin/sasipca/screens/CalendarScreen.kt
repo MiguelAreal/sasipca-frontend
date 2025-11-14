@@ -274,13 +274,13 @@ fun FutureDeliveriesList(
 ) {
     Column(modifier = modifier) {
         if (isLargeScreen()){
-        Text(
-            text = "Entregas Futuras",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+            Text(
+                text = "Entregas Futuras",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
         )
-            }
+        }
 
         if (deliveries.isEmpty()) {
             Box(

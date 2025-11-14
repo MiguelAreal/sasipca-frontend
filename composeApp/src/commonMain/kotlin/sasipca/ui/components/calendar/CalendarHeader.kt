@@ -53,7 +53,7 @@ fun CalendarHeader(
             // 🔹 Left side: navigation controls
             Row(verticalAlignment = Alignment.CenterVertically) {
 
-                if (isSmallScreen()) {
+                if (small) {
                     // Small-screen version: Icon only
                     IconButton(
                         onClick = onToday,

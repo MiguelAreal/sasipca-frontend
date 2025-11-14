@@ -6,6 +6,7 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.serialization.json.Json
+import sasipca.utils.UnitConverter
 
 class OFFRepository(private val client: HttpClient) {
     private val json = Json {
@@ -24,7 +25,22 @@ class OFFRepository(private val client: HttpClient) {
 
             if (response.status == HttpStatusCode.OK) {
                 val body = response.bodyAsText()
-                json.decodeFromString<ProductOFFResponse>(body)
+                val productResponse = json.decodeFromString<ProductOFFResponse>(body)
+
+                productResponse.product?.let { p ->
+                    val normalized = UnitConverter.normalize(
+                        p.product_quantity?.toDouble(),
+                        p.product_quantity_unit
+                    )
+
+                    if (normalized != null) {
+                        // Atualiza diretamente o modelo original
+                        p.product_quantity = normalized.value
+                        p.product_quantity_unit = normalized.unit
+                    }
+                }
+
+                productResponse
             } else {
                 null
             }
@@ -33,4 +49,5 @@ class OFFRepository(private val client: HttpClient) {
             null
         }
     }
+
 }

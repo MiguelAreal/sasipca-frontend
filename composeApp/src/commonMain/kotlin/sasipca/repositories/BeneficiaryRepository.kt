@@ -52,7 +52,7 @@ class BeneficiaryRepository(private val client: HttpClient) {
         return client.requestWithAuth(
             method = HttpMethod.Put,
             url = "${ApiConfig.baseUrl()}/beneficiaries/$beneficiaryId",
-            body = dto
+            body = dto,
         )
     }
 }

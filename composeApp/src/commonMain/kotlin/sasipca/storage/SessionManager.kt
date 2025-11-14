@@ -3,6 +3,7 @@ package sasipca.storage
 import com.russhwolf.settings.Settings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import sasipca.navigation.NavigationService
 import kotlin.time.ExperimentalTime
 
 object SessionManager {
@@ -22,6 +23,9 @@ object SessionManager {
                 settings.getStringOrNull("user_name") != null
     }
 
+    /**
+     * Guarda dados do utilizador localmente
+     */
     @OptIn(ExperimentalTime::class)
     fun saveSession(
         token: String,
@@ -38,15 +42,9 @@ object SessionManager {
 
     fun getAccessToken(): String? = settings.getStringOrNull("access_token")
     fun getRefreshToken(): String? = settings.getStringOrNull("refresh_token")
-    fun getUserId(): Int? = settings.getIntOrNull("user_id")
     fun getUserName(): String? = settings.getStringOrNull("user_name")
-
     fun setAccessToken(newToken: String) {
         settings.putString("access_token", newToken)
-    }
-
-    fun setRefreshToken(newToken: String) {
-        settings.putString("refresh_token", newToken)
     }
 
     /**
@@ -63,5 +61,8 @@ object SessionManager {
         settings.remove("user_id")
         settings.remove("user_name")
         _isLoggedIn.value = false
+
+        //Aproveita e faz reset aos separadores
+        NavigationService.resetMainTabIndex()
     }
 }

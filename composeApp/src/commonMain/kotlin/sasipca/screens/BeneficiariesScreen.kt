@@ -32,6 +32,7 @@ enum class BeneficiaryViewMode {
     LIST, GRID
 }
 
+@Suppress("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BeneficiariesScreen(

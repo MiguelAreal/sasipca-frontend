@@ -51,6 +51,11 @@ object NavigationService {
     var previousScreen by mutableStateOf<Screen?>(null)
         private set
 
+    var mainScreenTabIndex by mutableStateOf(0)
+    fun resetMainTabIndex() {
+        mainScreenTabIndex = 0
+    }
+
     /** Navega para um ecrã e guarda o atual no histórico */
     fun navigateTo(screen: Screen) {
         previousScreen = currentScreen

@@ -16,7 +16,7 @@ suspend inline fun <reified T> HttpClient.requestWithAuth(
     url: String,
     body: Any? = null
 ): T {
-    // 🚫 Não aplicar refresh automático se for o próprio pedido de refresh
+    // Não aplicar refresh automático se for o próprio pedido de refresh
     val isRefreshRequest = attributes.contains(RefreshTokenRequestKey)
     if (isRefreshRequest) {
         val response = request(url) {
@@ -80,6 +80,10 @@ suspend fun executeRequest(
     return client.request(url) {
         this.method = method
         header(HttpHeaders.Authorization, "Bearer $token")
-        if (body != null) setBody(body)
+
+        if (body != null) {
+            setBody(body)
+            contentType(ContentType.Application.Json)
+        }
     }
 }

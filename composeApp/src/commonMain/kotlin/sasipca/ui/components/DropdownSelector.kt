@@ -27,7 +27,6 @@ fun <T : NamedItem> DropdownSelector(
         onExpandedChange = { expanded = it },
         modifier = modifier
     ) {
-        // CORREÇÃO: Usar ExposedDropdownMenuDefaults.TextFieldDecorationBox para imitar o estilo OutlinedTextField
         OutlinedTextField(
             // O componente que atua como âncora do menu
             modifier = Modifier.menuAnchor().fillMaxWidth(),

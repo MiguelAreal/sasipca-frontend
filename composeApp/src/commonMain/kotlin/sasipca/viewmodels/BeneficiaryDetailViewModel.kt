@@ -72,7 +72,7 @@ class BeneficiaryDetailViewModel(
     /**
      * Atualiza um beneficiário existente.
      */
-    fun updateBeneficiary(id: Int, dto: BeneficiaryPostDTO, onSuccess: (() -> Unit)? = null) {
+    fun updateBeneficiary(id: Int, dto: BeneficiaryPostDTO) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 isLoading = true
@@ -81,7 +81,6 @@ class BeneficiaryDetailViewModel(
                     message = response.message ?: "Beneficiário atualizado com sucesso.",
                     type = SnackbarType.SUCCESS
                 )
-                onSuccess?.invoke()
             } catch (e: Exception) {
                 SnackbarManager.show(
                     message = e.message ?: "Erro ao atualizar beneficiário.",

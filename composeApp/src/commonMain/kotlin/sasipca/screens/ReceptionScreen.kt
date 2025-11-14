@@ -13,17 +13,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -39,7 +35,10 @@ import kotlinx.coroutines.launch
 import sasipca.models.Category
 import sasipca.models.LotToEnter
 import sasipca.models.UnitType
-import sasipca.ui.components.NamedItem
+import sasipca.storage.ScreenSizeManager
+import sasipca.storage.ScreenSizeManager.isLargeScreen
+import sasipca.ui.components.ImagePopup
+import sasipca.ui.components.LoadingWidget
 import sasipca.ui.components.products.LotCard
 import kotlin.collections.plus
 
@@ -62,15 +61,15 @@ fun ReceptionScreen() {
 
     // Dummies, assume they come from a ViewModel or similar
     val categories = listOf(
-        Category(1, "Alimentos"),
-        Category(2, "Higiene")
+        Category(1, "Alimento"),
+        Category(2, "Higiene"),
+        Category(3, "Higiene Doméstica")
     )
 
     val units = listOf(
-        UnitType(1, "Kg"),
-        UnitType(2, "L"),
-        UnitType(3, "ml"),
-        UnitType(4, "Uni")
+        UnitType(1, "g"),
+        UnitType(2, "un"),
+        UnitType(3, "ml")
     )
 
     val offRepository = remember { OFFRepository(ApiClient.client) }
@@ -110,12 +109,7 @@ fun ReceptionScreen() {
         }
     }
 
-    BoxWithConstraints(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        val isWideScreen = maxWidth >= 800.dp
-
-        Column(
+           Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
@@ -123,8 +117,8 @@ fun ReceptionScreen() {
             Header(title = "Receção de Stock")
 
             Box(modifier = Modifier.fillMaxSize()) {
-                if (isWideScreen) {
-                    // CÓDIGO DO MODO ECRÃ GRANDE (DESKTOP)
+
+                if (isLargeScreen()) {
                     Row(
                         modifier = Modifier
                             .fillMaxSize()
@@ -178,7 +172,6 @@ fun ReceptionScreen() {
                                 onUnitSizeChange = { unitSize = it },
                                 note = note,
                                 onNoteChange = { note = it },
-                                isWideScreen = true,
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -256,8 +249,7 @@ fun ReceptionScreen() {
                                 unitSize = unitSize,
                                 onUnitSizeChange = { unitSize = it },
                                 note = note,
-                                onNoteChange = { note = it },
-                                isWideScreen = false
+                                onNoteChange = { note = it }
                             )
                         }
 
@@ -356,18 +348,11 @@ fun ReceptionScreen() {
                 }
 
                 if (isLoading) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                    LoadingWidget()
                 }
             }
         }
-    }
+
 }
 
 // --- ProductInfoSection (Cores aplicadas) ---
@@ -387,11 +372,11 @@ fun ProductInfoSection(
     onUnitSizeChange: (String) -> Unit,
     note: String,
     onNoteChange: (String) -> Unit,
-    isWideScreen: Boolean,
     modifier: Modifier = Modifier
 ) {
     val categoryList = remember { mutableStateListOf(*categories.toTypedArray()) }
     val unitList = remember { mutableStateListOf(*units.toTypedArray()) }
+    var showImagePopup by remember { mutableStateOf(false) }
 
     val addCategory: (String) -> Unit = { newName ->
         val newCategory = Category(-1, newName)
@@ -405,7 +390,7 @@ fun ProductInfoSection(
         onUnitSelect(newUnit)
     }
 
-    if (isWideScreen) {
+    if (isLargeScreen()) {
         Column(
             modifier = modifier,
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -530,7 +515,7 @@ fun ProductInfoSection(
         ) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                elevation = CardDefaults.   cardElevation(defaultElevation = 1.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
@@ -546,10 +531,12 @@ fun ProductInfoSection(
                     )
 
                     if (imageUrl != null) {
-                        Card(
+                        // Container clicável para abrir popup
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(200.dp)
+                                .clickable { showImagePopup = true } // Abre popup ao clicar
                         ) {
                             AsyncImage(
                                 model = imageUrl,
@@ -558,7 +545,16 @@ fun ProductInfoSection(
                                 contentScale = ContentScale.Crop
                             )
                         }
+
+                        // Mostrar popup se clicado
+                        if (showImagePopup) {
+                            ImagePopup(
+                                imageUrl = imageUrl,
+                                onDismiss = { showImagePopup = false }
+                            )
+                        }
                     }
+
 
                     OutlinedTextField(
                         value = productName,

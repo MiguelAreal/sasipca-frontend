@@ -17,6 +17,7 @@ import sasipca.screens.HomeScreen
 import sasipca.screens.ProductsScreen
 import sasipca.screens.ProfileScreen
 import kotlinx.coroutines.launch
+import sasipca.navigation.NavigationService
 import sasipca.repositories.BeneficiaryRepository
 import sasipca.screens.BeneficiariesScreen
 
@@ -28,10 +29,14 @@ fun MainScreen(stockRepository: StockRepository,
 {
     val tabs = listOf(Screen.Home, Screen.Products, Screen.Calendar, Screen.Beneficiaries)
     val pagerState = rememberPagerState(
-        initialPage = 0,
+        initialPage = NavigationService.mainScreenTabIndex,
         pageCount ={ tabs.size }
     )
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(pagerState.currentPage) {
+        NavigationService.mainScreenTabIndex = pagerState.currentPage
+    }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -68,20 +73,26 @@ fun MainScreen(stockRepository: StockRepository,
     ) { paddingValues ->
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier = Modifier.fillMaxSize().padding(paddingValues)
         ) { page ->
-            when (tabs[page]) {
-                Screen.Home -> HomeScreen()
-                Screen.Products -> ProductsScreen(productRepository)
-                Screen.Calendar -> CalendarScreen(stockRepository)
-                Screen.Beneficiaries -> BeneficiariesScreen(
-                    beneficiaryRepository = beneficiaryRepository,
-                    onOpenBeneficiary = onOpenBeneficiary
-                )
-                else -> Box(modifier = Modifier.fillMaxSize())
+            val screen = tabs[page]
+
+            // Só compõe a página atual
+            if (page == pagerState.currentPage) {
+                when (screen) {
+                    Screen.Home -> HomeScreen()
+                    Screen.Products -> ProductsScreen(productRepository)
+                    Screen.Calendar -> CalendarScreen(stockRepository)
+                    Screen.Beneficiaries -> BeneficiariesScreen(
+                        beneficiaryRepository = beneficiaryRepository,
+                        onOpenBeneficiary = onOpenBeneficiary
+                    )
+                    else -> Box(modifier = Modifier.fillMaxSize())
+                }
+            } else {
+                Box(modifier = Modifier.fillMaxSize())
             }
         }
+
     }
 }
