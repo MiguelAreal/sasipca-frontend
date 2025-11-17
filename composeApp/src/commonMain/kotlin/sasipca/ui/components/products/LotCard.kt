@@ -1,6 +1,5 @@
 package sasipca.ui.components.products
 
-import ValidatedTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,9 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -20,7 +17,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -36,6 +32,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import sasipca.models.LotToEnter
+import sasipca.ui.components.ValidatedDateField
+import sasipca.ui.components.ValidatedTextField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,9 +45,6 @@ fun LotCard(
     canRemove: Boolean,
     errors: Map<String, String> = emptyMap()
 ) {
-    val datePickerState = rememberDatePickerState()
-    var showDatePicker by remember { mutableStateOf(false) }
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
@@ -67,11 +62,15 @@ fun LotCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "Lote ${index + 1}",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
+
+                val title = if (lot.lot.isBlank()) {
+                    "Lote ${index + 1}"
+                } else {
+                    "Lote ${lot.lot}"
+                }
+
+                Text(text = title, style = MaterialTheme.typography.titleSmall)
+
                 if (canRemove) {
                     IconButton(
                         onClick = onRemove,
@@ -95,7 +94,7 @@ fun LotCard(
                 ValidatedTextField(
                     value = lot.lot,
                     onValueChange = { onLotChange(lot.copy(lot = it)) },
-                    label = "Nº Lote",
+                    label = "Lote",
                     maxLength = 255,
                     error = errors["lot_$index.lot"],
                     modifier = Modifier.weight(1f)
@@ -114,46 +113,15 @@ fun LotCard(
             }
 
             // Data de validade
-            ValidatedTextField(
+            ValidatedDateField(
                 value = lot.expiryDate,
-                onValueChange = {},
+                onValueChange = { onLotChange(lot.copy(expiryDate = it)) },
                 label = "Data de Validade",
                 error = errors["lot_$index.expiryDate"],
-                modifier = Modifier.fillMaxWidth(),
-                keyboardType = KeyboardType.Number // mantém mas não permite digitar diretamente
+                modifier = Modifier.fillMaxWidth()
             )
 
-            IconButton(onClick = { showDatePicker = true }) {
-                Icon(
-                    imageVector = Icons.Default.CalendarMonth,
-                    contentDescription = "Selecionar data"
-                )
-            }
-        }
-    }
 
-    if (showDatePicker) {
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        datePickerState.selectedDateMillis?.let { millis ->
-                            val date = java.text.SimpleDateFormat(
-                                "dd/MM/yyyy",
-                                java.util.Locale.getDefault()
-                            ).format(java.util.Date(millis))
-                            onLotChange(lot.copy(expiryDate = date))
-                        }
-                        showDatePicker = false
-                    }
-                ) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
-            }
-        ) {
-            DatePicker(state = datePickerState)
         }
     }
 }

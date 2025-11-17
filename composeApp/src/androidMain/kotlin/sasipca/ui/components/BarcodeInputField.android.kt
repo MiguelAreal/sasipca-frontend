@@ -20,12 +20,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
+import sasipca.ui.theme.UnderlineError
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 actual fun BarcodeInputField(
     barcode: String,
-    onBarcodeScanned: (String) -> Unit
+    onBarcodeScanned: (String) -> Unit,
+    error: String?,
 ) {
     var showScanner by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -40,7 +42,7 @@ actual fun BarcodeInputField(
         value = barcode,
         onValueChange = { onBarcodeScanned(it) },
         modifier = Modifier.fillMaxWidth(),
-        placeholder = { Text("Ex.: 7898765430018", color = Color(0xFF999999)) },
+        placeholder = { Text("Ex.: 7898765430018") },
         singleLine = true,
         trailingIcon = {
             IconButton(onClick = {
@@ -54,6 +56,9 @@ actual fun BarcodeInputField(
             }
         }
     )
+    if (error != null) {
+        UnderlineError(error)
+    }
 
     // Overlay com o scanner em Dialog (50% da tela)
     if (showScanner) {

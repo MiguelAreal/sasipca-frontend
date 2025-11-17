@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import sasipca.ApiClient
 import sasipca.models.ActiveCampaigns
@@ -37,8 +36,7 @@ import sasipca.ui.components.LoadingWidget
 import sasipca.ui.components.products.LotCard
 import sasipca.ui.components.LotsSection
 import sasipca.ui.components.ReceiptInfoSection
-import sasipca.utils.SnackbarManager
-import sasipca.utils.SnackbarType
+import sasipca.ui.theme.CardTitle
 import sasipca.viewmodels.ProductViewModel
 import sasipca.viewmodels.ReceiptsViewModel
 import kotlin.collections.plus
@@ -48,9 +46,10 @@ import kotlin.collections.plus
 fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: ReceiptRepository) {
 
     val receiptsViewModel = remember { ReceiptsViewModel(receiptRepository) }
-    val scope = rememberCoroutineScope()
     // UI state from viewmodel
     val uiState by receiptsViewModel.uiState.collectAsState()
+    val scope = rememberCoroutineScope()
+
 
     var barcode by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
@@ -134,25 +133,17 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                                     .fillMaxWidth()
                                     .padding(16.dp)
                             ) {
-                                Text(
-                                    "Código de Barras",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
+                                CardTitle("Código de Barras")
                                 Spacer(Modifier.height(8.dp))
                                 BarcodeInputField(
                                     barcode = barcode,
-                                    onBarcodeScanned = { barcode = it }
+                                    onBarcodeScanned = { barcode = it} ,
+                                    uiState.errors["barcode"]
                                 )
-
-                                // show barcode error
-                                uiState.errors["barcode"]?.let { msg ->
-                                    Text(text = msg, color = MaterialTheme.colorScheme.error)
-                                }
                             }
                         }
 
-                        // Product info + campaign + notes (inside ReceiptInfoSection)
+                        // Product info + campaign + notes
                         ReceiptInfoSection(
                             productName = editableName,
                             onProductNameChange = { editableName = it },
@@ -180,6 +171,7 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight(),
+                        verticalArrangement = Arrangement.SpaceBetween
                     ) {
                         LotsSection(
                             lots = lots,
@@ -191,7 +183,8 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                                 if (lots.size > 1) lots = lots.toMutableList().apply { removeAt(index) }
                             },
                             isWideScreen = true,
-                            errors = uiState.errors
+                            errors = uiState.errors,
+                            modifier = Modifier.weight(1f)
                         )
 
                         Spacer(Modifier.height(8.dp))
@@ -219,8 +212,7 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                         ) {
                             Text(
                                 "Registar Receção",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold
+                                fontSize = 16.sp
                             )
                         }
                     }
@@ -246,20 +238,13 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                                     .fillMaxWidth()
                                     .padding(16.dp)
                             ) {
-                                Text(
-                                    "Código de Barras",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
+                                CardTitle("Código de Barras")
                                 Spacer(Modifier.height(8.dp))
                                 BarcodeInputField(
                                     barcode = barcode,
-                                    onBarcodeScanned = { barcode = it }
+                                    onBarcodeScanned = { barcode = it} ,
+                                    uiState.errors["barcode"]
                                 )
-
-                                uiState.errors["barcode"]?.let { msg ->
-                                    Text(text = msg, color = MaterialTheme.colorScheme.error)
-                                }
                             }
                         }
                     }
@@ -303,10 +288,7 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        "Lotes (${lots.size})",
-                                        fontSize = 16.sp
-                                    )
+                                    CardTitle("Lotes (${lots.size})")
                                     Spacer(Modifier.width(8.dp))
                                     Icon(
                                         imageVector = if (lotsExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
@@ -371,8 +353,7 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                         ) {
                             Text(
                                 "Registar Receção",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold
+                                fontSize = 16.sp
                             )
                         }
                     }

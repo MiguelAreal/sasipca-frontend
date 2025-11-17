@@ -5,5 +5,6 @@ import androidx.compose.runtime.Composable
 @Composable
 expect fun BarcodeInputField(
     barcode: String,
-    onBarcodeScanned: (String) -> Unit
+    onBarcodeScanned: (String) -> Unit,
+    error: String? = null,
 )

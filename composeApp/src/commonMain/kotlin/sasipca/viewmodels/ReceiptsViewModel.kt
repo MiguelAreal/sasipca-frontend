@@ -78,7 +78,7 @@ class ReceiptsViewModel(private val receiptRepository: ReceiptRepository) : View
             lotsUi.forEachIndexed { index, l ->
                 val prefix = "lot_$index"
                 if (l.lot.isBlank()) {
-                    errors["$prefix.lot"] = "Nº lote obrigatório"
+                    errors["$prefix.lot"] = "Lote obrigatório"
                 }
                 if (l.quantity.isBlank()) {
                     errors["$prefix.quantity"] = "Quantidade obrigatória"
@@ -88,9 +88,6 @@ class ReceiptsViewModel(private val receiptRepository: ReceiptRepository) : View
                         errors["$prefix.quantity"] = "Quantidade inválida"
                     } else if (qty <= 0) {
                         errors["$prefix.quantity"] = "Quantidade deve ser maior que zero"
-                    } else {
-                        // ok temporariamente, converteremos depois se a data estiver ok
-                        // mas só adicionamos quando data ok
                     }
                 }
 

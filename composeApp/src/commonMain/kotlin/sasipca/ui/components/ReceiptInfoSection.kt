@@ -1,6 +1,5 @@
 package sasipca.ui.components
 
-import ValidatedTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -20,12 +18,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import sasipca.models.ActiveCampaigns
 import sasipca.models.Category
 import sasipca.models.UnitType
 import sasipca.storage.ScreenSizeManager.isLargeScreen
 import sasipca.ui.components.products.ProductImagesCarousel
+import sasipca.ui.theme.CardTitle
 
 @Composable
 fun ReceiptInfoSection(
@@ -66,7 +64,7 @@ fun ReceiptInfoSection(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text("Informações do Produto", fontSize = 16.sp)
+                    CardTitle("Informações do Produto")
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -115,7 +113,8 @@ fun ReceiptInfoSection(
                                     label = "Quantidade",
                                     error = errors["unitSize"],
                                     maxLength = 11,
-                                    keyboardType = KeyboardType.Number
+                                    keyboardType = KeyboardType.Number,
+                                    modifier = Modifier.weight(1f),
                                 )
                             }
                         }
@@ -126,7 +125,7 @@ fun ReceiptInfoSection(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("Associar Campanha", fontSize = 16.sp)
+                    CardTitle("Associar Campanha")
                     ValidatedDropdown(
                         label = "Campanha",
                         items = campaigns,
@@ -141,16 +140,7 @@ fun ReceiptInfoSection(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("Observações", fontSize = 16.sp)
-                    ValidatedTextField(
-                        value = note,
-                        onValueChange = onNoteChange,
-                        label = "Quantidade",
-                        error = errors["unitSize"],
-                        maxLength = 300,
-                        keyboardType = KeyboardType.Number,
-                        modifier = Modifier.fillMaxWidth().height(120.dp),
-                    )
+                    CardTitle("Observações")
                     OutlinedTextField(
                         value = note,
                         onValueChange = onNoteChange,
@@ -178,7 +168,7 @@ fun ReceiptInfoSection(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text("Informações do Produto", fontSize = 16.sp)
+                    CardTitle("Informações do Produto")
                     if (images.isNotEmpty()) {
                         ProductImagesCarousel(
                             images = images,
@@ -237,7 +227,7 @@ fun ReceiptInfoSection(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("Associar Campanha", fontSize = 16.sp)
+                    CardTitle("Associar Campanha")
                     ValidatedDropdown(
                         label = "Campanha",
                         items = campaigns,
@@ -259,7 +249,7 @@ fun ReceiptInfoSection(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("Observações", fontSize = 16.sp)
+                    CardTitle("Observações")
                     OutlinedTextField(
                         value = note,
                         onValueChange = onNoteChange,

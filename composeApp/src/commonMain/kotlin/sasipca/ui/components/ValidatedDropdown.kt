@@ -15,6 +15,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import sasipca.ui.theme.UnderlineError
 
 interface NamedItem {
     val name: String
@@ -51,6 +53,9 @@ fun <T:NamedItem> ValidatedDropdown(
                 onValueChange = {},
                 readOnly = true,
                 label = { Text(label) },
+                singleLine = true,
+                minLines = 1,
+                maxLines = 1,
                 trailingIcon = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         // Ícone do dropdown
@@ -68,7 +73,13 @@ fun <T:NamedItem> ValidatedDropdown(
                     }
                 },
                 isError = error != null,
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(8.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                    cursorColor = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                )
+
             )
 
             ExposedDropdownMenu(
@@ -88,12 +99,7 @@ fun <T:NamedItem> ValidatedDropdown(
         }
 
         if (error != null) {
-            Text(
-                text = error,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-            )
+            UnderlineError(error)
         }
     }
 }

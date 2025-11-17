@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import sasipca.models.LotToEnter
 import sasipca.models.ReceiptLotItem
 import sasipca.ui.components.products.LotCard
+import sasipca.ui.theme.CardTitle
 
 
 @Composable
@@ -39,17 +40,15 @@ fun LotsSection(
     onLotChange: (Int, LotToEnter) -> Unit,
     onRemoveLot: (Int) -> Unit,
     isWideScreen: Boolean,
-    errors: Map<String, String> = emptyMap()
+    errors: Map<String, String> = emptyMap(),
+    modifier: Modifier = Modifier
 ) {
     if (isWideScreen) {
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = modifier.fillMaxWidth()
         ) {
-            // Lots Card (Takes all available space, except for the submit button)
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f), // Takes remaining space
+                modifier = Modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -64,10 +63,7 @@ fun LotsSection(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            "Lotes",
-                            fontSize = 16.sp
-                        )
+                        CardTitle("Lotes")
                         IconButton(onClick = onAddLot) {
                             Icon(
                                 Icons.Outlined.Add,

@@ -170,7 +170,7 @@ fun customTypography(): Typography {
         titleMedium = TextStyle(
             fontFamily = fontFamily,
             fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Medium,
             lineHeight = 24.sp
         ),
         titleSmall = TextStyle(
