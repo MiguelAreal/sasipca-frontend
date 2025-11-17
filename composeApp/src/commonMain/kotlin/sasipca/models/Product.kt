@@ -2,8 +2,12 @@ package sasipca.models
 
 import kotlinx.serialization.Serializable
 
+
+/**
+ * Classe que representa um cabeçalho de produto
+ */
 @Serializable
-data class ProductItem(
+data class Product(
     val barcode: String,
     val name: String,
     val categoryId: Int,
@@ -14,8 +18,14 @@ data class ProductItem(
     val availableStock: Int? = null
 )
 
+
+/**
+ * Classe utilizada para mostrar um cabeçalho de produto no front-end.
+ *
+ * Traduz categoryID e unitID para nomes.
+ */
 @Serializable
-data class ProductItemUI(
+data class ProductUI(
     val barcode: String,
     val name: String,
     val categoryName: String,

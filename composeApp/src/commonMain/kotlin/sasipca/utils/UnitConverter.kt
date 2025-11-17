@@ -1,5 +1,7 @@
 package sasipca.utils
 
+import kotlin.math.roundToInt
+
 /**
  * Normaliza unidades do OpenFoodFacts para formato interno consistente.
  * Exemplo:
@@ -11,9 +13,9 @@ package sasipca.utils
  */
 object UnitConverter {
 
-    data class NormalizedQuantity(val value: Double, val unit: String)
+    data class NormalizedQuantity(val value: Int, val unit: String)
 
-    fun normalize(quantity: Double?, unit: String?): NormalizedQuantity? {
+    fun normalize(quantity: Int?, unit: String?): NormalizedQuantity? {
         if (quantity == null || unit.isNullOrBlank()) return null
 
         val normalized = when (unit.lowercase()) {
@@ -24,7 +26,7 @@ object UnitConverter {
             "ml", "millilitre", "millilitres", "milliliter", "milliliters" -> NormalizedQuantity(quantity, "ml")
             "cl" -> NormalizedQuantity(quantity * 10, "ml")
 
-            "oz" -> NormalizedQuantity(quantity * 28.35, "g")
+            "oz" -> NormalizedQuantity((quantity * 28.35).roundToInt(), "g")
             "unit", "units", "un", "uni" -> NormalizedQuantity(quantity, "un")
 
             else -> NormalizedQuantity(quantity, unit.lowercase()) // fallback

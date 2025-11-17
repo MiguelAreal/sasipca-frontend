@@ -20,683 +20,298 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
+import kotlinx.coroutines.launch
 import sasipca.ApiClient
 import sasipca.repositories.OFFRepository
+import sasipca.repositories.ProductRepository
+import sasipca.storage.ListsStore
+import sasipca.storage.ScreenSizeManager.isLargeScreen
 import sasipca.ui.components.BarcodeInputField
 import sasipca.ui.components.DropdownSelector
 import sasipca.ui.components.Header
-import kotlinx.coroutines.launch
+import sasipca.ui.components.LoadingWidget
+import sasipca.ui.components.products.LotCard
+import sasipca.ui.components.products.ProductImagesCarousel
 import sasipca.models.Category
 import sasipca.models.LotToEnter
 import sasipca.models.UnitType
-import sasipca.storage.ScreenSizeManager.isLargeScreen
-import sasipca.ui.components.ImagePopup
-import sasipca.ui.components.LoadingWidget
-import sasipca.ui.components.products.LotCard
+import sasipca.ui.components.LotsSection
+import sasipca.ui.components.ProductInfoSection
+import sasipca.viewmodels.ProductViewModel
 import kotlin.collections.plus
-import sasipca.storage.ListsStore
-import sasipca.ui.components.products.ProductImagesCarousel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReceptionScreen() {
+fun ReceptionScreen(productRepository: ProductRepository) {
     var barcode by remember { mutableStateOf("") }
-    var productName by remember { mutableStateOf("") }
-    var images by remember { mutableStateOf(listOf<String>()) }
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var selectedUnit by remember { mutableStateOf<UnitType?>(null) }
-    var unitSize by remember { mutableStateOf("") }
-    var unitType by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
     var lots by remember { mutableStateOf(listOf(LotToEnter("", "", ""))) }
-
-    var isLoading by remember { mutableStateOf(false) }
     var lotsExpanded by remember { mutableStateOf(true) }
 
-
-    val categories: List<Category> by remember {
-        derivedStateOf {
-            ListsStore.categories.map { Category(it.id, it.type) }
-        }
-    }
-
-    val units: List<UnitType> by remember {
-        derivedStateOf {
-            ListsStore.unitTypes.map { UnitType(it.id, it.type) }
-        }
-    }
+    var editableName by remember { mutableStateOf("") }
+    var editableUnitSize by remember { mutableStateOf("") }
 
     val offRepository = remember { OFFRepository(ApiClient.client) }
-    val scope = rememberCoroutineScope()
 
+    // Inicializa o ViewModel com o repositório recebido
+    val productViewModel = remember { ProductViewModel(productRepository) }
+
+    // Observa os estados do ViewModel
+    val productDetail = productViewModel.selectedProductDetail
+    val isLoading = productViewModel.isLoading
+
+    val categories: List<Category> = remember { ListsStore.categoriestypes.map { Category(it.id, it.type) } }
+    val units: List<UnitType> = remember { ListsStore.unitTypes.map { UnitType(it.id, it.type) } }
+
+    // Atualiza selectedUnit automaticamente quando o produto muda
+    LaunchedEffect(productDetail) {
+        editableName = productDetail?.name ?: ""
+        editableUnitSize = productDetail?.unitSize?.toString() ?: ""
+
+        val unitTypeName = productDetail?.unitName ?: ""
+        selectedUnit = units.find { it.name.equals(unitTypeName, ignoreCase = true) }
+    }
+
+    // Busca produto ao digitar o barcode
     LaunchedEffect(barcode) {
-        // Reset product info when barcode changes
-        if (barcode.length > 0) {
-            productName = ""
-            images = emptyList()
-            selectedCategory = null
-            selectedUnit = null
-            unitSize = ""
-
-            if (barcode.length >= 8) {
-                isLoading = true
-                scope.launch {
-                    try {
-                        val productResponse = offRepository.getProductByBarcode(barcode)
-                        val product = productResponse?.product
-
-                        if (product != null) {
-                            productName = product.product_name ?: ""
-                            images = product.images
-                            unitSize = product.product_quantity?.toString() ?: ""
-                            unitType = product.product_quantity_unit ?: ""
-
-                            selectedUnit = units.find { it.name.equals(unitType, ignoreCase = true) }
-
-                        }
-                    } finally {
-                        isLoading = false
-                    }
-                }
-            }
+        if (barcode.isNotEmpty()) {
+            productViewModel.loadProductHybrid(barcode, offRepository)
+        } else {
+            productViewModel.resetProduct()
         }
     }
 
-           Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-        ) {
-            Header(title = "Receção de Stock")
 
-            Box(modifier = Modifier.fillMaxSize()) {
+    val productName = productDetail?.name ?: ""
+    val images = productDetail?.images ?: emptyList()
+    val unitSize = productDetail?.unitSize?.toString() ?: ""
 
-                if (isLargeScreen()) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(20.dp)
-                    ) {
-                        // Left side - Product Info (2/3 width)
-                        Column(
-                            modifier = Modifier
-                                .weight(2f)
-                                .fillMaxHeight(),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            // Section 1: Barcode (Fixed height)
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp)
-                                ) {
-                                    Text(
-                                        "Código de Barras",
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Spacer(Modifier.height(8.dp))
-                                    BarcodeInputField(
-                                        barcode = barcode,
-                                        onBarcodeScanned = { barcode = it }
-                                    )
-                                }
-                            }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        Header(title = "Receção de Stock")
 
-                            // Section 2: Product Details and Notes (Takes remaining vertical space)
-                            ProductInfoSection(
-                                productName = productName,
-                                onProductNameChange = { productName = it },
-                                images = images,
-                                selectedCategory = selectedCategory,
-                                onCategorySelect = { selectedCategory = it },
-                                categories = categories,
-                                selectedUnit = selectedUnit,
-                                onUnitSelect = { selectedUnit = it },
-                                units = units,
-                                unitSize = unitSize,
-                                onUnitSizeChange = { unitSize = it },
-                                note = note,
-                                onNoteChange = { note = it },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-
-                        // Right side - Lots and Register Button (1/3 width)
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight(),
-                        ) {
-                            LotsSection(
-                                lots = lots,
-                                onAddLot = { lots = lots + LotToEnter("", "", "") },
-                                onLotChange = { index, updatedLot ->
-                                    lots = lots.toMutableList().apply { set(index, updatedLot) }
-                                },
-                                onRemoveLot = { index ->
-                                    if (lots.size > 1) {
-                                        lots = lots.toMutableList().apply { removeAt(index) }
-                                    }
-                                },
-                                onSubmit = { /* TODO: Submeter */ },
-                                isWideScreen = true
-                            )
-                        }
-                    }
-                } else {
-                    // CÓDIGO DO MODO ECRÃ ESTREITO (COMPACTO/MÓVEL)
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 20.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
-                    ) {
-                        // Barcode field for narrow screen
-                        item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp)
-                                ) {
-                                    Text(
-                                        "Código de Barras",
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Spacer(Modifier.height(8.dp))
-                                    BarcodeInputField(
-                                        barcode = barcode,
-                                        onBarcodeScanned = { barcode = it }
-                                    )
-                                }
-                            }
-                        }
-
-                        // Product Info Section for narrow screen
-                        item {
-                            ProductInfoSection(
-                                productName = productName,
-                                onProductNameChange = { productName = it },
-                                images = images,
-                                selectedCategory = selectedCategory,
-                                onCategorySelect = { selectedCategory = it },
-                                categories = categories,
-                                selectedUnit = selectedUnit,
-                                onUnitSelect = { selectedUnit = it },
-                                units = units,
-                                unitSize = unitSize,
-                                onUnitSizeChange = { unitSize = it },
-                                note = note,
-                                onNoteChange = { note = it }
-                            )
-                        }
-
-
-                        // Lotes Colapsáveis (Header)
-                        item {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { lotsExpanded = !lotsExpanded },
-                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            "Lotes (${lots.size})",
-                                            fontSize = 16.sp
-                                        )
-                                        Spacer(Modifier.width(8.dp))
-                                        Icon(
-                                            imageVector = if (lotsExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                            contentDescription = if (lotsExpanded) "Recolher lotes" else "Expandir lotes",
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-
-                                    IconButton(
-                                        onClick = { lots = lots + LotToEnter("", "", "") }
-                                    ) {
-                                        Icon(
-                                            Icons.Outlined.Add,
-                                            contentDescription = "Adicionar lote"
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        // Lotes Colapsáveis (Content)
-                        item {
-                            // CORREÇÃO: Envolver AnimatedVisibility numa Column explícita para resolver o problema do receiver.
-                            Column {
-                                AnimatedVisibility(
-                                    visible = lotsExpanded,
-                                    enter = expandVertically(expandFrom = Alignment.Top),
-                                    exit = shrinkVertically(shrinkTowards = Alignment.Top)
-                                ) {
-                                    Column(
-                                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        lots.forEachIndexed { index, lot ->
-                                            LotCard(
-                                                lot = lot,
-                                                index = index,
-                                                onLotChange = { updatedLot ->
-                                                    lots = lots.toMutableList().apply { set(index, updatedLot) }
-                                                },
-                                                onRemove = {
-                                                    if (lots.size > 1) {
-                                                        lots = lots.toMutableList().apply { removeAt(index) }
-                                                    }
-                                                },
-                                                canRemove = lots.size > 1
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Botão de submissão
-                        item {
-                            Button(
-                                onClick = { /* TODO: Submeter */ },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text(
-                                    "Registar Receção",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                        }
-                    }
-                }
-
-                if (isLoading) {
-                    LoadingWidget()
-                }
-            }
-        }
-
-}
-
-// --- ProductInfoSection (Cores aplicadas) ---
-
-@Composable
-fun ProductInfoSection(
-    productName: String,
-    onProductNameChange: (String) -> Unit,
-    images: List<String>,
-    selectedCategory: Category?,
-    onCategorySelect: (Category?) -> Unit,
-    categories: List<Category>,
-    selectedUnit: UnitType?,
-    onUnitSelect: (UnitType?) -> Unit,
-    units: List<UnitType>,
-    unitSize: String,
-    onUnitSizeChange: (String) -> Unit,
-    note: String,
-    onNoteChange: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val categoryList = remember { mutableStateListOf(*categories.toTypedArray()) }
-    val unitList = remember { mutableStateListOf(*units.toTypedArray()) }
-    var showImagePopup by remember { mutableStateOf(false) }
-
-    val addCategory: (String) -> Unit = { newName ->
-        val newCategory = Category(-1, newName)
-        categoryList.add(newCategory)
-        onCategorySelect(newCategory)
-    }
-
-    val addUnit: (String) -> Unit = { newName ->
-        val newUnit = UnitType(-1, newName)
-        unitList.add(newUnit)
-        onUnitSelect(newUnit)
-    }
-
-    if (isLargeScreen()) {
-        Column(
-            modifier = modifier,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Column(
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (isLargeScreen()) {
+                Row(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .fillMaxSize()
+                        .padding(20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    Text(
-                        "Informações do Produto",
-                        fontSize = 16.sp
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        if (images.isNotEmpty()) {
-                            ProductImagesCarousel(
-                                images = images,
-                                modifier = Modifier
-                                    .weight(1f)  // ocupa proporcionalmente
-                                    .height(250.dp) // controla a altura
-                            )
-                        }
-
-
-                        Column(
-                            modifier = if (images.isNotEmpty()) Modifier.weight(2f) else Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            OutlinedTextField(
-                                value = productName,
-                                onValueChange = onProductNameChange,
-                                modifier = Modifier.fillMaxWidth(),
-                                label = { Text("Nome do Produto") },
-                                singleLine = true,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-
-                            DropdownSelector(
-                                label = "Categoria",
-                                items = categories,
-                                selectedItem = selectedCategory,
-                                onSelect = onCategorySelect,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                DropdownSelector(
-                                    label = "Unidade",
-                                    items = units,
-                                    selectedItem = selectedUnit,
-                                    onSelect = onUnitSelect,
-                                    modifier = Modifier.weight(1f)
-                                )
-
-                                OutlinedTextField(
-                                    value = unitSize,
-                                    onValueChange = onUnitSizeChange,
-                                    modifier = Modifier.weight(1f),
-                                    label = { Text("Quantidade") },
-                                    singleLine = true,
-                                    keyboardOptions = KeyboardOptions(
-                                        keyboardType = KeyboardType.Number
-                                    ),
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                            }
-                        }
-                    }
-
+                    // Left side - Product Info (2/3 width)
                     Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp)
+                            .weight(2f)
+                            .fillMaxHeight(),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Text(
-                            "Observações",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = note,
-                            onValueChange = onNoteChange,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(120.dp),
-                            placeholder = { Text("Adicione notas sobre o produto...") },
-                            shape = RoundedCornerShape(8.dp),
-                            maxLines = 5
-                        )
-                    }
-                }
-            }
-        }
-    } else {
-        // Narrow Screen Layout (Cores aplicadas)
-        Column(
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.   cardElevation(defaultElevation = 1.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        "Informações do Produto",
-                        fontSize = 16.sp
-                    )
+                        // Barcode input
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                            ) {
+                                Text(
+                                    "Código de Barras",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                BarcodeInputField(
+                                    barcode = barcode,
+                                    onBarcodeScanned = { barcode = it }
+                                )
+                            }
+                        }
 
-                    if (images.isNotEmpty()) {
-                        ProductImagesCarousel(images = images,Modifier
-                            .fillMaxWidth()
-                            .height(200.dp))
-                    }
-
-
-                    OutlinedTextField(
-                        value = productName,
-                        onValueChange = onProductNameChange,
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Nome do Produto") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-
-                    DropdownSelector(
-                        label = "Categoria",
-                        items = categories,
-                        selectedItem = selectedCategory,
-                        onSelect = onCategorySelect,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        DropdownSelector(
-                            label = "Unidade",
-                            items = units,
-                            selectedItem = selectedUnit,
-                            onSelect = onUnitSelect,
+                        // Product info
+                        ProductInfoSection(
+                            productName = editableName,
+                            onProductNameChange = { editableName = it },
+                            images = images,
+                            selectedCategory = selectedCategory,
+                            onCategorySelect = { selectedCategory = it },
+                            categories = categories,
+                            selectedUnit = selectedUnit,
+                            onUnitSelect = { selectedUnit = it },
+                            units = units,
+                            unitSize = editableUnitSize,
+                            onUnitSizeChange = { editableUnitSize = it },
+                            note = note,
+                            onNoteChange = { note = it },
                             modifier = Modifier.weight(1f)
                         )
+                    }
 
-                        OutlinedTextField(
-                            value = unitSize,
-                            onValueChange = onUnitSizeChange,
-                            modifier = Modifier.weight(1f),
-                            label = { Text("Quantidade") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number
-                            ),
-                            shape = RoundedCornerShape(8.dp)
+                    // Right side - Lots and Register button
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                    ) {
+                        LotsSection(
+                            lots = lots,
+                            onAddLot = { lots = lots + LotToEnter("", "", "") },
+                            onLotChange = { index, updatedLot ->
+                                lots = lots.toMutableList().apply { set(index, updatedLot) }
+                            },
+                            onRemoveLot = { index ->
+                                if (lots.size > 1) lots = lots.toMutableList().apply { removeAt(index) }
+                            },
+                            onSubmit = { /* TODO: Submeter */ },
+                            isWideScreen = true
                         )
                     }
                 }
-            }
-
-            // Notes
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Column(
+            } else {
+                // Compact/mobile screen
+                LazyColumn(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
                 ) {
-                    Text(
-                        "Observações",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = note,
-                        onValueChange = onNoteChange,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp),
-                        placeholder = { Text("Adicione notas sobre o produto...") },
-                        shape = RoundedCornerShape(8.dp),
-                        maxLines = 5
-                    )
-                }
-            }
-        }
-    }
-}
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                            ) {
+                                Text(
+                                    "Código de Barras",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                BarcodeInputField(
+                                    barcode = barcode,
+                                    onBarcodeScanned = { barcode = it }
+                                )
+                            }
+                        }
+                    }
 
-// --- LotsSection (Cores aplicadas) ---
-
-@Composable
-fun LotsSection(
-    lots: List<LotToEnter>,
-    onAddLot: () -> Unit,
-    onLotChange: (Int, LotToEnter) -> Unit,
-    onRemoveLot: (Int) -> Unit,
-    onSubmit: () -> Unit,
-    isWideScreen: Boolean // New parameter
-) {
-    if (isWideScreen) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // Lots Card (Takes all available space, except for the submit button)
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f), // Takes remaining space
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Lotes",
-                            fontSize = 16.sp
+                    item {
+                        ProductInfoSection(
+                            productName = editableName,
+                            onProductNameChange = { editableName = it },
+                            images = images,
+                            selectedCategory = selectedCategory,
+                            onCategorySelect = { selectedCategory = it },
+                            categories = categories,
+                            selectedUnit = selectedUnit,
+                            onUnitSelect = { selectedUnit = it },
+                            units = units,
+                            unitSize = editableUnitSize,
+                            onUnitSizeChange = { editableUnitSize = it },
+                            note = note,
+                            onNoteChange = { note = it }
                         )
-                        IconButton(onClick = onAddLot) {
-                            Icon(
-                                Icons.Outlined.Add,
-                                contentDescription = "Adicionar lote"
-                            )
+                    }
+
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { lotsExpanded = !lotsExpanded },
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        "Lotes (${lots.size})",
+                                        fontSize = 16.sp
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Icon(
+                                        imageVector = if (lotsExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                                IconButton(onClick = { lots = lots + LotToEnter("", "", "") }) {
+                                    Icon(Icons.Outlined.Add, contentDescription = "Adicionar lote")
+                                }
+                            }
                         }
                     }
 
-                    // Lots List (Optimized for height - less padding)
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f) // Takes remaining height in the Card
-                            .padding(horizontal = 8.dp), // Reduced horizontal padding
-                        verticalArrangement = Arrangement.spacedBy(8.dp), // Reduced spacing
-                        contentPadding = PaddingValues(bottom = 8.dp) // Added bottom padding for last item
-                    ) {
-                        itemsIndexed(lots) { index, lot ->
-                            LotCard(
-                                lot = lot,
-                                index = index,
-                                onLotChange = { onLotChange(index, it) },
-                                onRemove = { onRemoveLot(index) },
-                                canRemove = lots.size > 1
+                    item {
+                        Column {
+                            AnimatedVisibility(
+                                visible = lotsExpanded,
+                                enter = expandVertically(expandFrom = Alignment.Top),
+                                exit = shrinkVertically(shrinkTowards = Alignment.Top)
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    lots.forEachIndexed { index, lot ->
+                                        LotCard(
+                                            lot = lot,
+                                            index = index,
+                                            onLotChange = { updatedLot ->
+                                                lots = lots.toMutableList().apply { set(index, updatedLot) }
+                                            },
+                                            onRemove = {
+                                                if (lots.size > 1) lots = lots.toMutableList().apply { removeAt(index) }
+                                            },
+                                            canRemove = lots.size > 1
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        Button(
+                            onClick = { /* TODO: Submeter */ },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                "Registar Receção",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
                     }
                 }
             }
 
-            // Submit Button (Outside the Card, aligned right)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp),
-                horizontalArrangement = Arrangement.End // Aligns button to the right
-            ) {
-                Button(
-                    onClick = onSubmit,
-                    modifier = Modifier
-                        .widthIn(min = 200.dp) // Fixed minimum width for better appearance
-                        .height(56.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        "Registar Receção",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
+            if (isLoading) {
+                LoadingWidget()
             }
         }
     }

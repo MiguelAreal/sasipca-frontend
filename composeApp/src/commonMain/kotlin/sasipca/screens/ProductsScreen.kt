@@ -23,7 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import sasipca.models.ProductItemUI
+import sasipca.models.ProductUI
 import sasipca.repositories.ProductRepository
 import sasipca.ui.components.Header
 import sasipca.utils.getFormattedDatePt
@@ -148,7 +148,7 @@ fun ProductsScreen(productRepository: ProductRepository) {
 }
 
 @Composable
-fun StockItemCard(item: ProductItemUI) {
+fun StockItemCard(item: ProductUI) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -188,7 +188,7 @@ fun StockItemCard(item: ProductItemUI) {
 }
 
 @Composable
-fun ProductItemCardGrid(item: ProductItemUI) {
+fun ProductItemCardGrid(item: ProductUI) {
     Card(
         modifier = Modifier
             .fillMaxWidth()

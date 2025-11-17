@@ -120,6 +120,20 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
                         )
                     }
                 }
+
+
+                /**
+                 * Secção de Informações do Projeto
+                 */
+                SectionHeader("Sobre")
+                SettingsCard {
+                    SettingsTextItem(
+                        icon = Icons.Default.Info,
+                        title = "Projeto SASIPCA",
+                        description = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+                    )
+                }
+
             }
         }
     }
@@ -188,6 +202,9 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
     }
 }
 
+/**
+ * Header de Secção
+ */
 @Composable
 fun SectionHeader(title: String) {
     Text(
@@ -199,6 +216,9 @@ fun SectionHeader(title: String) {
     )
 }
 
+/**
+ * Card para apresentar algum componente
+ */
 @Composable
 fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
     Card(
@@ -215,6 +235,9 @@ fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
     }
 }
 
+/**
+ * Item de toggle ON/OFF para opções
+ */
 @Composable
 fun SettingsToggleItem(
     icon: ImageVector,
@@ -336,3 +359,53 @@ fun SettingsClickableItem(
         }
     }
 }
+
+/**
+ * Item de texto
+ */
+@Composable
+fun SettingsTextItem(
+    icon: ImageVector,
+    title: String,
+    description: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column {
+            Text(
+                text = title,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = description,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 13.sp
+            )
+        }
+    }
+}
+

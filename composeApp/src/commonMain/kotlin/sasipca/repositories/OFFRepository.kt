@@ -19,7 +19,7 @@ class OFFRepository(private val client: HttpClient) {
      * Pesquisa produto pelo código de barras (EAN-13)
      * Retorna null se não for encontrado.
      */
-    suspend fun getProductByBarcode(barcode: String): ProductOFFResponse? {
+    suspend fun getProduct(barcode: String): ProductOFFResponse? {
         return try {
             val response: HttpResponse = client.get("${oofUrl}/$barcode")
 
@@ -29,7 +29,7 @@ class OFFRepository(private val client: HttpClient) {
 
                 productResponse.product?.let { p ->
                     val normalized = UnitConverter.normalize(
-                        p.product_quantity?.toDouble(),
+                        p.product_quantity,
                         p.product_quantity_unit
                     )
 

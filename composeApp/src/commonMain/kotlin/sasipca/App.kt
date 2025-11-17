@@ -157,7 +157,7 @@ private fun AnimatedNavigation(
                 }
             )
 
-            Screen.Reception -> ReceptionScreen()
+            Screen.Reception -> ReceptionScreen(productRepository)
             Screen.Delivery -> DeliveryScreen()
             Screen.StockAdjustment -> PlaceholderScreen()
             Screen.Campaigns -> PlaceholderScreen()

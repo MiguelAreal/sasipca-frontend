@@ -3,18 +3,14 @@ package sasipca
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.russhwolf.settings.*
-import io.ktor.client.HttpClient
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import sasipca.storage.SessionManager
 import sasipca.storage.SettingsManager
 import org.jetbrains.compose.resources.painterResource
 import sasipca.composeapp.generated.resources.Res
 import sasipca.composeapp.generated.resources.icon512x512
-import sasipca.storage.ScreenSizeManager
 import sasipca.utils.ObserveScreenSize
 import java.util.prefs.Preferences
+
 
 fun main() = application {
     // Configuração de settings locais

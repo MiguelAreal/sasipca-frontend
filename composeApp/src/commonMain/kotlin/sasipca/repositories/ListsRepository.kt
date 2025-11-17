@@ -23,8 +23,11 @@ class ListsRepository(private val client: HttpClient) {
 
             // Guardar globalmente
             ListsStore.load(
-                categories = result.categories,
-                unitTypes = result.types
+                categoriesTypes = result.categories,
+                unitTypes = result.units,
+                movementTypes = result.movements,
+                deliveriesStatus = result.deliveries,
+                reportTypes = result.reports
             )
 
         } catch (e: ClientRequestException) {
