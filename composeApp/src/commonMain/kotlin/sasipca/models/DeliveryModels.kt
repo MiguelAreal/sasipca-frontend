@@ -3,30 +3,30 @@ package sasipca.models
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class DeliveryCreationDTO(
+data class DeliveryPost(
     val beneficiaryId: Int,
     val scheduledDate: String, // formato ISO: "2025-11-06"
     val note: String? = null,
-    val itemsToDeliver: List<DeliveryItemDTO>
+    val itemsToDeliver: List<DeliveryItem>
 )
 
 @Serializable
-data class DeliveryUpdateDTO(
+data class DeliveryPut(
     val scheduledDate: String? = null,
     val newStatusId: Int? = null, // 1=Agendada, 2=Entregue, 3=Cancelada
     val note: String? = null,
-    val itemsToDeliver: List<DeliveryItemDTO>
+    val itemsToDeliver: List<DeliveryItem>
 )
 
 @Serializable
-data class DeliveryItemDTO(
+data class DeliveryItem(
     val barcode: String,
     val lot: String,
     val quantity: Int
 )
 
 @Serializable
-data class DeliveryGetDTO(
+data class DeliveryGet(
     val statusId: Int? = null,
     val beneficiaryId: Int? = null,
     val dateFrom: String? = null, // formato ISO "2025-01-01"
@@ -37,7 +37,7 @@ data class DeliveryGetDTO(
  * Representa uma entrega vinda da API (View VDelivery)
  */
 @Serializable
-data class VDeliveryDTO(
+data class Delivery(
     val deliveryId: Int,
     val scheduledDate: String,
     val statusId: Int,

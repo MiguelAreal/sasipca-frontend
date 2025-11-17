@@ -11,18 +11,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import sasipca.navigation.Screen
 import sasipca.repositories.ProductRepository
-import sasipca.repositories.StockRepository
 import sasipca.screens.CalendarScreen
 import sasipca.screens.HomeScreen
 import sasipca.screens.ProductsScreen
-import sasipca.screens.ProfileScreen
 import kotlinx.coroutines.launch
 import sasipca.navigation.NavigationService
 import sasipca.repositories.BeneficiaryRepository
+import sasipca.repositories.DeliveryRepository
 import sasipca.screens.BeneficiariesScreen
 
 @Composable
-fun MainScreen(stockRepository: StockRepository,
+fun MainScreen(deliveryRepository: DeliveryRepository,
                productRepository: ProductRepository,
                beneficiaryRepository: BeneficiaryRepository,
                onOpenBeneficiary: (Int) -> Unit = {})
@@ -82,7 +81,7 @@ fun MainScreen(stockRepository: StockRepository,
                 when (screen) {
                     Screen.Home -> HomeScreen()
                     Screen.Products -> ProductsScreen(productRepository)
-                    Screen.Calendar -> CalendarScreen(stockRepository)
+                    Screen.Calendar -> CalendarScreen(deliveryRepository)
                     Screen.Beneficiaries -> BeneficiariesScreen(
                         beneficiaryRepository = beneficiaryRepository,
                         onOpenBeneficiary = onOpenBeneficiary

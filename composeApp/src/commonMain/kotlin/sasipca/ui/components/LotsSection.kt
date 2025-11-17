@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import sasipca.models.LotToEnter
+import sasipca.models.ReceiptLotItem
 import sasipca.ui.components.products.LotCard
 
 
@@ -37,8 +38,8 @@ fun LotsSection(
     onAddLot: () -> Unit,
     onLotChange: (Int, LotToEnter) -> Unit,
     onRemoveLot: (Int) -> Unit,
-    onSubmit: () -> Unit,
-    isWideScreen: Boolean
+    isWideScreen: Boolean,
+    errors: Map<String, String> = emptyMap()
 ) {
     if (isWideScreen) {
         Column(
@@ -90,32 +91,11 @@ fun LotsSection(
                                 index = index,
                                 onLotChange = { onLotChange(index, it) },
                                 onRemove = { onRemoveLot(index) },
-                                canRemove = lots.size > 1
+                                canRemove = lots.size > 1,
+                                errors = errors
                             )
                         }
                     }
-                }
-            }
-
-            // Submit Button (Outside the Card, aligned right)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp),
-                horizontalArrangement = Arrangement.End // Aligns button to the right
-            ) {
-                Button(
-                    onClick = onSubmit,
-                    modifier = Modifier
-                        .widthIn(min = 200.dp) // Fixed minimum width for better appearance
-                        .height(56.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        "Registar Receção",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
                 }
             }
         }

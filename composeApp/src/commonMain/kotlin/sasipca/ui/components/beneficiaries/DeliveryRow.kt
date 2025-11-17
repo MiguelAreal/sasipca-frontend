@@ -12,12 +12,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import sasipca.models.VDeliveryDTO
+import sasipca.models.Delivery
 
 
 @Composable
 fun DeliveryRow(
-    delivery: VDeliveryDTO,
+    delivery: Delivery,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {

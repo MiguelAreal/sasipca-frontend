@@ -1,15 +1,18 @@
 package sasipca.ui.components
 
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-interface NamedItem {
-    val name: String
-}
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -17,7 +20,7 @@ fun <T : NamedItem> DropdownSelector(
     label: String,
     items: List<T>,
     selectedItem: T?,
-    onSelect: (T) -> Unit,
+    onSelect: (T?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -28,15 +31,32 @@ fun <T : NamedItem> DropdownSelector(
         modifier = modifier
     ) {
         OutlinedTextField(
-            // O componente que atua como âncora do menu
             modifier = Modifier.menuAnchor().fillMaxWidth(),
             value = selectedItem?.name ?: "",
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            trailingIcon = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Ícone do dropdown
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded)
+
+                    // Ícone de limpar
+                    if (selectedItem != null) {
+                        IconButton(onClick = { onSelect(null) }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Limpar seleção"
+                            )
+                        }
+                    }
+                }
+            },
             shape = RoundedCornerShape(8.dp)
         )
+
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false }

@@ -15,7 +15,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import sasipca.models.VDeliveryDTO
+import sasipca.models.Delivery
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -24,9 +24,9 @@ import java.time.YearMonth
 fun WeekRow(
     startOfWeek: LocalDate,
     focusedMonth: YearMonth,
-    deliveries: List<VDeliveryDTO>,
-    onDayClick: (LocalDate, List<VDeliveryDTO>) -> Unit,
-    onEventClick: (VDeliveryDTO) -> Unit,
+    deliveries: List<Delivery>,
+    onDayClick: (LocalDate, List<Delivery>) -> Unit,
+    onEventClick: (Delivery) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val days = (0..6).map { startOfWeek.plusDays(it.toLong()) }

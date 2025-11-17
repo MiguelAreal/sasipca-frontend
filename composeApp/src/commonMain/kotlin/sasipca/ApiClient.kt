@@ -4,9 +4,10 @@ import io.ktor.client.*
 import sasipca.models.AuthResponse
 import sasipca.repositories.AuthRepository
 import sasipca.repositories.BeneficiaryRepository
+import sasipca.repositories.DeliveryRepository
 import sasipca.repositories.ListsRepository
 import sasipca.repositories.ProductRepository
-import sasipca.repositories.StockRepository
+import sasipca.repositories.ReceiptRepository
 
 expect fun createHttpClient(): HttpClient
 
@@ -16,7 +17,10 @@ object ApiClient {
 
     lateinit var authRepository: AuthRepository
         private set
-    lateinit var stockRepository: StockRepository
+    lateinit var deliveryRepository: DeliveryRepository
+        private set
+
+    lateinit var receiptRepository: ReceiptRepository
         private set
     lateinit var productRepository: ProductRepository
         private set
@@ -34,7 +38,8 @@ object ApiClient {
         authRepository = AuthRepository(client)
 
         // Criar os restantes repositórios
-        stockRepository = StockRepository(client)
+        deliveryRepository = DeliveryRepository(client)
+        receiptRepository = ReceiptRepository(client)
         productRepository = ProductRepository(client)
         beneficiaryRepository = BeneficiaryRepository(client)
         listsRepository = ListsRepository(client)

@@ -9,7 +9,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import sasipca.navigation.NavigationService
 import sasipca.repositories.BeneficiaryRepository
-import sasipca.repositories.StockRepository
+import sasipca.repositories.DeliveryRepository
 import sasipca.storage.ScreenSizeManager.isLargeScreen
 import sasipca.storage.ScreenSizeManager.updateSize
 import sasipca.ui.components.Header
@@ -23,11 +23,11 @@ import sasipca.viewmodels.DeliveriesViewModel
 fun BeneficiaryScreen(
     beneficiaryId: Int,
     repository: BeneficiaryRepository,
-    stockRepository: StockRepository
+    deliveryRepository: DeliveryRepository
 ) {
 
     val viewModel = remember { BeneficiaryDetailViewModel(repository) }
-    val deliveriesViewModel = remember { DeliveriesViewModel(stockRepository) }
+    val deliveriesViewModel = remember { DeliveriesViewModel(deliveryRepository) }
     val scope = rememberCoroutineScope()
 
     val beneficiary = viewModel.getBeneficiary

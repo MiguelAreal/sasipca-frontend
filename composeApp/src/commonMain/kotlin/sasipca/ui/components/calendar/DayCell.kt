@@ -19,16 +19,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import sasipca.models.VDeliveryDTO
+import sasipca.models.Delivery
 import java.time.LocalDate
 
 
 @Composable
 fun DayCell(
     day: LocalDate,
-    deliveriesForDay: List<VDeliveryDTO>,
+    deliveriesForDay: List<Delivery>,
     textColor: Color,
-    onEventClick: (VDeliveryDTO) -> Unit,
+    onEventClick: (Delivery) -> Unit,
     compactMode: Boolean = false
 ) {
     val today = LocalDate.now()

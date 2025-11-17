@@ -1,5 +1,6 @@
 package sasipca.storage
 
+import sasipca.models.ActiveCampaigns
 import sasipca.models.CategoryType
 import sasipca.models.DeliveriesStatus
 import sasipca.models.MovementType
@@ -23,11 +24,15 @@ object ListsStore {
     var ReportTypes: List<ReportTypes> = emptyList()
         private set
 
+    var ActiveCampaigns: List<ActiveCampaigns> = emptyList()
+        private set
+
     fun load(categoriesTypes: List<CategoryType>,
              unitTypes: List<UnitTypeInfo>,
              movementTypes: List<MovementType>,
              deliveriesStatus: List<DeliveriesStatus>,
-             reportTypes: List<ReportTypes>
+             reportTypes: List<ReportTypes>,
+             activeCampaigns: List<ActiveCampaigns>
 
     ) {
         this.categoriestypes = categoriesTypes
@@ -35,6 +40,7 @@ object ListsStore {
         this.movementTypes = movementTypes
         this.DeliveriesStatus = deliveriesStatus
         this.ReportTypes = reportTypes
+        this.ActiveCampaigns = activeCampaigns
     }
 
     fun getCategoryTypeName(id: Int): String =
@@ -45,11 +51,15 @@ object ListsStore {
 
     fun getMovementTypeName(id: Int): String =
         movementTypes.firstOrNull { it.id == id }?.type ?: "Desconhecido"
+
     fun getDeliveriesStatusName(id: Int): String =
         DeliveriesStatus.firstOrNull { it.id == id }?.status ?: "Desconhecido"
 
     fun getReportTypeName(id: Int): String =
         ReportTypes.firstOrNull { it.id == id }?.type ?: "Desconhecido"
+
+    fun getActiveCampaignName(id: Int): String =
+        ActiveCampaigns.firstOrNull { it.id == id }?.name ?: "Desconhecido"
 
 
 }

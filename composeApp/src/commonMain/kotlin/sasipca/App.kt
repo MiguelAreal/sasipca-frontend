@@ -10,7 +10,6 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import sasipca.navigation.NavigationService
 import sasipca.navigation.Screen
-import sasipca.repositories.ListsRepository
 import sasipca.screens.*
 import sasipca.storage.SessionManager
 import sasipca.storage.SettingsManager
@@ -126,7 +125,8 @@ private fun AnimatedNavigation(
     onThemeChange: (Boolean) -> Unit
 ) {
     val authRepository = ApiClient.authRepository
-    val stockRepository = ApiClient.stockRepository
+    val deliveryRepository = ApiClient.deliveryRepository
+    val receiptRepository = ApiClient.receiptRepository
     val productRepository = ApiClient.productRepository
     val beneficiaryRepository = ApiClient.beneficiaryRepository
 
@@ -148,7 +148,7 @@ private fun AnimatedNavigation(
         when (screen) {
             Screen.Login -> LoginScreen(authRepository)
             Screen.Main -> MainScreen(
-                stockRepository,
+                deliveryRepository,
                 productRepository,
                 beneficiaryRepository,
                 onOpenBeneficiary = { id ->
@@ -157,7 +157,7 @@ private fun AnimatedNavigation(
                 }
             )
 
-            Screen.Reception -> ReceptionScreen(productRepository)
+            Screen.Reception -> ReceiptScreen(productRepository, receiptRepository)
             Screen.Delivery -> DeliveryScreen()
             Screen.StockAdjustment -> PlaceholderScreen()
             Screen.Campaigns -> PlaceholderScreen()
@@ -173,14 +173,14 @@ private fun AnimatedNavigation(
                 BeneficiaryScreen(
                     beneficiaryId = id,
                     repository = beneficiaryRepository,
-                    stockRepository = stockRepository
+                    deliveryRepository = deliveryRepository
                 )
             }
 
             Screen.Settings -> SettingsScreen { onThemeChange(it) }
             Screen.Notifications -> PlaceholderScreen()
             Screen.Placeholder -> PlaceholderScreen()
-            Screen.Calendar -> CalendarScreen(stockRepository)
+            Screen.Calendar -> CalendarScreen(deliveryRepository)
             Screen.Home -> HomeScreen()
             Screen.Profile -> ProfileScreen()
             Screen.Products -> ProductsScreen(productRepository)

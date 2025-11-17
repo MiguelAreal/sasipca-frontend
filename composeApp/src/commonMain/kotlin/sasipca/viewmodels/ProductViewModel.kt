@@ -149,8 +149,6 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
 
 
 
-
-
     /**
      * Carrega lista paginada de produtos
      */

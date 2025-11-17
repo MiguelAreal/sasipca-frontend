@@ -26,7 +26,9 @@ import sasipca.ui.components.Header
 import sasipca.utils.SnackbarType
 import sasipca.utils.SnackbarManager
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import sasipca.storage.SessionManager
+
 
 @Composable
 fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
@@ -130,7 +132,7 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
                     SettingsTextItem(
                         icon = Icons.Default.Info,
                         title = "Projeto SASIPCA",
-                        description = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+                        description = "Aplicação desenvolvida por: João Lopes Nº12168 | Júlio Faria Nº22920 | Paulo Costa Nº22934 | Miguel Areal Nº29559",
                     )
                 }
 

@@ -2,19 +2,19 @@ package sasipca.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import sasipca.repositories.StockRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import sasipca.models.DeliveryCreationDTO
-import sasipca.models.DeliveryGetDTO
-import sasipca.models.DeliveryUpdateDTO
-import sasipca.models.VDeliveryDTO
+import sasipca.models.Delivery
+import sasipca.models.DeliveryGet
+import sasipca.models.DeliveryPost
+import sasipca.models.DeliveryPut
+import sasipca.repositories.DeliveryRepository
 import java.time.LocalDate
 import java.time.YearMonth
 
-class DeliveriesViewModel(private val stockRepository: StockRepository) : ViewModel() {
+class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : ViewModel() {
 
     private val _month = MutableStateFlow(YearMonth.now())
     val month: StateFlow<YearMonth> = _month
@@ -22,8 +22,8 @@ class DeliveriesViewModel(private val stockRepository: StockRepository) : ViewMo
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate: StateFlow<LocalDate> = _selectedDate
 
-    private val _deliveries = MutableStateFlow<List<VDeliveryDTO>>(emptyList())
-    val deliveries: StateFlow<List<VDeliveryDTO>> = _deliveries
+    private val _deliveries = MutableStateFlow<List<Delivery>>(emptyList())
+    val deliveries: StateFlow<List<Delivery>> = _deliveries
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -37,8 +37,8 @@ class DeliveriesViewModel(private val stockRepository: StockRepository) : ViewMo
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
             runCatching {
-                stockRepository.getDeliveries(
-                    DeliveryGetDTO(
+                deliveryRepository.getDeliveries(
+                    DeliveryGet(
                         beneficiaryId = beneficiaryId
                     )
                 )
@@ -60,8 +60,8 @@ class DeliveriesViewModel(private val stockRepository: StockRepository) : ViewMo
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
             runCatching {
-                stockRepository.getDeliveries(
-                    DeliveryGetDTO(
+                deliveryRepository.getDeliveries(
+                    DeliveryGet(
                         dateFrom = month.atDay(1).toString(),
                         dateTo = month.atEndOfMonth().toString()
                     )
@@ -81,10 +81,10 @@ class DeliveriesViewModel(private val stockRepository: StockRepository) : ViewMo
      *
      * Executa nova entrega imediatamente (instant = true)
      */
-    fun scheduleDelivery(dto: DeliveryCreationDTO, instant: Boolean) {
+    fun scheduleDelivery(body: DeliveryPost, instant: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                stockRepository.scheduleDelivery(dto,instant)
+                deliveryRepository.scheduleDelivery(body,instant)
             }.onSuccess {
                 loadMonthDeliveries(_month.value)
             }
@@ -94,10 +94,10 @@ class DeliveriesViewModel(private val stockRepository: StockRepository) : ViewMo
     /**
      * Update a entrega agendada existente.
      */
-    fun updateDelivery(deliveryId: Int, dto: DeliveryUpdateDTO) {
+    fun updateDelivery(deliveryId: Int, dto: DeliveryPut) {
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                stockRepository.updateDelivery(deliveryId, dto)
+                deliveryRepository.updateDelivery(deliveryId, dto)
             }.onSuccess {
                 loadMonthDeliveries(_month.value)
             }

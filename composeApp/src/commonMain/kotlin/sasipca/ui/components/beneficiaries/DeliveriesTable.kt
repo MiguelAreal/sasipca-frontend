@@ -31,7 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import sasipca.models.VDeliveryDTO
+import sasipca.models.Delivery
 import sasipca.storage.ScreenSizeManager.isLargeScreen
 
 
@@ -46,10 +46,10 @@ enum class SortDirection {
 
 @Composable
 fun DeliveriesTable(
-    deliveries: List<VDeliveryDTO>,
+    deliveries: List<Delivery>,
     isLoading: Boolean
 ) {
-    var selectedDelivery by remember { mutableStateOf<VDeliveryDTO?>(null) }
+    var selectedDelivery by remember { mutableStateOf<Delivery?>(null) }
     var sortColumn by remember { mutableStateOf(SortColumn.SCHEDULED_DATE) }
     var sortDirection by remember { mutableStateOf(SortDirection.DESCENDING) }
 

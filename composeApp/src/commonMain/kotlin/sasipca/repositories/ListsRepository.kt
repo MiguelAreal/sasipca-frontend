@@ -27,7 +27,8 @@ class ListsRepository(private val client: HttpClient) {
                 unitTypes = result.units,
                 movementTypes = result.movements,
                 deliveriesStatus = result.deliveries,
-                reportTypes = result.reports
+                reportTypes = result.reports,
+                activeCampaigns = result.activeCampaigns
             )
 
         } catch (e: ClientRequestException) {

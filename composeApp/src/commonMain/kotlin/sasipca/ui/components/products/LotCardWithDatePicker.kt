@@ -1,5 +1,6 @@
 package sasipca.ui.components.products
 
+import ValidatedTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import sasipca.models.LotToEnter
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LotCard(
@@ -44,22 +44,23 @@ fun LotCard(
     index: Int,
     onLotChange: (LotToEnter) -> Unit,
     onRemove: () -> Unit,
-    canRemove: Boolean
+    canRemove: Boolean,
+    errors: Map<String, String> = emptyMap()
 ) {
     val datePickerState = rememberDatePickerState()
     var showDatePicker by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp), // Reduced elevation for a flatter look
-        shape = RoundedCornerShape(8.dp), // Slightly smaller radius
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface) // COR DO SETTINGSSCREEN
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp), // Reduced padding inside the card
-            verticalArrangement = Arrangement.spacedBy(8.dp) // Reduced spacing
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -76,7 +77,6 @@ fun LotCard(
                         onClick = onRemove,
                         modifier = Modifier.size(32.dp)
                     ) {
-                        // NOVO: Aplicar cor vermelha fixa (MaterialTheme.colorScheme.error)
                         Icon(
                             Icons.Outlined.Delete,
                             contentDescription = "Remover lote",
@@ -87,53 +87,51 @@ fun LotCard(
                 }
             }
 
-            // Horizontal layout for Lot Number and Quantity to save vertical space
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                OutlinedTextField(
-                    value = lot.lotNumber,
-                    onValueChange = { onLotChange(lot.copy(lotNumber = it)) },
-                    modifier = Modifier.weight(1f),
-                    label = { Text("Nº Lote") }, // Shorter label
-                    singleLine = true,
-                    shape = RoundedCornerShape(8.dp)
+                // Lote (máx 255 caracteres)
+                ValidatedTextField(
+                    value = lot.lot,
+                    onValueChange = { onLotChange(lot.copy(lot = it)) },
+                    label = "Nº Lote",
+                    maxLength = 255,
+                    error = errors["lot_$index.lot"],
+                    modifier = Modifier.weight(1f)
                 )
 
-                OutlinedTextField(
+                // Quantidade (apenas números, máx 11 caracteres)
+                ValidatedTextField(
                     value = lot.quantity,
                     onValueChange = { onLotChange(lot.copy(quantity = it)) },
-                    modifier = Modifier.weight(1f),
-                    label = { Text("Quant.") }, // Shorter label
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(8.dp)
+                    label = "Quant.",
+                    maxLength = 11,
+                    keyboardType = KeyboardType.Number,
+                    error = errors["lot_$index.quantity"],
+                    modifier = Modifier.weight(1f)
                 )
             }
 
-            // Date Picker Field (Full width)
-            OutlinedTextField(
-                value = lot.expirationDate,
-                onValueChange = { },
+            // Data de validade
+            ValidatedTextField(
+                value = lot.expiryDate,
+                onValueChange = {},
+                label = "Data de Validade",
+                error = errors["lot_$index.expiryDate"],
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Data de Validade") },
-                readOnly = true,
-                singleLine = true,
-                shape = RoundedCornerShape(8.dp),
-                trailingIcon = {
-                    IconButton(onClick = { showDatePicker = true }) {
-                        Icon(
-                            imageVector = Icons.Default.CalendarMonth,
-                            contentDescription = "Selecionar data"
-                        )
-                    }
-                }
+                keyboardType = KeyboardType.Number // mantém mas não permite digitar diretamente
             )
+
+            IconButton(onClick = { showDatePicker = true }) {
+                Icon(
+                    imageVector = Icons.Default.CalendarMonth,
+                    contentDescription = "Selecionar data"
+                )
+            }
         }
     }
 
-    // DatePickerDialog remains the same
     if (showDatePicker) {
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
@@ -141,20 +139,18 @@ fun LotCard(
                 TextButton(
                     onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
-                            val date = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
-                                .format(java.util.Date(millis))
-                            onLotChange(lot.copy(expirationDate = date))
+                            val date = java.text.SimpleDateFormat(
+                                "dd/MM/yyyy",
+                                java.util.Locale.getDefault()
+                            ).format(java.util.Date(millis))
+                            onLotChange(lot.copy(expiryDate = date))
                         }
                         showDatePicker = false
                     }
-                ) {
-                    Text("OK")
-                }
+                ) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancelar")
-                }
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
             }
         ) {
             DatePicker(state = datePickerState)

@@ -7,11 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -21,35 +17,46 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import sasipca.ApiClient
+import sasipca.models.ActiveCampaigns
+import sasipca.models.LotToEnter
+import sasipca.models.Category
+import sasipca.models.UnitType
 import sasipca.repositories.OFFRepository
 import sasipca.repositories.ProductRepository
+import sasipca.repositories.ReceiptRepository
 import sasipca.storage.ListsStore
 import sasipca.storage.ScreenSizeManager.isLargeScreen
 import sasipca.ui.components.BarcodeInputField
-import sasipca.ui.components.DropdownSelector
 import sasipca.ui.components.Header
 import sasipca.ui.components.LoadingWidget
 import sasipca.ui.components.products.LotCard
-import sasipca.ui.components.products.ProductImagesCarousel
-import sasipca.models.Category
-import sasipca.models.LotToEnter
-import sasipca.models.UnitType
 import sasipca.ui.components.LotsSection
-import sasipca.ui.components.ProductInfoSection
+import sasipca.ui.components.ReceiptInfoSection
+import sasipca.utils.SnackbarManager
+import sasipca.utils.SnackbarType
 import sasipca.viewmodels.ProductViewModel
+import sasipca.viewmodels.ReceiptsViewModel
 import kotlin.collections.plus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReceptionScreen(productRepository: ProductRepository) {
+fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: ReceiptRepository) {
+
+    val receiptsViewModel = remember { ReceiptsViewModel(receiptRepository) }
+    val scope = rememberCoroutineScope()
+    // UI state from viewmodel
+    val uiState by receiptsViewModel.uiState.collectAsState()
+
     var barcode by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var selectedUnit by remember { mutableStateOf<UnitType?>(null) }
+    var selectedCampaign by remember { mutableStateOf<ActiveCampaigns?>(null) }
+
     var note by remember { mutableStateOf("") }
     var lots by remember { mutableStateOf(listOf(LotToEnter("", "", ""))) }
     var lotsExpanded by remember { mutableStateOf(true) }
@@ -64,10 +71,14 @@ fun ReceptionScreen(productRepository: ProductRepository) {
 
     // Observa os estados do ViewModel
     val productDetail = productViewModel.selectedProductDetail
-    val isLoading = productViewModel.isLoading
+    val isLoadingProduct = productViewModel.isLoading
 
+    // Inicialização de listas
     val categories: List<Category> = remember { ListsStore.categoriestypes.map { Category(it.id, it.type) } }
     val units: List<UnitType> = remember { ListsStore.unitTypes.map { UnitType(it.id, it.type) } }
+    val activeCampaigns: List<ActiveCampaigns> = remember { ListsStore.ActiveCampaigns.map { ActiveCampaigns(it.id, it.name) } }
+
+    val images = productDetail?.images ?: emptyList()
 
     // Atualiza selectedUnit automaticamente quando o produto muda
     LaunchedEffect(productDetail) {
@@ -78,7 +89,7 @@ fun ReceptionScreen(productRepository: ProductRepository) {
         selectedUnit = units.find { it.name.equals(unitTypeName, ignoreCase = true) }
     }
 
-    // Busca produto ao digitar o barcode
+    // Busca produto ao alterar o barcode
     LaunchedEffect(barcode) {
         if (barcode.isNotEmpty()) {
             productViewModel.loadProductHybrid(barcode, offRepository)
@@ -86,11 +97,6 @@ fun ReceptionScreen(productRepository: ProductRepository) {
             productViewModel.resetProduct()
         }
     }
-
-
-    val productName = productDetail?.name ?: ""
-    val images = productDetail?.images ?: emptyList()
-    val unitSize = productDetail?.unitSize?.toString() ?: ""
 
     Column(
         modifier = Modifier
@@ -100,6 +106,8 @@ fun ReceptionScreen(productRepository: ProductRepository) {
         Header(title = "Receção de Stock")
 
         Box(modifier = Modifier.fillMaxSize()) {
+            val anyLoading = isLoadingProduct || uiState.isLoading
+
             if (isLargeScreen()) {
                 Row(
                     modifier = Modifier
@@ -136,11 +144,16 @@ fun ReceptionScreen(productRepository: ProductRepository) {
                                     barcode = barcode,
                                     onBarcodeScanned = { barcode = it }
                                 )
+
+                                // show barcode error
+                                uiState.errors["barcode"]?.let { msg ->
+                                    Text(text = msg, color = MaterialTheme.colorScheme.error)
+                                }
                             }
                         }
 
-                        // Product info
-                        ProductInfoSection(
+                        // Product info + campaign + notes (inside ReceiptInfoSection)
+                        ReceiptInfoSection(
                             productName = editableName,
                             onProductNameChange = { editableName = it },
                             images = images,
@@ -152,8 +165,12 @@ fun ReceptionScreen(productRepository: ProductRepository) {
                             units = units,
                             unitSize = editableUnitSize,
                             onUnitSizeChange = { editableUnitSize = it },
+                            selectedCampaign = selectedCampaign,
+                            onCampaignSelect = { selectedCampaign = it },
+                            campaigns = activeCampaigns,
                             note = note,
                             onNoteChange = { note = it },
+                            errors = uiState.errors,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -173,9 +190,39 @@ fun ReceptionScreen(productRepository: ProductRepository) {
                             onRemoveLot = { index ->
                                 if (lots.size > 1) lots = lots.toMutableList().apply { removeAt(index) }
                             },
-                            onSubmit = { /* TODO: Submeter */ },
-                            isWideScreen = true
+                            isWideScreen = true,
+                            errors = uiState.errors
                         )
+
+                        Spacer(Modifier.height(8.dp))
+
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    receiptsViewModel.submitReceipt(
+                                        barcode = barcode,
+                                        lotsUi = lots,
+                                        name = editableName,
+                                        categoryId = selectedCategory?.id,
+                                        unitId = selectedUnit?.id,
+                                        campaignId = selectedCampaign?.id,
+                                        unitSizeStr = editableUnitSize,
+                                        note = note
+                                    )
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            enabled = !(isLoadingProduct || uiState.isLoading)
+                        ) {
+                            Text(
+                                "Registar Receção",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 }
             } else {
@@ -209,12 +256,16 @@ fun ReceptionScreen(productRepository: ProductRepository) {
                                     barcode = barcode,
                                     onBarcodeScanned = { barcode = it }
                                 )
+
+                                uiState.errors["barcode"]?.let { msg ->
+                                    Text(text = msg, color = MaterialTheme.colorScheme.error)
+                                }
                             }
                         }
                     }
 
                     item {
-                        ProductInfoSection(
+                        ReceiptInfoSection(
                             productName = editableName,
                             onProductNameChange = { editableName = it },
                             images = images,
@@ -226,7 +277,11 @@ fun ReceptionScreen(productRepository: ProductRepository) {
                             units = units,
                             unitSize = editableUnitSize,
                             onUnitSizeChange = { editableUnitSize = it },
+                            selectedCampaign = selectedCampaign,
+                            onCampaignSelect = { selectedCampaign = it },
+                            campaigns = activeCampaigns,
                             note = note,
+                            errors = uiState.errors,
                             onNoteChange = { note = it }
                         )
                     }
@@ -294,11 +349,25 @@ fun ReceptionScreen(productRepository: ProductRepository) {
 
                     item {
                         Button(
-                            onClick = { /* TODO: Submeter */ },
+                            onClick = {
+                                scope.launch {
+                                    receiptsViewModel.submitReceipt(
+                                        barcode = barcode,
+                                        lotsUi = lots,
+                                        name = editableName,
+                                        categoryId = selectedCategory?.id,
+                                        unitId = selectedUnit?.id,
+                                        campaignId = selectedCampaign?.id,
+                                        unitSizeStr = editableUnitSize,
+                                        note = note
+                                    )
+                                }
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            enabled = !(isLoadingProduct || uiState.isLoading)
                         ) {
                             Text(
                                 "Registar Receção",
@@ -310,7 +379,7 @@ fun ReceptionScreen(productRepository: ProductRepository) {
                 }
             }
 
-            if (isLoading) {
+            if (anyLoading) {
                 LoadingWidget()
             }
         }

@@ -6,12 +6,12 @@ import sasipca.storage.requestWithAuth
 import io.ktor.client.*
 import io.ktor.http.*
 
-class StockRepository(private val client: HttpClient) {
+class DeliveryRepository(private val client: HttpClient) {
 
     /**
      * Consulta entregas com filtros opcionais
      */
-    suspend fun getDeliveries(query: DeliveryGetDTO? = null): List<VDeliveryDTO> {
+    suspend fun getDeliveries(query: DeliveryGet? = null): List<Delivery> {
         val url = buildString {
             append("${ApiConfig.baseUrl()}/stock/delivery")
             query?.let {
@@ -25,16 +25,17 @@ class StockRepository(private val client: HttpClient) {
         )
     }
 
+
     /**
      * Agenda uma nova entrega para uma data específica.
      *
      * Cria uma entrega imediata.
      */
-    suspend fun scheduleDelivery(dto: DeliveryCreationDTO, instant: Boolean): VDeliveryDTO {
+    suspend fun scheduleDelivery(body: DeliveryPost, instant: Boolean): Delivery {
         return client.requestWithAuth(
             method = HttpMethod.Post,
             url = "${ApiConfig.baseUrl()}/stock/delivery",
-            body = dto
+            body = body
         )
     }
 
@@ -42,11 +43,11 @@ class StockRepository(private val client: HttpClient) {
      * Atualiza uma entrega existente (ex: data, status, itens)
      * Apenas se estiver 'Agendada'
      */
-    suspend fun updateDelivery(deliveryId: Int, dto: DeliveryUpdateDTO): VDeliveryDTO {
+    suspend fun updateDelivery(deliveryId: Int, body: DeliveryPut): Delivery {
         return client.requestWithAuth(
             method = HttpMethod.Put,
             url = "${ApiConfig.baseUrl()}/stock/delivery/$deliveryId",
-            body = dto
+            body = body
         )
     }
 

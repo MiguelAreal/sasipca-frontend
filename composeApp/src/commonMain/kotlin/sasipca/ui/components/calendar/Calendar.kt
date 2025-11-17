@@ -8,7 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import sasipca.models.VDeliveryDTO
+import sasipca.models.Delivery
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -25,10 +25,10 @@ class WeekCalendarController(
 fun Calendar(
     month: YearMonth,
     startDate: LocalDate = LocalDate.now(),
-    deliveries: List<VDeliveryDTO> = emptyList(),
+    deliveries: List<Delivery> = emptyList(),
     onMonthChange: (YearMonth) -> Unit,
-    onDayClick: (LocalDate, List<VDeliveryDTO>) -> Unit,
-    onEventClick: (VDeliveryDTO) -> Unit,
+    onDayClick: (LocalDate, List<Delivery>) -> Unit,
+    onEventClick: (Delivery) -> Unit,
     modifier: Modifier = Modifier,
     controller: (WeekCalendarController) -> Unit = {}
 ) {

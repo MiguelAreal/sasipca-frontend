@@ -12,8 +12,3 @@ data class UnitType(
     override val name: String
 ) : NamedItem
 
-data class LotToEnter(
-    var lotNumber: String,
-    var expirationDate: String,
-    var quantity: String
-)

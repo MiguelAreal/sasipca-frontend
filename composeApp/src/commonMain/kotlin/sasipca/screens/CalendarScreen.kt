@@ -18,11 +18,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import sasipca.repositories.StockRepository
+import sasipca.models.Delivery
+import sasipca.models.DeliveryPost
+import sasipca.models.DeliveryPut
+import sasipca.repositories.DeliveryRepository
 import sasipca.viewmodels.DeliveriesViewModel
-import sasipca.models.DeliveryCreationDTO
-import sasipca.models.DeliveryUpdateDTO
-import sasipca.models.VDeliveryDTO
 import sasipca.storage.ScreenSizeManager.isLargeScreen
 import sasipca.storage.ScreenSizeManager.isSmallScreen
 import sasipca.ui.components.calendar.CalendarHeader
@@ -34,15 +34,15 @@ import java.time.YearMonth
 
 @Suppress("UnusedBoxWithConstraintsScope")
 @Composable
-fun CalendarScreen(stockRepository: StockRepository) {
-    val viewModel = remember { DeliveriesViewModel(stockRepository) }
+fun CalendarScreen(deliveryRepository: DeliveryRepository) {
+    val viewModel = remember { DeliveriesViewModel(deliveryRepository) }
     val month by viewModel.month.collectAsState()
     val selectedDate by viewModel.selectedDate.collectAsState()
     val deliveries by viewModel.deliveries.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    var editorState by remember { mutableStateOf<VDeliveryDTO?>(null) }
-    var pickerState by remember { mutableStateOf<Pair<LocalDate, List<VDeliveryDTO>>?>(null) }
+    var editorState by remember { mutableStateOf<Delivery?>(null) }
+    var pickerState by remember { mutableStateOf<Pair<LocalDate, List<Delivery>>?>(null) }
 
     var showFutureDeliveries by remember { mutableStateOf(false) }
 
@@ -92,7 +92,7 @@ fun CalendarScreen(stockRepository: StockRepository) {
                 onDismiss = { pickerState = null },
                 onSelect = { selected ->
                     pickerState = null
-                    editorState = selected ?: VDeliveryDTO(
+                    editorState = selected ?: Delivery(
                         deliveryId = 0,
                         beneficiaryId = 0,
                         beneficiaryName = null,
@@ -116,7 +116,7 @@ fun CalendarScreen(stockRepository: StockRepository) {
                 onSave = { updated ->
                     if (updated.deliveryId == 0) {
                         viewModel.scheduleDelivery(
-                            DeliveryCreationDTO(
+                            DeliveryPost(
                                 beneficiaryId = updated.beneficiaryId,
                                 scheduledDate = updated.scheduledDate, // já é String ISO
                                 note = updated.note,
@@ -128,7 +128,7 @@ fun CalendarScreen(stockRepository: StockRepository) {
                         // Atualizar entrega existente
                         viewModel.updateDelivery(
                             updated.deliveryId,
-                            DeliveryUpdateDTO(
+                            DeliveryPut(
                                 scheduledDate = updated.scheduledDate,
                                 newStatusId = updated.statusId,
                                 note = updated.note,
@@ -148,12 +148,12 @@ fun CalendarScreen(stockRepository: StockRepository) {
 fun CompactLayout(
     month: YearMonth,
     selectedDate: LocalDate,
-    deliveries: List<VDeliveryDTO>,
+    deliveries: List<Delivery>,
     viewModel: DeliveriesViewModel,
-    pickerState: Pair<LocalDate, List<VDeliveryDTO>>?,
-    onPickerStateChange: (Pair<LocalDate, List<VDeliveryDTO>>?) -> Unit,
-    editorState: VDeliveryDTO?,
-    onEditorStateChange: (VDeliveryDTO?) -> Unit,
+    pickerState: Pair<LocalDate, List<Delivery>>?,
+    onPickerStateChange: (Pair<LocalDate, List<Delivery>>?) -> Unit,
+    editorState: Delivery?,
+    onEditorStateChange: (Delivery?) -> Unit,
     showFutureDeliveries: Boolean,
     onMonthChange: (YearMonth) -> Unit,
     onShowFutureDeliveriesChange: (Boolean) -> Unit
@@ -217,12 +217,12 @@ fun CompactLayout(
 fun WideLayout(
     month: YearMonth,
     selectedDate: LocalDate,
-    deliveries: List<VDeliveryDTO>,
+    deliveries: List<Delivery>,
     viewModel: DeliveriesViewModel,
-    pickerState: Pair<LocalDate, List<VDeliveryDTO>>?,
-    onPickerStateChange: (Pair<LocalDate, List<VDeliveryDTO>>?) -> Unit,
-    editorState: VDeliveryDTO?,
-    onEditorStateChange: (VDeliveryDTO?) -> Unit,
+    pickerState: Pair<LocalDate, List<Delivery>>?,
+    onPickerStateChange: (Pair<LocalDate, List<Delivery>>?) -> Unit,
+    editorState: Delivery?,
+    onEditorStateChange: (Delivery?) -> Unit,
     onMonthChange: (YearMonth) -> Unit
 ) {
     var calendarController by remember { mutableStateOf<WeekCalendarController?>(null) }
@@ -265,8 +265,8 @@ fun WideLayout(
 
 @Composable
 fun FutureDeliveriesList(
-    onEventClick: (VDeliveryDTO) -> Unit,
-    deliveries: List<VDeliveryDTO>,
+    onEventClick: (Delivery) -> Unit,
+    deliveries: List<Delivery>,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -303,9 +303,9 @@ fun FutureDeliveriesList(
 @Composable
 fun EventPickerDialog(
     date: LocalDate,
-    deliveries: List<VDeliveryDTO>,
+    deliveries: List<Delivery>,
     onDismiss: () -> Unit,
-    onSelect: (VDeliveryDTO?) -> Unit
+    onSelect: (Delivery?) -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -372,10 +372,10 @@ fun EventPickerDialog(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventEditorDialog(
-    initial: VDeliveryDTO,
+    initial: Delivery,
     onDismiss: () -> Unit,
-    onSave: (VDeliveryDTO) -> Unit,
-    onDelete: (VDeliveryDTO) -> Unit
+    onSave: (Delivery) -> Unit,
+    onDelete: (Delivery) -> Unit
 ) {
     var beneficiaryId by remember { mutableStateOf(initial.beneficiaryId.toString()) }
     var date by remember { mutableStateOf(initial.scheduledDate) }
