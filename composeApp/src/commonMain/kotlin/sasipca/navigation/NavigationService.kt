@@ -14,6 +14,7 @@ sealed class Screen {
     object Main : Screen()
     object Home : Screen()
     object Products : Screen()
+    object Product : Screen()
     object Calendar : Screen()
     object Profile : Screen()
     object Reception : Screen()

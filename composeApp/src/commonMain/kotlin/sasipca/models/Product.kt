@@ -17,21 +17,3 @@ data class Product(
     val reservedQuantity: Int? = null,
     val availableStock: Int? = null
 )
-
-
-/**
- * Classe utilizada para mostrar um cabeçalho de produto no front-end.
- *
- * Traduz categoryID e unitID para nomes.
- */
-@Serializable
-data class ProductUI(
-    val barcode: String,
-    val name: String,
-    val categoryName: String,
-    val unitName: String,
-    val unitSize: Int?,
-    val totalQuantity: Int?,
-    val reservedQuantity: Int?,
-    val availableStock: Int?
-)

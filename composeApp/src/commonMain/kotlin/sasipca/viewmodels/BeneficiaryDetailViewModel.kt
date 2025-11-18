@@ -5,8 +5,8 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import sasipca.models.BeneficiaryGetDTO
-import sasipca.models.BeneficiaryPostDTO
+import sasipca.models.BeneficiaryGet
+import sasipca.models.BeneficiaryPost
 import sasipca.models.Resposta
 import sasipca.repositories.BeneficiaryRepository
 import sasipca.utils.SnackbarManager
@@ -22,7 +22,7 @@ class BeneficiaryDetailViewModel(
     var isLoading by mutableStateOf(false)
         private set
 
-    var getBeneficiary by mutableStateOf<BeneficiaryGetDTO?>(null)
+    var getBeneficiary by mutableStateOf<BeneficiaryGet?>(null)
         private set
 
 
@@ -48,7 +48,7 @@ class BeneficiaryDetailViewModel(
     /**
      * Cria um novo beneficiário.
      */
-    fun createBeneficiary(dto: BeneficiaryPostDTO, onSuccess: (() -> Unit)? = null) {
+    fun createBeneficiary(dto: BeneficiaryPost, onSuccess: (() -> Unit)? = null) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 isLoading = true
@@ -72,7 +72,7 @@ class BeneficiaryDetailViewModel(
     /**
      * Atualiza um beneficiário existente.
      */
-    fun updateBeneficiary(id: Int, dto: BeneficiaryPostDTO) {
+    fun updateBeneficiary(id: Int, dto: BeneficiaryPost) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 isLoading = true

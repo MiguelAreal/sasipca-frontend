@@ -16,7 +16,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
@@ -46,10 +45,8 @@ import kotlin.collections.plus
 fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: ReceiptRepository) {
 
     val receiptsViewModel = remember { ReceiptsViewModel(receiptRepository) }
-    // UI state from viewmodel
     val uiState by receiptsViewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
-
 
     var barcode by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
@@ -76,7 +73,6 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
     val categories: List<Category> = remember { ListsStore.categoriestypes.map { Category(it.id, it.type) } }
     val units: List<UnitType> = remember { ListsStore.unitTypes.map { UnitType(it.id, it.type) } }
     val activeCampaigns: List<ActiveCampaigns> = remember { ListsStore.ActiveCampaigns.map { ActiveCampaigns(it.id, it.name) } }
-
     val images = productDetail?.images ?: emptyList()
 
     // Atualiza selectedUnit automaticamente quando o produto muda
@@ -84,8 +80,7 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
         editableName = productDetail?.name ?: ""
         editableUnitSize = productDetail?.unitSize?.toString() ?: ""
 
-        val unitTypeName = productDetail?.unitName ?: ""
-        selectedUnit = units.find { it.name.equals(unitTypeName, ignoreCase = true) }
+        selectedUnit = units.find { it.id == productDetail?.unitId }
     }
 
     // Busca produto ao alterar o barcode

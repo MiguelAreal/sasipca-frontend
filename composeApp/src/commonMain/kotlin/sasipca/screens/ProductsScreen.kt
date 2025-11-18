@@ -1,20 +1,15 @@
 package sasipca.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.GridView
-import androidx.compose.material.icons.outlined.ViewList
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,11 +18,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import sasipca.models.ProductUI
+import sasipca.models.Product
 import sasipca.repositories.ProductRepository
+import sasipca.storage.ListsStore
 import sasipca.ui.components.Header
 import sasipca.utils.getFormattedDatePt
 import sasipca.viewmodels.ProductViewModel
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ViewList
+
 
 enum class ViewMode {
     LIST, GRID
@@ -35,19 +36,22 @@ enum class ViewMode {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProductsScreen(productRepository: ProductRepository) {
-    val viewModel = remember { ProductViewModel(productRepository) }
+fun ProductsScreen(
+    productRepository: ProductRepository,
+    onOpenProduct: (String) -> Unit = {}
+) {
+    val productviewModel = remember { ProductViewModel(productRepository) }
     var viewMode by remember { mutableStateOf(ViewMode.LIST) }
 
     // Chamada inicial
-    LaunchedEffect(Unit) { viewModel.loadProducts() }
+    LaunchedEffect(Unit) { productviewModel.loadProducts() }
 
-    val filteredItems by remember { viewModel::filteredItems }
-    val isLoading by remember { viewModel::isLoading }
-    val errorMessage by remember { viewModel::errorMessage }
-    val searchQuery by remember { viewModel::searchQuery }
-    val currentPage by remember { viewModel::currentPage }
-    val totalPages by remember { viewModel::totalPages }
+    val filteredItems by remember { productviewModel::filteredItems }
+    val isLoading by remember { productviewModel::isLoading }
+    val errorMessage by remember { productviewModel::errorMessage }
+    val searchQuery by remember { productviewModel::searchQuery }
+    val currentPage by remember { productviewModel::currentPage }
+    val totalPages by remember { productviewModel::totalPages }
 
     Column(
         modifier = Modifier
@@ -67,7 +71,7 @@ fun ProductsScreen(productRepository: ProductRepository) {
             // Barra de pesquisa
             OutlinedTextField(
                 value = searchQuery,
-                onValueChange = { viewModel.loadProducts(it) },
+                onValueChange = { productviewModel.loadProducts(it) },
                 modifier = Modifier
                     .weight(1f)
                     .height(65.dp),
@@ -109,7 +113,7 @@ fun ProductsScreen(productRepository: ProductRepository) {
                     .background(MaterialTheme.colorScheme.surface)
             ) {
                 Icon(
-                    if (viewMode == ViewMode.LIST) Icons.Outlined.GridView else Icons.Outlined.ViewList,
+                    if (viewMode == ViewMode.LIST) Icons.Outlined.GridView else Icons.AutoMirrored.Outlined.ViewList,
                     contentDescription = "Alternar visualização"
                 )
             }
@@ -125,7 +129,7 @@ fun ProductsScreen(productRepository: ProductRepository) {
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
                 items(filteredItems) { item ->
-                    StockItemCard(item)
+                    StockItemCard(item,onClick = { onOpenProduct(item.barcode) })
                 }
             }
         } else {
@@ -139,7 +143,7 @@ fun ProductsScreen(productRepository: ProductRepository) {
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
                 items(filteredItems) { item ->
-                    ProductItemCardGrid(item)
+                    ProductItemCardGrid(item,onClick = { onOpenProduct(item.barcode) })
 
                 }
             }
@@ -148,11 +152,11 @@ fun ProductsScreen(productRepository: ProductRepository) {
 }
 
 @Composable
-fun StockItemCard(item: ProductUI) {
+fun StockItemCard(item: Product, onClick: () -> Unit) {
     Card(
+        onClick = onClick,
         modifier = Modifier
-            .fillMaxWidth()
-            .clickable { /* TODO: Ação ao clicar */ },
+            .fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -172,14 +176,14 @@ fun StockItemCard(item: ProductUI) {
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = item.categoryName, // antes era categoryId.toString()
+                    text = ListsStore.getCategoryName(item.categoryId),
                     fontSize = 14.sp,
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
 
             Text(
-                text = "${item.availableStock} ${item.unitName}", // antes era unitId
+                text = "${item.availableStock}",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -188,12 +192,12 @@ fun StockItemCard(item: ProductUI) {
 }
 
 @Composable
-fun ProductItemCardGrid(item: ProductUI) {
+fun ProductItemCardGrid(item: Product, onClick: () -> Unit) {
     Card(
+        onClick =onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1f)
-            .clickable { /* TODO: Ação ao clicar */ },
+            .aspectRatio(1f),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -211,14 +215,14 @@ fun ProductItemCardGrid(item: ProductUI) {
                     maxLines = 2
                 )
                 Text(
-                    text = item.categoryName, // antes categoryId.toString()
+                    text = ListsStore.getCategoryName(item.categoryId),
                     fontSize = 13.sp,
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
 
             Text(
-                text = "${item.availableStock} ${item.unitName}", // antes unitId
+                text = item.availableStock.toString(),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )

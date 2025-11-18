@@ -7,49 +7,55 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import sasipca.ApiClient
+import sasipca.models.Category
+import sasipca.models.ProductDetail
+import sasipca.models.UnitType
 import sasipca.navigation.NavigationService
 import sasipca.repositories.BeneficiaryRepository
 import sasipca.repositories.DeliveryRepository
+import sasipca.repositories.OFFRepository
+import sasipca.repositories.ProductRepository
+import sasipca.storage.ListsStore
 import sasipca.storage.ScreenSizeManager.isLargeScreen
 import sasipca.storage.ScreenSizeManager.updateSize
 import sasipca.ui.components.Header
 import sasipca.ui.components.beneficiaries.*
+import sasipca.ui.components.products.ProductEditForm
 import sasipca.viewmodels.BeneficiaryDetailViewModel
 import sasipca.viewmodels.DeliveriesViewModel
+import sasipca.viewmodels.ProductViewModel
 
 @Suppress("UnusedBoxWithConstraintsScope")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BeneficiaryScreen(
-    beneficiaryId: Int,
-    repository: BeneficiaryRepository,
-    deliveryRepository: DeliveryRepository
+fun ProductScreen(
+    barcode: String,
+    productRepository: ProductRepository
 ) {
 
-    val viewModel = remember { BeneficiaryDetailViewModel(repository) }
-    val deliveriesViewModel = remember { DeliveriesViewModel(deliveryRepository) }
+    val productViewModel = remember { ProductViewModel(productRepository) }
+    val uiState by productViewModel.uiState.collectAsState()
+
+    val offRepository = remember { OFFRepository(ApiClient.client) }
     val scope = rememberCoroutineScope()
 
-    val beneficiary = viewModel.getBeneficiary
-    val isLoading by remember { viewModel::isLoading }
-    val deliveries by deliveriesViewModel.deliveries.collectAsState()
-
+    val productDetail: ProductDetail? = productViewModel.selectedProductDetail
+    val isLoading by remember { productViewModel::isLoading }
     var selectedTab by remember { mutableStateOf(0) }
 
     // Carrega dados iniciais
-    LaunchedEffect(beneficiaryId) {
-        viewModel.loadBeneficiary(beneficiaryId)
-        deliveriesViewModel.loadBeneficiaryDeliveries(beneficiaryId)
+    LaunchedEffect(barcode) {
+        productViewModel.getProduct(barcode,offRepository)
     }
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Header(
-            title = "Beneficiário",
-            subTitle = beneficiary?.name ?: ""
+            title = "Produto",
+            subTitle = productDetail?.name?: ""
         )
 
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            updateSize(maxWidth, maxHeight)
             if (isLargeScreen()) {
                 Row(
                     modifier = Modifier
@@ -59,25 +65,25 @@ fun BeneficiaryScreen(
                 ) {
                     // Coluna da esquerda - Edição
                     Box(modifier = Modifier.weight(1f)) {
-                        BeneficiaryEditForm(
-                            beneficiary = beneficiary,
-                            isLoading = isLoading,
-                            onSave = { body ->
-                                scope.launch {
-                                    viewModel.updateBeneficiary(beneficiaryId, body)
-                                    NavigationService.goBack()
+                        productDetail?.let {
+                            ProductEditForm(
+                                product = it,
+                                isLoading = isLoading,
+                                errors = uiState.errors,
+                                onSave = { body ->
+                                    scope.launch {
+                                        productViewModel.putProduct(
+                                            barcode = barcode,
+                                            body = body
+                                        )
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
 
                     // Coluna da direita - Histórico
-                    Box(modifier = Modifier.weight(1f)) {
-                        DeliveriesTable(
-                            deliveries = deliveries,
-                            isLoading = deliveriesViewModel.isLoading.collectAsState().value
-                        )
-                    }
+                    Box(modifier = Modifier.weight(1f)) {}
                 }
             } else {
                 // Layout com separadores para ecrãs pequenos
@@ -91,7 +97,7 @@ fun BeneficiaryScreen(
                         FilterChip(
                             selected = selectedTab == 0,
                             onClick = { selectedTab = 0 },
-                            label = { Text("Perfil") },
+                            label = { Text("Produto") },
                             modifier = Modifier.padding(end = 8.dp)
                         )
                         FilterChip(
@@ -103,20 +109,22 @@ fun BeneficiaryScreen(
 
                     Box(modifier = Modifier.fillMaxSize()) {
                         when (selectedTab) {
-                            0 -> BeneficiaryEditForm(
-                                beneficiary = beneficiary,
-                                isLoading = isLoading,
-                                onSave = { body ->
-                                    scope.launch {
-                                        viewModel.updateBeneficiary(beneficiaryId, body)
-                                        NavigationService.goBack()
+                            0 -> productDetail?.let {
+                                ProductEditForm(
+                                    product = it,
+                                    isLoading = isLoading,
+                                    errors = uiState.errors,
+                                    onSave = { body ->
+                                        scope.launch {
+                                            productViewModel.putProduct(
+                                                barcode = barcode,
+                                                body = body
+                                            )
+                                        }
                                     }
-                                }
-                            )
-                            1 -> DeliveriesTable(
-                                deliveries = deliveries,
-                                isLoading = deliveriesViewModel.isLoading.collectAsState().value
-                            )
+                                )
+                            }
+                            1 -> Box {}
                         }
                     }
                 }

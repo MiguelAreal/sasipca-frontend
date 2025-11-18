@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import sasipca.repositories.BeneficiaryRepository
 import sasipca.ui.components.beneficiaries.CreateBeneficiaryPopup
 import sasipca.ui.components.Header
+import sasipca.ui.components.LoadingWidget
 import sasipca.ui.components.beneficiaries.*
 import sasipca.utils.getFormattedDatePt
 import sasipca.viewmodels.BeneficiariesViewModel
@@ -176,7 +177,7 @@ fun BeneficiariesScreen(
             when {
                 isLoading -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                        LoadingWidget()
                     }
                 }
 

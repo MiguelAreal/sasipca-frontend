@@ -97,7 +97,7 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
     fun updateDelivery(deliveryId: Int, dto: DeliveryPut) {
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                deliveryRepository.updateDelivery(deliveryId, dto)
+                deliveryRepository.putDelivery(deliveryId, dto)
             }.onSuccess {
                 loadMonthDeliveries(_month.value)
             }

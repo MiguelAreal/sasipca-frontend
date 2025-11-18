@@ -36,6 +36,7 @@ import sasipca.composeapp.generated.resources.Res
 import sasipca.composeapp.generated.resources.login_bg
 import sasipca.composeapp.generated.resources.logo
 import sasipca.repositories.AuthRepository
+import sasipca.ui.components.LoadingWidget
 
 
 @Composable
@@ -215,11 +216,7 @@ fun LoginScreen(authRepository: AuthRepository) {
             enabled = !isLoading
         ) {
             if (isLoading) {
-                CircularProgressIndicator(
-                    color = Color(0xFFFFFFFF),
-                    strokeWidth = 2.dp,
-                    modifier = Modifier.size(24.dp)
-                )
+                LoadingWidget()
             } else {
                 Text("Entrar")
             }

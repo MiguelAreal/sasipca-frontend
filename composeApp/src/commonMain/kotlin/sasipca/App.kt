@@ -34,6 +34,7 @@ fun App() {
     var isDarkTheme by remember { mutableStateOf(false) }
     var initialized by remember { mutableStateOf(false) }
     var selectedBeneficiaryId by remember { mutableStateOf<Int?>(null) }
+    var selectedProductBarcode by remember { mutableStateOf<String?>(null) }
 
     // Inicializar tema e singletons globais
     InitializeApp(
@@ -58,6 +59,8 @@ fun App() {
             currentScreen = currentScreen,
             selectedBeneficiaryId = selectedBeneficiaryId,
             onBeneficiarySelected = { selectedBeneficiaryId = it },
+            selectedProductBarcode = selectedProductBarcode,
+            onProductSelected = { selectedProductBarcode = it },
             onThemeChange = { isDarkTheme = it }
         )
 
@@ -122,6 +125,8 @@ private fun AnimatedNavigation(
     currentScreen: Screen,
     selectedBeneficiaryId: Int?,
     onBeneficiarySelected: (Int) -> Unit,
+    selectedProductBarcode: String?,
+    onProductSelected: (String) -> Unit,
     onThemeChange: (Boolean) -> Unit
 ) {
     val authRepository = ApiClient.authRepository
@@ -154,7 +159,10 @@ private fun AnimatedNavigation(
                 onOpenBeneficiary = { id ->
                     onBeneficiarySelected(id)
                     NavigationService.navigateTo(Screen.Beneficiary)
-                }
+                },
+                onOpenProduct = { barcode ->
+                    onProductSelected(barcode)
+                    NavigationService.navigateTo(Screen.Product)}
             )
 
             Screen.Reception -> ReceiptScreen(productRepository, receiptRepository)
@@ -168,7 +176,6 @@ private fun AnimatedNavigation(
                     NavigationService.navigateTo(Screen.Beneficiary)
                 }
             )
-
             Screen.Beneficiary -> selectedBeneficiaryId?.let { id ->
                 BeneficiaryScreen(
                     beneficiaryId = id,
@@ -176,14 +183,24 @@ private fun AnimatedNavigation(
                     deliveryRepository = deliveryRepository
                 )
             }
-
             Screen.Settings -> SettingsScreen { onThemeChange(it) }
             Screen.Notifications -> PlaceholderScreen()
             Screen.Placeholder -> PlaceholderScreen()
             Screen.Calendar -> CalendarScreen(deliveryRepository)
             Screen.Home -> HomeScreen()
             Screen.Profile -> ProfileScreen()
-            Screen.Products -> ProductsScreen(productRepository)
+            Screen.Products -> ProductsScreen(
+                productRepository,
+                onOpenProduct = { barcode ->
+                onProductSelected(barcode)
+                NavigationService.navigateTo(Screen.Product)
+            })
+            Screen.Product -> selectedProductBarcode?.let { barcode ->
+                ProductScreen(
+                    barcode = barcode,
+                    productRepository = productRepository,
+                )
+            }
         }
     }
 }

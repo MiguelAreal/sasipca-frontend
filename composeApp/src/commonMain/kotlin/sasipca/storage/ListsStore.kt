@@ -43,10 +43,10 @@ object ListsStore {
         this.ActiveCampaigns = activeCampaigns
     }
 
-    fun getCategoryTypeName(id: Int): String =
+    fun getCategoryName(id: Int): String =
         categoriestypes.firstOrNull { it.id == id }?.type ?: "Desconhecido"
 
-    fun getUnitTypeName(id: Int): String =
+    fun getUnitName(id: Int): String =
         unitTypes.firstOrNull { it.id == id }?.type ?: "Desconhecido"
 
     fun getMovementTypeName(id: Int): String =

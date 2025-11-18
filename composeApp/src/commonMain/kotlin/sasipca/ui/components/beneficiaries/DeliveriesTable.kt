@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import sasipca.models.Delivery
 import sasipca.storage.ScreenSizeManager.isLargeScreen
+import sasipca.ui.components.LoadingWidget
 
 
 enum class SortColumn {
@@ -165,14 +166,7 @@ fun DeliveriesTable(
                 }
 
                 if (isLoading) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.3f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                    }
+                    LoadingWidget()
                 }
             }
 

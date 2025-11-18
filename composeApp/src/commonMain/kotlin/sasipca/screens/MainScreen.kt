@@ -24,7 +24,7 @@ import sasipca.screens.BeneficiariesScreen
 fun MainScreen(deliveryRepository: DeliveryRepository,
                productRepository: ProductRepository,
                beneficiaryRepository: BeneficiaryRepository,
-               onOpenBeneficiary: (Int) -> Unit = {})
+               onOpenBeneficiary: (Int) -> Unit = {},onOpenProduct: (String) -> Unit = {})
 {
     val tabs = listOf(Screen.Home, Screen.Products, Screen.Calendar, Screen.Beneficiaries)
     val pagerState = rememberPagerState(
@@ -80,7 +80,7 @@ fun MainScreen(deliveryRepository: DeliveryRepository,
             if (page == pagerState.currentPage) {
                 when (screen) {
                     Screen.Home -> HomeScreen()
-                    Screen.Products -> ProductsScreen(productRepository)
+                    Screen.Products -> ProductsScreen(productRepository,onOpenProduct)
                     Screen.Calendar -> CalendarScreen(deliveryRepository)
                     Screen.Beneficiaries -> BeneficiariesScreen(
                         beneficiaryRepository = beneficiaryRepository,

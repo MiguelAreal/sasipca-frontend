@@ -43,7 +43,7 @@ class DeliveryRepository(private val client: HttpClient) {
      * Atualiza uma entrega existente (ex: data, status, itens)
      * Apenas se estiver 'Agendada'
      */
-    suspend fun updateDelivery(deliveryId: Int, body: DeliveryPut): Delivery {
+    suspend fun putDelivery(deliveryId: Int, body: DeliveryPut): Delivery {
         return client.requestWithAuth(
             method = HttpMethod.Put,
             url = "${ApiConfig.baseUrl()}/stock/delivery/$deliveryId",

@@ -2,13 +2,13 @@ package sasipca.viewmodels
 
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
-import sasipca.models.BeneficiaryListDTO
+import sasipca.models.BeneficiaryItem
 import sasipca.models.PaginatedResponse
 import sasipca.repositories.BeneficiaryRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import sasipca.models.BeneficiaryPostDTO
+import sasipca.models.BeneficiaryPost
 import sasipca.utils.NotFoundException
 import sasipca.utils.RepositoryException
 import sasipca.utils.SnackbarManager
@@ -28,7 +28,7 @@ class BeneficiariesViewModel(val repository: BeneficiaryRepository) : ViewModel(
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
-    var beneficiaries by mutableStateOf<PaginatedResponse<BeneficiaryListDTO>?>(null)
+    var beneficiaries by mutableStateOf<PaginatedResponse<BeneficiaryItem>?>(null)
         private set
 
     var searchTerm by mutableStateOf("")
@@ -57,7 +57,7 @@ class BeneficiariesViewModel(val repository: BeneficiaryRepository) : ViewModel(
                 isLoading = true
                 errorMessage = null
 
-                val response: PaginatedResponse<BeneficiaryListDTO> =
+                val response: PaginatedResponse<BeneficiaryItem> =
                     repository.getProfiles(
                         search = search,
                         pageNumber = page,
@@ -65,9 +65,9 @@ class BeneficiariesViewModel(val repository: BeneficiaryRepository) : ViewModel(
                         orderBy = order
                     )
 
-                val mapped = PaginatedResponse<BeneficiaryListDTO>(
+                val mapped = PaginatedResponse<BeneficiaryItem>(
                     data = response.data.map {
-                        BeneficiaryListDTO(
+                        BeneficiaryItem(
                             beneficiaryId = it.beneficiaryId,
                             name = it.name,
                             email = it.email

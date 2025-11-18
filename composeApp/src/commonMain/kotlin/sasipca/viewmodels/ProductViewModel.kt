@@ -2,25 +2,46 @@ package sasipca.viewmodels
 
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import sasipca.repositories.ProductRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import sasipca.models.ProductDetailUI
-import sasipca.models.ProductUI
+import sasipca.models.LotToEnter
+import sasipca.models.Product
+import sasipca.models.ProductDetail
+import sasipca.models.ProductPut
+import sasipca.models.ReceiptLotItem
+import sasipca.models.ReceiptPost
+import sasipca.models.UnitTypeInfo
+import sasipca.navigation.NavigationService
 import sasipca.repositories.OFFRepository
 import sasipca.storage.ListsStore
 
-class ProductViewModel(private val repository: ProductRepository) : ViewModel() {
+data class ProductUiState(
+    val isLoading: Boolean = false,
+    val errors: Map<String, String> = emptyMap(), // chave -> mensagem (ex: "barcode" -> "Obrigatório")
+    val lastErrorMessage: String? = null,
+    val success: Boolean = false
+)
+
+class ProductViewModel(private val productRepository: ProductRepository) : ViewModel() {
     var isLoading by mutableStateOf(false)
         private set
-    var stockItems by mutableStateOf<List<ProductUI>>(emptyList())
+
+    private val _uiState = MutableStateFlow(ProductUiState())
+
+    val uiState: StateFlow<ProductUiState> = _uiState
+
+    var stockItems by mutableStateOf<List<Product>>(emptyList())
         private set
 
-    var filteredItems by mutableStateOf<List<ProductUI>>(emptyList())
+    var filteredItems by mutableStateOf<List<Product>>(emptyList())
         private set
 
-    var selectedProductDetail by mutableStateOf<ProductDetailUI?>(null)
+    var selectedProductDetail by mutableStateOf<ProductDetail?>(null)
         private set
 
     var errorMessage by mutableStateOf<String?>(null)
@@ -37,7 +58,7 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
         private set
 
     /**
-     * Deseleciona um produto
+     * Desseleciona um produto
      */
     fun resetProduct() {
         selectedProductDetail = null
@@ -45,28 +66,38 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
 
     /**
      * Carrega produto específico da nossa API.
+     * Carrega imagens do OpenFoodFacts, caso existam.
      */
-    fun loadProduct(barcode: String) {
+    fun getProduct(barcode: String, offRepository: OFFRepository) {
         isLoading = true
         errorMessage = null
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val detail = repository.getProduct(barcode)
+                // Busca sempre o produto na API interna (se falhar, é erro)
+                val detail = productRepository.getProduct(barcode)
 
-                val uiDetail = ProductDetailUI(
+                // Busca imagens no OFF (se falhar, ignora)
+                val offResponse = try { offRepository.getProduct(barcode) } catch (_: Exception) { null }
+                val offImages = offResponse?.product?.images ?: emptyList()
+
+                // Constrói o objeto de UI usando APENAS a API como fonte de verdade
+                val uiDetail = ProductDetail(
                     barcode = detail.barcode,
                     name = detail.name,
                     unitSize = detail.unitSize,
-                    categoryName = ListsStore.getCategoryTypeName(detail.categoryId),
-                    unitName = ListsStore.getUnitTypeName(detail.unitId),
+                    categoryId = detail.categoryId,
+                    unitId = detail.unitId,
                     totalQuantity = detail.totalQuantity,
                     reservedQuantity = detail.reservedQuantity,
                     availableStock = detail.availableStock,
                     productLots = detail.productLots
-                )
+                ).also {
+                    it.images = offImages
+                }
 
                 selectedProductDetail = uiDetail
+
             } catch (e: Exception) {
                 errorMessage = e.message
             } finally {
@@ -77,6 +108,7 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
 
     /**
      * Através do código de barras carrega um produto.
+     * Isto serve para receção de produtos
      * - Se o produto existir na nossa base de dados, carrega primeiro esses dados:
      *      - Nome de produto
      *      - Categoria
@@ -93,22 +125,22 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // 1️⃣ Tenta buscar na API interna
-                val detail = try { repository.getProduct(barcode) } catch (_: Exception) { null }
+                // Tenta buscar na API interna
+                val detail = try { productRepository.getProduct(barcode) } catch (_: Exception) { null }
 
-                // 2️⃣ Busca no Open Food Facts
+                // Busca no Open Food Facts
                 val offResponse = try { offRepository.getProduct(barcode) } catch (_: Exception) { null }
                 val offProduct = offResponse?.product
 
                 val uiDetail = when {
                     detail != null -> {
                         // Produto existe na API interna → API é fonte de verdade para dados
-                        ProductDetailUI(
+                        ProductDetail(
                             barcode = detail.barcode,
                             name = detail.name,
                             unitSize = detail.unitSize,
-                            categoryName = ListsStore.getCategoryTypeName(detail.categoryId),
-                            unitName = ListsStore.getUnitTypeName(detail.unitId),
+                            categoryId = detail.categoryId,
+                            unitId = detail.unitId,
                             totalQuantity = detail.totalQuantity,
                             reservedQuantity = detail.reservedQuantity,
                             availableStock = detail.availableStock,
@@ -119,13 +151,15 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
                         }
                     }
                     offProduct != null -> {
+                        val units: List<UnitTypeInfo> = ListsStore.unitTypes
+
                         // Produto novo → tudo vem do OFF
-                        ProductDetailUI(
+                        ProductDetail(
                             barcode = offResponse.code,
                             name = offProduct.product_name ?: "",
                             unitSize = offProduct.product_quantity,
-                            categoryName = "", // usuário preenche depois
-                            unitName = offProduct.product_quantity_unit ?: "",
+                            categoryId = null,
+                            unitId = units.find { it.type.equals(offProduct.product_quantity_unit, ignoreCase = true) }?.id,
                             totalQuantity = null,
                             reservedQuantity = null,
                             availableStock = null,
@@ -159,26 +193,13 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = repository.getProducts(search)
-                val uiItems = response.data.map { dto ->
-                    ProductUI(
-                        barcode = dto.barcode,
-                        name = dto.name,
-                        categoryName = ListsStore.getCategoryTypeName(dto.categoryId),
-                        unitName = ListsStore.getUnitTypeName(dto.unitId),
-                        unitSize = dto.unitSize,
-                        totalQuantity = dto.totalQuantity,
-                        reservedQuantity = dto.reservedQuantity,
-                        availableStock = dto.availableStock
-                    )
-                }
-
-                stockItems = uiItems
+                val response = productRepository.getProducts(search).data
+                stockItems = response
 
                 val startIndex = (currentPage - 1) * pageSize
-                filteredItems = uiItems.drop(startIndex).take(pageSize)
+                filteredItems = response.drop(startIndex).take(pageSize)
 
-                totalPages = (uiItems.size + pageSize - 1) / pageSize
+                totalPages = (response.size + pageSize - 1) / pageSize
             } catch (e: Exception) {
                 errorMessage = e.message
             } finally {
@@ -187,6 +208,67 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
         }
     }
 
+
+    /**
+     * Valida e submete alteração a cabeçalho do produto.
+     */
+    fun putProduct(
+        barcode: String,
+        body: ProductPut
+    ) {
+        viewModelScope.launch(Dispatchers.Default) {
+            // inicia limpeza de estado
+            _uiState.value = _uiState.value.copy(isLoading = false, errors = emptyMap(), lastErrorMessage = null, success = false)
+
+            val errors = mutableMapOf<String, String>()
+
+            // barcode (necessário para pesquisa)
+            if (barcode.isBlank()) {
+                errors["barcode"] = "Código de barras obrigatório"
+            }
+
+            // Name (Não pode ir vazio)
+            if (body.name == null) {
+                errors["name"] = "Nome é obrigatório"
+            }
+
+            // unitSize (Não pode ser menor que 1 nem vazio)
+            if (body.unitSize == null || body.unitSize <= 1) {
+                errors["unitSize"] = "Quantidade por unidade tem de ser no mínimo 1"
+            }
+
+
+            // se existirem erros, atualiza estado e sai
+            if (errors.isNotEmpty()) {
+                _uiState.value = _uiState.value.copy(isLoading = false, errors = errors, lastErrorMessage = "Existem erros no formulário")
+                return@launch
+            }
+
+            // construir body
+            val body = ProductPut(
+                name = body.name,
+                unitSize = body.unitSize,
+                categoryId = body.categoryId,
+                unitId = body.unitId,
+            )
+
+            // enviar
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            runCatching {
+                productRepository.putProduct(barcode,body)
+            }.onSuccess { response ->
+                // considera sucesso — volta atrás na navegação
+                _uiState.value = ProductUiState(success = true)
+
+                // navigation
+                NavigationService.goBack()
+            }.onFailure { t ->
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    lastErrorMessage = t.message ?: "Erro ao submeter"
+                )
+            }
+        }
 
     fun goToNextPage() {
         if (currentPage < totalPages) {
@@ -201,4 +283,5 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
             loadProducts(searchQuery)
         }
     }
+}
 }

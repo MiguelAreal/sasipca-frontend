@@ -11,7 +11,7 @@ import sasipca.storage.requestWithAuth
 
 class BeneficiaryRepository(private val client: HttpClient) {
 
-    suspend fun getProfile(beneficiaryId: Int): BeneficiaryGetDTO {
+    suspend fun getProfile(beneficiaryId: Int): BeneficiaryGet {
         return client.requestWithAuth(
             method = HttpMethod.Get,
             url = "${ApiConfig.baseUrl()}/beneficiaries/$beneficiaryId"
@@ -23,7 +23,7 @@ class BeneficiaryRepository(private val client: HttpClient) {
         pageNumber: Int = 1,
         pageSize: Int = 20,
         orderBy: String = "asc"
-    ): PaginatedResponse<BeneficiaryListDTO> {
+    ): PaginatedResponse<BeneficiaryItem> {
         return try {
             client.requestWithAuth(
                 method = HttpMethod.Get,
@@ -40,7 +40,7 @@ class BeneficiaryRepository(private val client: HttpClient) {
         }
     }
 
-    suspend fun postProfile(dto: BeneficiaryPostDTO): Resposta {
+    suspend fun postProfile(dto: BeneficiaryPost): Resposta {
         return client.requestWithAuth(
             method = HttpMethod.Post,
             url = "${ApiConfig.baseUrl()}/beneficiaries",
@@ -48,7 +48,7 @@ class BeneficiaryRepository(private val client: HttpClient) {
         )
     }
 
-    suspend fun updateProfile(beneficiaryId: Int, dto: BeneficiaryPostDTO): Resposta {
+    suspend fun updateProfile(beneficiaryId: Int, dto: BeneficiaryPost): Resposta {
         return client.requestWithAuth(
             method = HttpMethod.Put,
             url = "${ApiConfig.baseUrl()}/beneficiaries/$beneficiaryId",

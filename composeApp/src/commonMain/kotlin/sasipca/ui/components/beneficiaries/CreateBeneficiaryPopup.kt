@@ -10,7 +10,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.launch
-import sasipca.models.BeneficiaryPostDTO
+import sasipca.models.BeneficiaryPost
 import sasipca.repositories.BeneficiaryRepository
 import sasipca.viewmodels.BeneficiaryDetailViewModel
 
@@ -142,7 +142,7 @@ fun CreateBeneficiaryPopup(
 
                 Button(
                     onClick = {
-                        val dto = BeneficiaryPostDTO(
+                        val dto = BeneficiaryPost(
                             name = name,
                             email = email,
                             contact = contact,

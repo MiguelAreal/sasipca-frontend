@@ -65,12 +65,18 @@ class ReceiptsViewModel(private val receiptRepository: ReceiptRepository) : View
                 errors["barcode"] = "Código de barras obrigatório"
             }
 
+            name?.let {
+                if (it.isBlank()) {
+                    errors["name"] = "Nome de produto é obrigatório"
+                }
+            }
+
             // unitSize
             val unitSize = unitSizeStr.toIntOrNull()
             if (unitSize == null) {
                 errors["unitSize"] = "Quantidade por unidade inválida"
-            } else if (unitSize <= 0) {
-                errors["unitSize"] = "Quantidade por unidade tem de ser maior que zero"
+            } else if (unitSize <= 1) {
+                errors["unitSize"] = "Quantidade por unidade tem de ser maior que 1"
             }
 
             // validar lotes individuais

@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
  * Representa dados a introduzir para criar ou editar um beneficiário
  */
 @Serializable
-data class BeneficiaryPostDTO(
+data class BeneficiaryPost(
     val name: String,
     val email: String,
     val contact: String,
@@ -24,10 +24,10 @@ data class BeneficiaryPostDTO(
 
 
 /**
- * Representa um beneficiário dentro de uma lista de beneficiários (mais simples)
+ * Representa um beneficiário numa lista de beneficiários (mais simples)
  */
 @Serializable
-data class BeneficiaryListDTO(
+data class BeneficiaryItem(
     val beneficiaryId: Int,
     val name: String,
     val email: String? = null
@@ -38,7 +38,7 @@ data class BeneficiaryListDTO(
  * Representa um beneficiário devolvido pela API
  */
 @Serializable
-data class BeneficiaryGetDTO(
+data class BeneficiaryGet(
     val beneficiaryId: Int,
     val name: String,
     val email: String,
