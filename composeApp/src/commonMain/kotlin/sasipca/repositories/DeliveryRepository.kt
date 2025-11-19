@@ -13,7 +13,7 @@ class DeliveryRepository(private val client: HttpClient) {
      */
     suspend fun getDeliveries(query: DeliveryGet? = null): List<Delivery> {
         val url = buildString {
-            append("${ApiConfig.baseUrl()}/stock/delivery")
+            append("${ApiConfig.baseUrl()}/deliveries")
             query?.let {
                 append("?StatusId=${it.statusId}&BeneficiaryId=${it.beneficiaryId}&DateFrom=${it.dateFrom}&DateTo=${it.dateTo}")
             }
@@ -34,7 +34,7 @@ class DeliveryRepository(private val client: HttpClient) {
     suspend fun scheduleDelivery(body: DeliveryPost, instant: Boolean): Delivery {
         return client.requestWithAuth(
             method = HttpMethod.Post,
-            url = "${ApiConfig.baseUrl()}/stock/delivery",
+            url = "${ApiConfig.baseUrl()}/stock/deliveries",
             body = body
         )
     }
@@ -46,7 +46,7 @@ class DeliveryRepository(private val client: HttpClient) {
     suspend fun putDelivery(deliveryId: Int, body: DeliveryPut): Delivery {
         return client.requestWithAuth(
             method = HttpMethod.Put,
-            url = "${ApiConfig.baseUrl()}/stock/delivery/$deliveryId",
+            url = "${ApiConfig.baseUrl()}/stock/deliveries/$deliveryId",
             body = body
         )
     }
@@ -57,7 +57,7 @@ class DeliveryRepository(private val client: HttpClient) {
     suspend fun deleteDelivery(deliveryId: Int): Resposta {
         return client.requestWithAuth(
             method = HttpMethod.Delete,
-            url = "${ApiConfig.baseUrl()}/stock/delivery/$deliveryId"
+            url = "${ApiConfig.baseUrl()}/stock/deliveries/$deliveryId"
         )
     }
 }

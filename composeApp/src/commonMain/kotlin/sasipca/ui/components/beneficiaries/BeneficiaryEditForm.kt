@@ -35,6 +35,7 @@
     import sasipca.models.BeneficiaryGet
     import sasipca.models.BeneficiaryPost
     import sasipca.ui.components.LoadingWidget
+    import sasipca.ui.theme.CardTitle
 
 
     @Composable
@@ -92,11 +93,7 @@
                                 .padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ){
-                            Text(
-                                "Informações Pessoais",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            CardTitle("Informações Pessoais")
 
                             OutlinedTextField(
                                 value = editName,
@@ -154,11 +151,7 @@
                                 .padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text(
-                                "Morada",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            CardTitle("Morada")
 
                             OutlinedTextField(
                                 value = editStreet,
@@ -205,11 +198,7 @@
                                 .padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text(
-                                "Informações Académicas",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            CardTitle("Informações Académicas")
 
                             OutlinedTextField(
                                 value = editStudentnum,
@@ -257,11 +246,7 @@
                                 .padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text(
-                                "Observações",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            CardTitle("Observações")
 
                             OutlinedTextField(
                                 value = editGlobalObs,
@@ -313,9 +298,7 @@
                             .height(56.dp),
                         shape = RoundedCornerShape(12.dp),
                     ) {
-                        Icon(Icons.Outlined.Check, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Guardar Alterações", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Guardar Alterações", fontSize = 16.sp)
                     }
                 }
             }

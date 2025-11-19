@@ -49,7 +49,6 @@ fun BeneficiaryScreen(
         )
 
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            updateSize(maxWidth, maxHeight)
             if (isLargeScreen()) {
                 Row(
                     modifier = Modifier
@@ -101,7 +100,9 @@ fun BeneficiaryScreen(
                         )
                     }
 
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Box(modifier = Modifier.fillMaxSize().
+                    padding(horizontal = 20.dp)
+                    ) {
                         when (selectedTab) {
                             0 -> BeneficiaryEditForm(
                                 beneficiary = beneficiary,
