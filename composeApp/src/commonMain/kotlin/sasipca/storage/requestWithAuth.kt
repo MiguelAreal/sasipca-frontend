@@ -7,6 +7,8 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import sasipca.ApiClient
+import sasipca.navigation.NavigationService
+import sasipca.navigation.Screen
 
 /**
  * Faz uma requisição com autenticação JWT e tenta renovar o token automaticamente se expirar.
@@ -55,6 +57,7 @@ suspend inline fun <reified T> HttpClient.requestWithAuth(
                 }
             } else {
                 SessionManager.clear()
+                NavigationService.resetTo(Screen.Login)
                 throw Exception("Não foi possível renovar o token.")
             }
         }

@@ -7,6 +7,7 @@ import sasipca.utils.RepositoryException
 import io.ktor.client.*
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.http.*
+import io.ktor.http.URLBuilder
 import sasipca.storage.requestWithAuth
 
 class BeneficiaryRepository(private val client: HttpClient) {
@@ -14,7 +15,9 @@ class BeneficiaryRepository(private val client: HttpClient) {
     suspend fun getProfile(beneficiaryId: Int): BeneficiaryGet {
         return client.requestWithAuth(
             method = HttpMethod.Get,
-            url = "${ApiConfig.baseUrl()}/beneficiaries/$beneficiaryId"
+            url = URLBuilder(ApiConfig.baseUrl()).apply {
+            appendPathSegments("beneficiaries",beneficiaryId.toString())
+        }.buildString()
         )
     }
 
@@ -24,10 +27,20 @@ class BeneficiaryRepository(private val client: HttpClient) {
         pageSize: Int = 20,
         orderBy: String = "asc"
     ): PaginatedResponse<BeneficiaryItem> {
+
+        val url = URLBuilder(ApiConfig.baseUrl()).apply {
+            appendPathSegments("beneficiaries")
+
+            parameters.append("searchTerm", search)
+            parameters.append("pageNumber", pageNumber.toString())
+            parameters.append("pageSize", pageSize.toString())
+            parameters.append("orderBy", orderBy)
+        }.buildString()
+
         return try {
             client.requestWithAuth(
                 method = HttpMethod.Get,
-                url = "${ApiConfig.baseUrl()}/beneficiaries?searchTerm=$search&pageNumber=$pageNumber&pageSize=$pageSize&orderBy=$orderBy"
+                url = url
             )
         } catch (e: ClientRequestException) {
             if (e.response.status == HttpStatusCode.NotFound) {
@@ -40,19 +53,24 @@ class BeneficiaryRepository(private val client: HttpClient) {
         }
     }
 
-    suspend fun postProfile(dto: BeneficiaryPost): Resposta {
+
+    suspend fun postProfile(body: BeneficiaryPost): Resposta {
         return client.requestWithAuth(
             method = HttpMethod.Post,
-            url = "${ApiConfig.baseUrl()}/beneficiaries",
-            body = dto
+            url = URLBuilder(ApiConfig.baseUrl()).apply {
+            appendPathSegments("beneficiaries")
+        }.buildString(),
+            body = body
         )
     }
 
-    suspend fun updateProfile(beneficiaryId: Int, dto: BeneficiaryPost): Resposta {
+    suspend fun putProfile(beneficiaryId: Int, body: BeneficiaryPost): Resposta {
         return client.requestWithAuth(
             method = HttpMethod.Put,
-            url = "${ApiConfig.baseUrl()}/beneficiaries/$beneficiaryId",
-            body = dto,
+            url = URLBuilder(ApiConfig.baseUrl()).apply {
+                appendPathSegments("beneficiaries",beneficiaryId.toString())
+            }.buildString(),
+            body = body,
         )
     }
 }

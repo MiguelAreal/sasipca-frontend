@@ -269,6 +269,7 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
                 )
             }
         }
+    }
 
     fun goToNextPage() {
         if (currentPage < totalPages) {
@@ -283,5 +284,4 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
             loadProducts(searchQuery)
         }
     }
-}
 }

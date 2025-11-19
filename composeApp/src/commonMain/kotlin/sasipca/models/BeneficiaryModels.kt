@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 data class BeneficiaryPost(
     val name: String,
     val email: String,
-    val contact: String,
+    var contact: String,
     val course: String?,
     val curricularYear: Int?,
     val studentNum: Int?,

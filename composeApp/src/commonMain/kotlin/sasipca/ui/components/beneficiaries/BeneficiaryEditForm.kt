@@ -3,23 +3,18 @@
     import androidx.compose.foundation.layout.Arrangement
     import androidx.compose.foundation.layout.Box
     import androidx.compose.foundation.layout.Column
-    import androidx.compose.foundation.layout.Spacer
+    import androidx.compose.foundation.layout.fillMaxHeight
     import androidx.compose.foundation.layout.fillMaxSize
     import androidx.compose.foundation.layout.fillMaxWidth
     import androidx.compose.foundation.layout.height
+    import androidx.compose.foundation.layout.heightIn
     import androidx.compose.foundation.layout.padding
-    import androidx.compose.foundation.layout.width
     import androidx.compose.foundation.lazy.LazyColumn
     import androidx.compose.foundation.shape.RoundedCornerShape
-    import androidx.compose.foundation.text.KeyboardOptions
-    import androidx.compose.material.icons.Icons
-    import androidx.compose.material.icons.outlined.Check
     import androidx.compose.material3.Button
     import androidx.compose.material3.Card
     import androidx.compose.material3.CardDefaults
-    import androidx.compose.material3.Icon
     import androidx.compose.material3.MaterialTheme
-    import androidx.compose.material3.OutlinedTextField
     import androidx.compose.material3.Text
     import androidx.compose.runtime.Composable
     import androidx.compose.runtime.LaunchedEffect
@@ -28,13 +23,13 @@
     import androidx.compose.runtime.remember
     import androidx.compose.runtime.setValue
     import androidx.compose.ui.Modifier
-    import androidx.compose.ui.text.font.FontWeight
     import androidx.compose.ui.text.input.KeyboardType
     import androidx.compose.ui.unit.dp
     import androidx.compose.ui.unit.sp
     import sasipca.models.BeneficiaryGet
     import sasipca.models.BeneficiaryPost
     import sasipca.ui.components.LoadingWidget
+    import sasipca.ui.components.ValidatedTextField
     import sasipca.ui.theme.CardTitle
 
 
@@ -42,6 +37,7 @@
     fun BeneficiaryEditForm(
         beneficiary: BeneficiaryGet?,
         isLoading: Boolean,
+        errors: Map<String, String>,
         onSave: (BeneficiaryPost) -> Unit
     ) {
         var editName by remember { mutableStateOf("") }
@@ -95,43 +91,42 @@
                         ){
                             CardTitle("Informações Pessoais")
 
-                            OutlinedTextField(
+                            ValidatedTextField(
                                 value = editName,
                                 onValueChange = { editName = it },
-                                label = { Text("Nome") },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                shape = RoundedCornerShape(8.dp)
+                                label = "Nome",
+                                error = errors["name"],
+                                maxLength = 50,
+                                modifier = Modifier.fillMaxWidth()
                             )
 
-                            OutlinedTextField(
+                            ValidatedTextField(
                                 value = editEmail,
                                 onValueChange = { editEmail = it },
-                                label = { Text("Email") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                shape = RoundedCornerShape(8.dp)
+                                label = "E-Mail",
+                                error = errors["email"],
+                                maxLength = 50,
+                                keyboardType = KeyboardType.Email,
+                                modifier = Modifier.fillMaxWidth()
                             )
-
-                            OutlinedTextField(
+                            ValidatedTextField(
                                 value = editContact,
                                 onValueChange = { editContact = it },
-                                label = { Text("Contacto") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                shape = RoundedCornerShape(8.dp)
+                                label = "Contacto",
+                                error = errors["contact"],
+                                maxLength = 13,
+                                keyboardType = KeyboardType.Phone,
+                                modifier = Modifier.fillMaxWidth()
                             )
 
-                            OutlinedTextField(
+                            ValidatedTextField(
                                 value = editNif,
                                 onValueChange = { editNif = it },
-                                label = { Text("NIF") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                shape = RoundedCornerShape(8.dp)
+                                label = "NIF",
+                                error = errors["nif"],
+                                maxLength = 9,
+                                keyboardType = KeyboardType.Number,
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
                     }
@@ -153,32 +148,31 @@
                         ) {
                             CardTitle("Morada")
 
-                            OutlinedTextField(
+                            ValidatedTextField(
                                 value = editStreet,
                                 onValueChange = { editStreet = it },
-                                label = { Text("Rua") },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                shape = RoundedCornerShape(8.dp)
+                                label = "Rua",
+                                error = errors["street"],
+                                maxLength = 255,
+                                modifier = Modifier.fillMaxWidth()
                             )
 
-                            OutlinedTextField(
+                            ValidatedTextField(
                                 value = editNumber,
                                 onValueChange = { editNumber = it },
-                                label = { Text("Número da Porta") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                shape = RoundedCornerShape(8.dp)
+                                label = "Número da Porta",
+                                error = errors["number"],
+                                maxLength = 11,
+                                keyboardType = KeyboardType.Number,
+                                modifier = Modifier.fillMaxWidth()
                             )
-
-                            OutlinedTextField(
+                            ValidatedTextField(
                                 value = editPostalcode,
                                 onValueChange = { editPostalcode = it },
-                                label = { Text("Código-Postal") },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                shape = RoundedCornerShape(8.dp)
+                                label = "Código-Postal",
+                                error = errors["postalCode"],
+                                maxLength = 8,
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
                     }
@@ -200,35 +194,34 @@
                         ) {
                             CardTitle("Informações Académicas")
 
-                            OutlinedTextField(
+                            ValidatedTextField(
                                 value = editStudentnum,
                                 onValueChange = { editStudentnum = it },
-                                label = { Text("Número de estudante") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                shape = RoundedCornerShape(8.dp)
+                                label = "Número de estudante",
+                                error = errors["studentNum"],
+                                maxLength = 10,
+                                keyboardType = KeyboardType.Number,
+                                modifier = Modifier.fillMaxWidth()
                             )
 
-                            OutlinedTextField(
+                            ValidatedTextField(
                                 value = editCourse,
                                 onValueChange = { editCourse = it },
-                                label = { Text("Curso") },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                shape = RoundedCornerShape(8.dp)
+                                label = "Curso",
+                                error = errors["course"],
+                                maxLength = 50,
+                                modifier = Modifier.fillMaxWidth()
                             )
 
-                            OutlinedTextField(
+                            ValidatedTextField(
                                 value = editCurricularYear,
                                 onValueChange = { editCurricularYear = it },
-                                label = { Text("Ano Curricular") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                        }
+                                label = "Ano Curricular",
+                                error = errors["curricularYear"],
+                                maxLength = 2,
+                                keyboardType = KeyboardType.Number,
+                                modifier = Modifier.fillMaxWidth()
+                            )                 }
                     }
                 }
 
@@ -242,33 +235,32 @@
                     ) {
                         Column(
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .fillMaxSize()
                                 .padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             CardTitle("Observações")
 
-                            OutlinedTextField(
+                            ValidatedTextField(
                                 value = editGlobalObs,
                                 onValueChange = { editGlobalObs = it },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(120.dp),
-                                label = { Text("Globais") },
-                                shape = RoundedCornerShape(8.dp),
-                                maxLines = 5
+                                label = "Globais",
+                                error = errors["obsGlobal"],
+                                maxLength = 255,
+                                singleLine = false,
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 80.dp, max = 200.dp)
                             )
 
-                            OutlinedTextField(
+                            ValidatedTextField(
                                 value = editParticularObs,
                                 onValueChange = { editParticularObs = it },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(120.dp),
-                                label = { Text("Particulares") },
-                                shape = RoundedCornerShape(8.dp),
-                                maxLines = 5
+                                label = "Particulares",
+                                error = errors["obsParticular"],
+                                maxLength = 255,
+                                singleLine = false,
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 80.dp, max = 200.dp)
                             )
+
                         }
                     }
                 }
