@@ -29,10 +29,6 @@ import sasipca.ui.components.beneficiaries.*
 import sasipca.utils.getFormattedDatePt
 import sasipca.viewmodels.BeneficiariesViewModel
 
-enum class BeneficiaryViewMode {
-    LIST, GRID
-}
-
 @Suppress("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,8 +38,6 @@ fun BeneficiariesScreen(
     onOpenBeneficiary: (Int) -> Unit = {}
 ) {
     val viewModel = remember { BeneficiariesViewModel(beneficiaryRepository) }
-
-    var viewMode by remember { mutableStateOf(BeneficiaryViewMode.LIST) }
     var showFilters by remember { mutableStateOf(false) }
 
     val isLoading by remember { viewModel::isLoading }
@@ -125,25 +119,6 @@ fun BeneficiariesScreen(
                     )
                 }
 
-                // Alternar visualização (Lista / Grelha)
-                IconButton(
-                    onClick = {
-                        viewMode = if (viewMode == BeneficiaryViewMode.LIST)
-                            BeneficiaryViewMode.GRID else BeneficiaryViewMode.LIST
-                    },
-                    modifier = Modifier
-                        .size(50.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surface)
-                ) {
-                    Icon(
-                        if (viewMode == BeneficiaryViewMode.LIST)
-                            Icons.Outlined.GridView
-                        else
-                            Icons.Outlined.ViewList,
-                        contentDescription = "Alternar visualização"
-                    )
-                }
             }
 
             // Painel de filtros
@@ -189,44 +164,25 @@ fun BeneficiariesScreen(
 
                 beneficiaries!!.data.isEmpty() -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Nenhum beneficiário encontrado :(")
+                        Text("Nenhum beneficiário encontrado")
                     }
                 }
 
                 else -> {
                     val list = beneficiaries!!.data
 
-                    if (viewMode == BeneficiaryViewMode.LIST) {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 20.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(bottom = 80.dp)
-                        ) {
-                            items(list) { beneficiary ->
-                                BeneficiaryListItemCard(
-                                    beneficiary = beneficiary,
-                                    onClick = { onOpenBeneficiary(beneficiary.beneficiaryId) }
-                                )
-                            }
-                        }
-                    } else {
-                        LazyVerticalGrid(
-                            columns = GridCells.Adaptive(minSize = 200.dp),
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 20.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(bottom = 80.dp)
-                        ) {
-                            items(list) { beneficiary ->
-                                BeneficiaryGridItemCard(
-                                    beneficiary = beneficiary,
-                                    onClick = { onOpenBeneficiary(beneficiary.beneficiaryId) }
-                                )
-                            }
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(bottom = 80.dp)
+                    ) {
+                        items(list) { beneficiary ->
+                            BeneficiaryListItemCard(
+                                beneficiary = beneficiary,
+                                onClick = { onOpenBeneficiary(beneficiary.beneficiaryId) }
+                            )
                         }
                     }
                 }
