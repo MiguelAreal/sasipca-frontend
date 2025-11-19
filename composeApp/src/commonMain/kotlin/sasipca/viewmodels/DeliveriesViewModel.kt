@@ -25,6 +25,8 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
     private val _deliveries = MutableStateFlow<List<Delivery>>(emptyList())
     val deliveries: StateFlow<List<Delivery>> = _deliveries
 
+    private val _futureDeliveries = MutableStateFlow<List<Delivery>>(emptyList())
+    val futureDeliveries: StateFlow<List<Delivery>> = _futureDeliveries
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
@@ -74,7 +76,30 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
             _isLoading.value = false
         }
     }
-
+    /**
+     * Busca todas as entregas agendadas a partir da data de hoje.
+     * Usado pela lista de Entregas Futuras (WideLayout / CompactLayout).
+     */
+    fun loadFutureDeliveries() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isLoading.value = true
+            runCatching {
+                deliveryRepository.getDeliveries(
+                    DeliveryGet(
+                        dateFrom = LocalDate.now().toString()
+                    )
+                )
+            }.onSuccess {
+                // Filtra para garantir que apenas as agendadas ou futuras sejam exibidas
+                _futureDeliveries.value = it.filter { delivery ->
+                    delivery.statusId == 1 // Assumindo que 1 = Agendada
+                }.sortedBy { it.scheduledDate }
+            }.onFailure {
+                println("Erro ao carregar entregas futuras: $it")
+            }
+            _isLoading.value = false
+        }
+    }
 
     /**
      * Agenda nova entrega (instant = false)
