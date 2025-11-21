@@ -81,6 +81,7 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
         editableUnitSize = productDetail?.unitSize?.toString() ?: ""
 
         selectedUnit = units.find { it.id == productDetail?.unitId }
+        selectedCategory = categories.find{it.id == productDetail?.categoryId}
     }
 
     // Busca produto ao alterar o barcode
