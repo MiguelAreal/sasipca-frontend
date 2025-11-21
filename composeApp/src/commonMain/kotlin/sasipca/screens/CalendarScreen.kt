@@ -122,7 +122,7 @@ fun CalendarScreen(deliveryRepository: DeliveryRepository) {
                 },
                 onSave = { updated ->
                     if (updated.deliveryId == 0) {
-                        deliveriesViewModel.scheduleDelivery(
+                        /*deliveriesViewModel.scheduleDelivery(
                             DeliveryPost(
                                 beneficiaryId = updated.beneficiaryId,
                                 scheduledDate = updated.scheduledDate, // já é String ISO
@@ -130,10 +130,10 @@ fun CalendarScreen(deliveryRepository: DeliveryRepository) {
                                 itemsToDeliver = emptyList() // TODO: substituir por itens reais quando disponível
                             ),
                             true
-                        )
+                        )*/
                     } else {
                         // Atualizar entrega existente
-                        deliveriesViewModel.updateDelivery(
+                        /*deliveriesViewModel.updateDelivery(
                             updated.deliveryId,
                             DeliveryPut(
                                 scheduledDate = updated.scheduledDate,
@@ -141,7 +141,7 @@ fun CalendarScreen(deliveryRepository: DeliveryRepository) {
                                 note = updated.note,
                                 itemsToDeliver = emptyList() // TODO: substituir por itens reais quando disponível
                             )
-                        )
+                        )*/
                     }
                     editorState = null
                 }

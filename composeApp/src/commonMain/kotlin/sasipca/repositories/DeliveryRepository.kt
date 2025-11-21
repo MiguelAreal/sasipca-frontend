@@ -42,7 +42,7 @@ class DeliveryRepository(private val client: HttpClient) {
      *
      * Cria uma entrega imediata.
      */
-    suspend fun scheduleDelivery(body: DeliveryPost, instant: Boolean): Delivery {
+    suspend fun scheduleDelivery(body: DeliveryPost, instant: Boolean): Resposta {
         return client.requestWithAuth(
             method = HttpMethod.Post,
             url = URLBuilder(ApiConfig.baseUrl()).apply {

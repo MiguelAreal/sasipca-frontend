@@ -30,7 +30,7 @@ data class BeneficiaryPost(
 data class BeneficiaryItem(
     val beneficiaryId: Int,
     val name: String,
-    val email: String? = null
+    val email: String
 )
 
 
