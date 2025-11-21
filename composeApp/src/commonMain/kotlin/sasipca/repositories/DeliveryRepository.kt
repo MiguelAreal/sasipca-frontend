@@ -12,18 +12,29 @@ class DeliveryRepository(private val client: HttpClient) {
      * Consulta entregas com filtros opcionais
      */
     suspend fun getDeliveries(query: DeliveryGet? = null): List<Delivery> {
-        val url = buildString {
-            append("${ApiConfig.baseUrl()}/stock/delivery")
-            query?.let {
-                append("?StatusId=${it.statusId}&BeneficiaryId=${it.beneficiaryId}&DateFrom=${it.dateFrom}&DateTo=${it.dateTo}")
-            }
-        }
-
         return client.requestWithAuth(
             method = HttpMethod.Get,
-            url = url
+            url = URLBuilder(ApiConfig.baseUrl()).apply {
+                appendPathSegments("deliveries")
+
+                query?.let {
+                    it.statusId?.let { value ->
+                        parameters.append("StatusId", value.toString())
+                    }
+                    it.beneficiaryId?.let { value ->
+                        parameters.append("BeneficiaryId", value.toString())
+                    }
+                    it.dateFrom?.let { value ->
+                        parameters.append("DateFrom", value)
+                    }
+                    it.dateTo?.let { value ->
+                        parameters.append("DateTo", value)
+                    }
+                }
+            }.buildString()
         )
     }
+
 
 
     /**
@@ -31,10 +42,14 @@ class DeliveryRepository(private val client: HttpClient) {
      *
      * Cria uma entrega imediata.
      */
-    suspend fun scheduleDelivery(body: DeliveryPost, instant: Boolean): Delivery {
+    suspend fun scheduleDelivery(body: DeliveryPost, instant: Boolean): Resposta {
         return client.requestWithAuth(
             method = HttpMethod.Post,
-            url = "${ApiConfig.baseUrl()}/stock/delivery",
+            url = URLBuilder(ApiConfig.baseUrl()).apply {
+                appendPathSegments("stock","deliveries")
+                parameters.append("instant", instant.toString())
+
+            }.buildString(),
             body = body
         )
     }
@@ -46,7 +61,9 @@ class DeliveryRepository(private val client: HttpClient) {
     suspend fun putDelivery(deliveryId: Int, body: DeliveryPut): Delivery {
         return client.requestWithAuth(
             method = HttpMethod.Put,
-            url = "${ApiConfig.baseUrl()}/stock/delivery/$deliveryId",
+            url = URLBuilder(ApiConfig.baseUrl()).apply {
+                appendPathSegments("stock", "deliveries", deliveryId.toString())
+            }.buildString(),
             body = body
         )
     }
@@ -57,7 +74,9 @@ class DeliveryRepository(private val client: HttpClient) {
     suspend fun deleteDelivery(deliveryId: Int): Resposta {
         return client.requestWithAuth(
             method = HttpMethod.Delete,
-            url = "${ApiConfig.baseUrl()}/stock/delivery/$deliveryId"
+            url = URLBuilder(ApiConfig.baseUrl()).apply {
+                appendPathSegments("stock", "deliveries", deliveryId.toString())
+            }.buildString(),
         )
     }
 }

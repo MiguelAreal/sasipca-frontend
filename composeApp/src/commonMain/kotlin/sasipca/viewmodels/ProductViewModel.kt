@@ -9,12 +9,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import sasipca.models.LotToEnter
 import sasipca.models.Product
 import sasipca.models.ProductDetail
 import sasipca.models.ProductPut
-import sasipca.models.ReceiptLotItem
-import sasipca.models.ReceiptPost
 import sasipca.models.UnitTypeInfo
 import sasipca.navigation.NavigationService
 import sasipca.repositories.OFFRepository
@@ -269,6 +266,7 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
                 )
             }
         }
+    }
 
     fun goToNextPage() {
         if (currentPage < totalPages) {
@@ -283,5 +281,4 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
             loadProducts(searchQuery)
         }
     }
-}
 }

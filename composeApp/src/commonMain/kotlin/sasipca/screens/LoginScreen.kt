@@ -216,7 +216,7 @@ fun LoginScreen(authRepository: AuthRepository) {
             enabled = !isLoading
         ) {
             if (isLoading) {
-                LoadingWidget()
+                CircularProgressIndicator()
             } else {
                 Text("Entrar")
             }

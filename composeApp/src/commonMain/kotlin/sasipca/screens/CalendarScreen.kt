@@ -35,19 +35,24 @@ import java.time.YearMonth
 @Suppress("UnusedBoxWithConstraintsScope")
 @Composable
 fun CalendarScreen(deliveryRepository: DeliveryRepository) {
-    val viewModel = remember { DeliveriesViewModel(deliveryRepository) }
-    val month by viewModel.month.collectAsState()
-    val selectedDate by viewModel.selectedDate.collectAsState()
-    val deliveries by viewModel.deliveries.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val deliveriesViewModel = remember { DeliveriesViewModel(deliveryRepository) }
+    val month by deliveriesViewModel.month.collectAsState()
+    val selectedDate by deliveriesViewModel.selectedDate.collectAsState()
+    val deliveries by deliveriesViewModel.deliveries.collectAsState()
+    val futureDeliveries by deliveriesViewModel.futureDeliveries.collectAsState() // <--- NOVO
+    val isLoading by deliveriesViewModel.isLoading.collectAsState()
 
     var editorState by remember { mutableStateOf<Delivery?>(null) }
     var pickerState by remember { mutableStateOf<Pair<LocalDate, List<Delivery>>?>(null) }
 
     var showFutureDeliveries by remember { mutableStateOf(false) }
 
+    LaunchedEffect(Unit) {
+        deliveriesViewModel.loadFutureDeliveries()
+    }
+
     LaunchedEffect(month) {
-        viewModel.loadMonthDeliveries(month)
+        deliveriesViewModel.loadMonthDeliveries(month)
     }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
@@ -61,13 +66,14 @@ fun CalendarScreen(deliveryRepository: DeliveryRepository) {
                 month = month,
                 selectedDate = selectedDate,
                 deliveries = deliveries,
-                viewModel = viewModel,
+                futureDeliveries = futureDeliveries,
+                viewModel = deliveriesViewModel,
                 pickerState = pickerState,
                 onPickerStateChange = { pickerState = it },
                 editorState = editorState,
                 onEditorStateChange = { editorState = it },
                 showFutureDeliveries = showFutureDeliveries,
-                onMonthChange = { viewModel.selectMonth(it) },
+                onMonthChange = { deliveriesViewModel.selectMonth(it) },
                 onShowFutureDeliveriesChange = { showFutureDeliveries = it }
             )
         } else {
@@ -75,12 +81,13 @@ fun CalendarScreen(deliveryRepository: DeliveryRepository) {
                 month = month,
                 selectedDate = selectedDate,
                 deliveries = deliveries,
-                viewModel = viewModel,
+                futureDeliveries = futureDeliveries,
+                viewModel = deliveriesViewModel,
                 pickerState = pickerState,
                 onPickerStateChange = { pickerState = it },
                 editorState = editorState,
                 onEditorStateChange = { editorState = it },
-                onMonthChange = { viewModel.selectMonth(it) }
+                onMonthChange = { deliveriesViewModel.selectMonth(it) }
             )
         }
 
@@ -115,7 +122,7 @@ fun CalendarScreen(deliveryRepository: DeliveryRepository) {
                 },
                 onSave = { updated ->
                     if (updated.deliveryId == 0) {
-                        viewModel.scheduleDelivery(
+                        /*deliveriesViewModel.scheduleDelivery(
                             DeliveryPost(
                                 beneficiaryId = updated.beneficiaryId,
                                 scheduledDate = updated.scheduledDate, // já é String ISO
@@ -123,10 +130,10 @@ fun CalendarScreen(deliveryRepository: DeliveryRepository) {
                                 itemsToDeliver = emptyList() // TODO: substituir por itens reais quando disponível
                             ),
                             true
-                        )
+                        )*/
                     } else {
                         // Atualizar entrega existente
-                        viewModel.updateDelivery(
+                        /*deliveriesViewModel.updateDelivery(
                             updated.deliveryId,
                             DeliveryPut(
                                 scheduledDate = updated.scheduledDate,
@@ -134,7 +141,7 @@ fun CalendarScreen(deliveryRepository: DeliveryRepository) {
                                 note = updated.note,
                                 itemsToDeliver = emptyList() // TODO: substituir por itens reais quando disponível
                             )
-                        )
+                        )*/
                     }
                     editorState = null
                 }
@@ -149,6 +156,7 @@ fun CompactLayout(
     month: YearMonth,
     selectedDate: LocalDate,
     deliveries: List<Delivery>,
+    futureDeliveries: List<Delivery>,
     viewModel: DeliveriesViewModel,
     pickerState: Pair<LocalDate, List<Delivery>>?,
     onPickerStateChange: (Pair<LocalDate, List<Delivery>>?) -> Unit,
@@ -192,7 +200,7 @@ fun CompactLayout(
         if (showFutureDeliveries) {
             FutureDeliveriesList(
                 onEventClick = { onEditorStateChange(it) },
-                deliveries,
+                futureDeliveries,
                 modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
             )
         } else {
@@ -218,6 +226,7 @@ fun WideLayout(
     month: YearMonth,
     selectedDate: LocalDate,
     deliveries: List<Delivery>,
+    futureDeliveries: List<Delivery>,
     viewModel: DeliveriesViewModel,
     pickerState: Pair<LocalDate, List<Delivery>>?,
     onPickerStateChange: (Pair<LocalDate, List<Delivery>>?) -> Unit,
@@ -256,30 +265,33 @@ fun WideLayout(
 
             FutureDeliveriesList(
                 onEventClick = { onEditorStateChange(it) },
-                deliveries,
+                futureDeliveries,
                 modifier = Modifier.width(280.dp).fillMaxHeight()
             )
         }
     }
 }
 
+
 @Composable
 fun FutureDeliveriesList(
     onEventClick: (Delivery) -> Unit,
-    deliveries: List<Delivery>,
+    deliveries: List<Delivery>, // Esta lista deve ser futureDeliveries do ViewModel
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
+        // Título apenas para ecrãs grandes (lógica existente)
         if (isLargeScreen()){
             Text(
                 text = "Entregas Futuras",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-        )
+            )
         }
 
         if (deliveries.isEmpty()) {
+            // Mensagem de lista vazia (lógica existente)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -292,10 +304,54 @@ fun FutureDeliveriesList(
                     textAlign = TextAlign.Center
                 )
             }
+        } else {
+            // 🚀 Implementação para mostrar as entregas
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)
+            ) {
+                items(deliveries) { delivery ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp, horizontal = 8.dp)
+                            .clickable { onEventClick(delivery) },
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                        elevation = CardDefaults.cardElevation(1.dp),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            // Nome do Beneficiário
+                            Text(
+                                text = delivery.beneficiaryName ?: "Entrega Agendada",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            // Data Agendada
+                            Text(
+                                text = "Data: ${delivery.scheduledDate}",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            // Nota (opcional)
+                            if (delivery.note.isNullOrBlank().not()) {
+                                Text(
+                                    text = "Nota: ${delivery.note}",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
-
 
 // ----------------------------------------------------------
 // Picker Dialog (entregas por data)

@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import sasipca.models.Delivery
+import sasipca.storage.ListsStore
 
 
 @Composable
@@ -45,7 +46,7 @@ fun DeliveryRow(
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
-            text = delivery.statusId.toString() ?: "N/A",
+            text = ListsStore.getDeliveriesStatusName(delivery.statusId),
             modifier = Modifier.weight(0.3f),
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurface

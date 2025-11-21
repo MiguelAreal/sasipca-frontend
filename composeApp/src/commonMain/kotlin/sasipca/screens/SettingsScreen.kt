@@ -80,8 +80,6 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
                 /**
                  * Secção de definições de rede.
                  */

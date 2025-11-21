@@ -26,19 +26,20 @@ fun BeneficiaryScreen(
     deliveryRepository: DeliveryRepository
 ) {
 
-    val viewModel = remember { BeneficiaryDetailViewModel(repository) }
+    val beneficiaryViewModel = remember { BeneficiaryDetailViewModel(repository) }
     val deliveriesViewModel = remember { DeliveriesViewModel(deliveryRepository) }
+    val uiState by beneficiaryViewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
 
-    val beneficiary = viewModel.getBeneficiary
-    val isLoading by remember { viewModel::isLoading }
+    val beneficiary = beneficiaryViewModel.getBeneficiary
+    val isLoading by remember { beneficiaryViewModel::isLoading }
     val deliveries by deliveriesViewModel.deliveries.collectAsState()
 
     var selectedTab by remember { mutableStateOf(0) }
 
     // Carrega dados iniciais
     LaunchedEffect(beneficiaryId) {
-        viewModel.loadBeneficiary(beneficiaryId)
+        beneficiaryViewModel.loadBeneficiary(beneficiaryId)
         deliveriesViewModel.loadBeneficiaryDeliveries(beneficiaryId)
     }
 
@@ -49,7 +50,6 @@ fun BeneficiaryScreen(
         )
 
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            updateSize(maxWidth, maxHeight)
             if (isLargeScreen()) {
                 Row(
                     modifier = Modifier
@@ -62,10 +62,10 @@ fun BeneficiaryScreen(
                         BeneficiaryEditForm(
                             beneficiary = beneficiary,
                             isLoading = isLoading,
+                            errors = uiState.errors,
                             onSave = { body ->
                                 scope.launch {
-                                    viewModel.updateBeneficiary(beneficiaryId, body)
-                                    NavigationService.goBack()
+                                    beneficiaryViewModel.updateBeneficiary(beneficiaryId, body)
                                 }
                             }
                         )
@@ -101,15 +101,17 @@ fun BeneficiaryScreen(
                         )
                     }
 
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Box(modifier = Modifier.fillMaxSize().
+                    padding(horizontal = 20.dp)
+                    ) {
                         when (selectedTab) {
                             0 -> BeneficiaryEditForm(
                                 beneficiary = beneficiary,
                                 isLoading = isLoading,
+                                errors = uiState.errors,
                                 onSave = { body ->
                                     scope.launch {
-                                        viewModel.updateBeneficiary(beneficiaryId, body)
-                                        NavigationService.goBack()
+                                        beneficiaryViewModel.updateBeneficiary(beneficiaryId, body)
                                     }
                                 }
                             )

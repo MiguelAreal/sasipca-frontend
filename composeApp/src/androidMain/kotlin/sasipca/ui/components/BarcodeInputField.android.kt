@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Scanner
 import androidx.compose.material3.*
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,7 +55,12 @@ actual fun BarcodeInputField(
             }) {
                 Icon(Icons.Default.Scanner, contentDescription = "Ler código de barras")
             }
-        }
+        },
+        colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+        unfocusedBorderColor = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+        cursorColor = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+    )
     )
     if (error != null) {
         UnderlineError(error)

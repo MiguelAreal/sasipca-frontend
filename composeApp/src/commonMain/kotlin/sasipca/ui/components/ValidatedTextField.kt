@@ -17,6 +17,7 @@ fun ValidatedTextField(
     label: String,
     error: String? = null,
     maxLength: Int? = null,
+    singleLine: Boolean = true,
     keyboardType: KeyboardType = KeyboardType.Text,
     modifier: Modifier = Modifier
 ) {
@@ -33,7 +34,7 @@ fun ValidatedTextField(
             },
             label = { Text(label) },
             isError = error != null,
-            singleLine = true,
+            singleLine = singleLine,
             keyboardOptions = KeyboardOptions.Default.copy(keyboardType = keyboardType),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),

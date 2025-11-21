@@ -27,13 +27,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import sasipca.models.Delivery
+import sasipca.storage.ListsStore
 import sasipca.storage.ScreenSizeManager.isLargeScreen
 import sasipca.ui.components.LoadingWidget
+import sasipca.ui.theme.CardTitle
 
 
 enum class SortColumn {
@@ -57,7 +58,7 @@ fun DeliveriesTable(
     val sortedDeliveries = remember(deliveries, sortColumn, sortDirection) {
         val sorted = when (sortColumn) {
             SortColumn.USERNAME -> deliveries.sortedBy { it.userName ?: "" }
-            SortColumn.STATUS -> deliveries.sortedBy { it.statusId }
+            SortColumn.STATUS -> deliveries.sortedBy { ListsStore.getDeliveriesStatusName(it.statusId) }
             SortColumn.SCHEDULED_DATE -> deliveries.sortedBy { it.scheduledDate }
         }
         if (sortDirection == SortDirection.DESCENDING) sorted.reversed() else sorted
@@ -69,16 +70,11 @@ fun DeliveriesTable(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             if (isLargeScreen()) {
 
-                Text(
-                    "Histórico de Entregas",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(16.dp)
-                )
+                CardTitle("Histórico de Entregas")
+
                 Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
             }
 

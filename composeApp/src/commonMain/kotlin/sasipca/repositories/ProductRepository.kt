@@ -26,7 +26,13 @@ class ProductRepository(private val client: HttpClient) {
 
         return client.requestWithAuth(
             method = HttpMethod.Get,
-            url = "${ApiConfig.baseUrl()}/products?searchTerm=$search&pageNumber=$pageNumber&pageSize=$pageSize&orderBy=$orderBy"
+            url = URLBuilder(ApiConfig.baseUrl()).apply {
+                appendPathSegments("products")
+                parameters.append("searchTerm", search)
+                parameters.append("pageNumber", "$pageNumber")
+                parameters.append("pageSize", "$pageSize")
+                parameters.append("orderBy", orderBy)
+            }.buildString()
         )
     }
 
@@ -38,7 +44,9 @@ class ProductRepository(private val client: HttpClient) {
     ): ProductDetail {
         return client.requestWithAuth(
             method = HttpMethod.Get,
-            url = "${ApiConfig.baseUrl()}/products/$barcode"
+            url = URLBuilder(ApiConfig.baseUrl()).apply {
+                appendPathSegments("products",barcode)
+            }.buildString()
         )
     }
 
@@ -48,7 +56,9 @@ class ProductRepository(private val client: HttpClient) {
     suspend fun putProduct(barcode: String, body: ProductPut): Resposta {
         return client.requestWithAuth(
             method = HttpMethod.Put,
-            url = "${ApiConfig.baseUrl()}/products/$barcode",
+            url = URLBuilder(ApiConfig.baseUrl()).apply {
+                appendPathSegments("products",barcode)
+            }.buildString(),
             body = body
         )
     }

@@ -166,7 +166,7 @@ private fun AnimatedNavigation(
             )
 
             Screen.Reception -> ReceiptScreen(productRepository, receiptRepository)
-            Screen.Delivery -> DeliveryScreen()
+            Screen.Delivery -> DeliveryScreen(productRepository, deliveryRepository, beneficiaryRepository)
             Screen.StockAdjustment -> PlaceholderScreen()
             Screen.Campaigns -> PlaceholderScreen()
             Screen.Beneficiaries -> BeneficiariesScreen(

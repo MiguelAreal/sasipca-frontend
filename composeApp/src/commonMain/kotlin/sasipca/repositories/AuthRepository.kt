@@ -97,7 +97,9 @@ class AuthRepository(private val client: HttpClient) {
         return try {
             val resposta: Resposta = client.requestWithAuth(
                 method = HttpMethod.Post,
-                url = "${ApiConfig.baseUrl()}/auth/logout"
+                url = URLBuilder(ApiConfig.baseUrl()).apply {
+                    appendPathSegments("auth", "logout")
+                }.buildString()
             )
 
             // Limpa sessão após sucesso
