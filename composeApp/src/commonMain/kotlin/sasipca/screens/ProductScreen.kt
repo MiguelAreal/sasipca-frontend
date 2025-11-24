@@ -103,7 +103,7 @@ fun ProductScreen(
                         FilterChip(
                             selected = selectedTab == 1,
                             onClick = { selectedTab = 1 },
-                            label = { Text("Histórico") }
+                            label = { Text("Stock") }
                         )
                     }
 

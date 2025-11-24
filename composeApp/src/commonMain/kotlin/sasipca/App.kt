@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import coil3.SingletonImageLoader
 import kotlinx.coroutines.CoroutineScope
 import sasipca.navigation.NavigationService
 import sasipca.navigation.Screen
@@ -20,6 +21,7 @@ import sasipca.utils.HandleBackNavigation
 import sasipca.utils.SnackbarManager
 import sasipca.utils.SnackbarMessage
 import sasipca.utils.SnackbarType
+import sasipca.utils.getAsyncImageLoader
 
 /**
  * Método de inicialização da app.
@@ -27,6 +29,10 @@ import sasipca.utils.SnackbarType
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun App() {
+
+    SingletonImageLoader.setSafe { context ->
+        getAsyncImageLoader(context)
+    }
 
     // Estado base da app
     val scope = rememberCoroutineScope()
@@ -74,7 +80,7 @@ fun App() {
 }
 
 /**
- * Inicializa managers.
+ * Inicializa managers e carrega dados essenciais.
  */
 @Composable
 private fun InitializeApp(
@@ -83,25 +89,24 @@ private fun InitializeApp(
     snackbarState: MutableState<SnackbarMessage?>,
     scope: CoroutineScope
 ) {
-    val listsRepository = ApiClient.listsRepository
-
     // Inicializar Snackbar
     LaunchedEffect(Unit) {
         SnackbarManager.snackbarState = snackbarState
         SnackbarManager.scope = scope
     }
 
-    // Inicializar sessão e tema
+    // Inicializar sessão, tema e carregar listas
     LaunchedEffect(Unit) {
         onThemeLoaded(SettingsManager.isDarkTheme())
 
         try {
-            listsRepository.loadLists()
+            ApiClient.listsRepository.loadLists()
         } catch (e: Exception) {
-            SnackbarManager.show("Falha ao carregar listas.", SnackbarType.ERROR)
+            // Não bloqueia a app, mas avisa o utilizador
+            SnackbarManager.show("Falha ao carregar listas auxiliares.", SnackbarType.ERROR)
         }
 
-
+        // 3. Verificar Sessão
         val refreshToken = SessionManager.getRefreshToken()
         if (refreshToken != null) {
             NavigationService.resetTo(Screen.Main)
@@ -116,7 +121,6 @@ private fun InitializeApp(
 
 /**
  * Navegação animada entre páginas.
- *
  * Inicializa todos os Screens da aplicação.
  */
 @OptIn(ExperimentalAnimationApi::class)
@@ -129,11 +133,14 @@ private fun AnimatedNavigation(
     onProductSelected: (String) -> Unit,
     onThemeChange: (Boolean) -> Unit
 ) {
+    // Obter referências dos repositórios já inicializados no ApiClient
     val authRepository = ApiClient.authRepository
     val deliveryRepository = ApiClient.deliveryRepository
     val receiptRepository = ApiClient.receiptRepository
     val productRepository = ApiClient.productRepository
     val beneficiaryRepository = ApiClient.beneficiaryRepository
+    val campaignRepository = ApiClient.campaignRepository
+    val listsRepository = ApiClient.listsRepository
 
     AnimatedContent(
         targetState = currentScreen,
@@ -156,6 +163,7 @@ private fun AnimatedNavigation(
                 deliveryRepository,
                 productRepository,
                 beneficiaryRepository,
+                campaignRepository,
                 onOpenBeneficiary = { id ->
                     onBeneficiarySelected(id)
                     NavigationService.navigateTo(Screen.Beneficiary)
@@ -168,7 +176,8 @@ private fun AnimatedNavigation(
             Screen.Reception -> ReceiptScreen(productRepository, receiptRepository)
             Screen.Delivery -> DeliveryScreen(productRepository, deliveryRepository, beneficiaryRepository)
             Screen.StockAdjustment -> PlaceholderScreen()
-            Screen.Campaigns -> PlaceholderScreen()
+            Screen.Campaigns -> CampaignsScreen(campaignRepository, listsRepository)
+
             Screen.Beneficiaries -> BeneficiariesScreen(
                 beneficiaryRepository,
                 onOpenBeneficiary = { id ->
@@ -192,9 +201,10 @@ private fun AnimatedNavigation(
             Screen.Products -> ProductsScreen(
                 productRepository,
                 onOpenProduct = { barcode ->
-                onProductSelected(barcode)
-                NavigationService.navigateTo(Screen.Product)
-            })
+                    onProductSelected(barcode)
+                    NavigationService.navigateTo(Screen.Product)
+                }
+            )
             Screen.Product -> selectedProductBarcode?.let { barcode ->
                 ProductScreen(
                     barcode = barcode,
@@ -204,4 +214,3 @@ private fun AnimatedNavigation(
         }
     }
 }
-

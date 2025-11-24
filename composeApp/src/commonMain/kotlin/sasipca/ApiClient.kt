@@ -4,6 +4,7 @@ import io.ktor.client.*
 import sasipca.models.AuthResponse
 import sasipca.repositories.AuthRepository
 import sasipca.repositories.BeneficiaryRepository
+import sasipca.repositories.CampaignRepository
 import sasipca.repositories.DeliveryRepository
 import sasipca.repositories.ListsRepository
 import sasipca.repositories.ProductRepository
@@ -26,6 +27,8 @@ object ApiClient {
         private set
     lateinit var beneficiaryRepository: BeneficiaryRepository
         private set
+    lateinit var campaignRepository: CampaignRepository
+        private set
 
     lateinit var listsRepository: ListsRepository
         private set
@@ -43,6 +46,7 @@ object ApiClient {
         productRepository = ProductRepository(client)
         beneficiaryRepository = BeneficiaryRepository(client)
         listsRepository = ListsRepository(client)
+        campaignRepository = CampaignRepository(client)
     }
 
     suspend fun refreshToken(): Result<AuthResponse> {

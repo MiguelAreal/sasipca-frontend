@@ -101,6 +101,7 @@ fun QuickActionsSection() {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MonthlyStatsSection() {
     Card(

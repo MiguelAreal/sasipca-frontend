@@ -17,6 +17,7 @@ import sasipca.screens.ProductsScreen
 import kotlinx.coroutines.launch
 import sasipca.navigation.NavigationService
 import sasipca.repositories.BeneficiaryRepository
+import sasipca.repositories.CampaignRepository
 import sasipca.repositories.DeliveryRepository
 import sasipca.screens.BeneficiariesScreen
 
@@ -24,6 +25,7 @@ import sasipca.screens.BeneficiariesScreen
 fun MainScreen(deliveryRepository: DeliveryRepository,
                productRepository: ProductRepository,
                beneficiaryRepository: BeneficiaryRepository,
+               campaignRepository: CampaignRepository,
                onOpenBeneficiary: (Int) -> Unit = {},onOpenProduct: (String) -> Unit = {})
 {
     val tabs = listOf(Screen.Home, Screen.Products, Screen.Calendar, Screen.Beneficiaries)
