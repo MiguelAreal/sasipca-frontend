@@ -1,11 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-feature
-            android:name="android.hardware.camera.any" />
+    <uses-feature android:name="android.hardware.camera.any" />
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
+
+    <queries>
+        <package android:name="com.azure.authenticator" />
+        <package android:name="com.microsoft.windowsintune.companyportal" />
+        <package android:name="com.microsoft.identity.testuserapp" />
+        <package android:name="com.android.chrome" />
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
+    </queries>
+
     <application
             android:requestLegacyExternalStorage="true"
             android:allowBackup="true"
@@ -14,15 +25,27 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:theme="@android:style/Theme.Material.Light.NoActionBar">
+
         <activity
                 android:exported="true"
                 android:name="sasipca.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
-
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-    </application>
 
+        <activity
+                android:name="com.microsoft.identity.client.BrowserTabActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                        android:scheme="msal1047dc49-3d68-457b-a0d4-ecc75ed581eb"
+                        android:host="auth" />
+            </intent-filter>
+        </activity>
+
+    </application>
 </manifest>

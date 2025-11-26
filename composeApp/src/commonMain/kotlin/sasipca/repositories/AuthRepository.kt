@@ -7,11 +7,15 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import sasipca.auth.MicrosoftAuthManager
 import sasipca.storage.requestWithAuth
 import sasipca.models.*
 import sasipca.storage.markAsRefreshTokenRequest
 
-class AuthRepository(private val client: HttpClient) {
+class AuthRepository(
+    private val client: HttpClient,
+    private val msAuthManager: MicrosoftAuthManager
+) {
 
     /**
      * Renova o access token usando o refresh token
@@ -56,21 +60,23 @@ class AuthRepository(private val client: HttpClient) {
         }
     }
 
-    /**
-     * Faz login
-     */
-    suspend fun login(email: String, password: String): Result<AuthResponse> {
+
+    suspend fun loginMicrosoft(): Result<AuthResponse> {
+        // 1. Obter IdToken da Microsoft
+        val idToken = msAuthManager.signIn()
+            ?: return Result.failure(Exception("Login Microsoft cancelado ou falhou."))
+
+        // 2. Enviar para o teu backend
         return try {
-            val response = client.post("${ApiConfig.baseUrl()}/auth/login") {
+            val response = client.post("${ApiConfig.baseUrl()}/auth/login/microsoft") {
                 contentType(ContentType.Application.Json)
-                setBody(LoginRequest(email, password))
+                // Criar um DTO simples para enviar o token
+                setBody(mapOf("idToken" to idToken))
             }
 
-            return when (response.status) {
+            when (response.status) {
                 HttpStatusCode.OK -> {
                     val successResponse: AuthResponse = response.body()
-                    // Armazena sessão
-
                     SessionManager.saveSession(
                         token = successResponse.accessToken,
                         refreshToken = successResponse.refreshToken,
@@ -79,11 +85,9 @@ class AuthRepository(private val client: HttpClient) {
                     )
                     Result.success(successResponse)
                 }
-                HttpStatusCode.BadRequest, HttpStatusCode.Unauthorized -> {
-                    val errorResposta: Resposta = response.body()
-                    Result.failure(Exception(errorResposta.message))
+                else -> {
+                    Result.failure(Exception("Erro no backend: ${response.status}"))
                 }
-                else -> Result.failure(Exception("Unexpected error: ${response.status.value}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

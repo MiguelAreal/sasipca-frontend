@@ -26,7 +26,6 @@ import sasipca.ui.components.Header
 import sasipca.utils.SnackbarType
 import sasipca.utils.SnackbarManager
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.ui.tooling.preview.Preview
 import sasipca.storage.SessionManager
 
 
@@ -37,7 +36,7 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
     var showIpDialog by remember { mutableStateOf(false) }
     var tempIp by remember { mutableStateOf(serverIp) }
     val scope = rememberCoroutineScope()
-    val authRepository = remember { AuthRepository(ApiClient.client) }
+    val authRepository = ApiClient.authRepository
 
 
     Column(
@@ -48,13 +47,10 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
     ) {
         Header("Definições", "Configure a aplicação")
 
-        BoxWithConstraints {
-            val horizontalPadding = if (maxWidth < 600.dp) 20.dp else 40.dp
-
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = horizontalPadding, vertical = 20.dp),
+                    .padding(horizontal = 24.dp, vertical = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
 
@@ -135,7 +131,6 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
                 }
 
             }
-        }
     }
 
     // Server IP Dialog

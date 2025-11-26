@@ -3,6 +3,8 @@ package sasipca.ui.components
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding // Importante
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
@@ -23,19 +25,18 @@ fun CustomSnackbarHost(
     snackbarMessageState: MutableState<SnackbarMessage?>,
     modifier: Modifier = Modifier
 ) {
-    // Remember the last message while visible
+
     val currentMessage = remember { mutableStateOf<SnackbarMessage?>(null) }
 
-    // Update currentMessage only when a new message appears
     val msg = snackbarMessageState.value
     if (msg != null) {
         currentMessage.value = msg
     }
 
     AnimatedVisibility(
-        visible = msg != null, // true while snackbarState has a message
-        enter = slideInVertically(initialOffsetY = { -40 }) + fadeIn(tween(300)),
-        exit = slideOutVertically(targetOffsetY = { -40 }) + fadeOut(tween(300))
+        visible = msg != null,
+        enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(tween(300)),
+        exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(tween(300))
     ) {
         val message = currentMessage.value ?: return@AnimatedVisibility
 
@@ -46,8 +47,10 @@ fun CustomSnackbarHost(
         }
 
         Box(
-            modifier = modifier,
-            contentAlignment = Alignment.TopEnd
+            modifier = modifier
+                .statusBarsPadding()
+                .padding(top = 8.dp, start = 16.dp, end = 16.dp),
+            contentAlignment = Alignment.TopCenter
         ) {
             Snackbar(
                 containerColor = color,

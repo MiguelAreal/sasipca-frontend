@@ -1,14 +1,9 @@
 package sasipca
 
 import io.ktor.client.*
+import sasipca.auth.MicrosoftAuthManager // <--- Importante
 import sasipca.models.AuthResponse
-import sasipca.repositories.AuthRepository
-import sasipca.repositories.BeneficiaryRepository
-import sasipca.repositories.CampaignRepository
-import sasipca.repositories.DeliveryRepository
-import sasipca.repositories.ListsRepository
-import sasipca.repositories.ProductRepository
-import sasipca.repositories.ReceiptRepository
+import sasipca.repositories.* // (Simplificado imports)
 
 expect fun createHttpClient(): HttpClient
 
@@ -20,7 +15,6 @@ object ApiClient {
         private set
     lateinit var deliveryRepository: DeliveryRepository
         private set
-
     lateinit var receiptRepository: ReceiptRepository
         private set
     lateinit var productRepository: ProductRepository
@@ -29,18 +23,19 @@ object ApiClient {
         private set
     lateinit var campaignRepository: CampaignRepository
         private set
-
     lateinit var listsRepository: ListsRepository
         private set
 
-    fun init() {
-        // Criar HttpClient sem lógica de refresh automática
+    // ALTERAÇÃO AQUI: Recebe o manager como parâmetro
+    fun init(authManager: MicrosoftAuthManager) {
+
+        // Criar HttpClient
         client = createHttpClient()
 
-        // Criar o AuthRepository com o client
-        authRepository = AuthRepository(client)
+        // Passar o manager para o AuthRepository
+        authRepository = AuthRepository(client, authManager)
 
-        // Criar os restantes repositórios
+        // Criar os restantes repositórios (iguais)
         deliveryRepository = DeliveryRepository(client)
         receiptRepository = ReceiptRepository(client)
         productRepository = ProductRepository(client)
@@ -50,7 +45,6 @@ object ApiClient {
     }
 
     suspend fun refreshToken(): Result<AuthResponse> {
-        // Delegar para o AuthRepository
         return authRepository.refreshToken()
     }
 }
