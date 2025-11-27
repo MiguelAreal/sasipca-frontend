@@ -38,18 +38,13 @@ class MicrosoftAuthManagerAndroid(private val context: Context) : MicrosoftAuthM
         val app = mSingleAccountApp
         val activity = currentActivity
 
-        // Log para diagnóstico
-        if (app == null) {
-            Log.e("MSAL_DEBUG", "Erro: mSingleAccountApp é NULL. O init falhou antes.")
-            continuation.resume(null)
-            return@suspendCoroutine
-        }
-        if (activity == null) {
-            Log.e("MSAL_DEBUG", "Erro: currentActivity é NULL.")
+        if (app == null || activity == null) {
+            Log.e("MSAL_DEBUG", "Erro: App ou Activity nulos.")
             continuation.resume(null)
             return@suspendCoroutine
         }
 
+        // Tenta primeiro "silent"
         app.acquireTokenSilentAsync(
             AcquireTokenSilentParameters.Builder()
                 .withScopes(listOf("User.Read"))
@@ -59,10 +54,26 @@ class MicrosoftAuthManagerAndroid(private val context: Context) : MicrosoftAuthM
                         Log.d("MSAL_DEBUG", "Silent Login: Sucesso")
                         continuation.resume(result.account.idToken)
                     }
+
                     override fun onError(exc: MsalException) {
-                        Log.d("MSAL_DEBUG", "Silent Login: Falhou, a tentar interativo...")
-                        startInteractiveLogin(app, activity, continuation)
+                        Log.d("MSAL_DEBUG", "Silent Login: Falhou (${exc.message}). Limpando sessão anterior...")
+
+                        // CORREÇÃO: Forçar Logout antes de tentar Login Interativo
+                        // Isto resolve o erro "An account is already signed in"
+                        app.signOut(object : ISingleAccountPublicClientApplication.SignOutCallback {
+                            override fun onSignOut() {
+                                Log.d("MSAL_DEBUG", "Sessão antiga limpa. A iniciar login interativo...")
+                                startInteractiveLogin(app, activity, continuation)
+                            }
+
+                            override fun onError(exception: MsalException) {
+                                // Se der erro no logout (ex: não havia conta), prossegue para login na mesma
+                                Log.w("MSAL_DEBUG", "Erro ao limpar sessão antiga (ignorável): ${exception.message}")
+                                startInteractiveLogin(app, activity, continuation)
+                            }
+                        })
                     }
+
                     override fun onCancel() { continuation.resume(null) }
                 }).build()
         )

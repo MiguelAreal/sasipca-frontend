@@ -21,8 +21,8 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import sasipca.ApiClient
 import sasipca.models.ActiveCampaigns
-import sasipca.models.LotToEnter
 import sasipca.models.Category
+import sasipca.models.GroupToEnter
 import sasipca.models.UnitType
 import sasipca.repositories.OFFRepository
 import sasipca.repositories.ProductRepository
@@ -30,11 +30,11 @@ import sasipca.repositories.ReceiptRepository
 import sasipca.storage.ListsStore
 import sasipca.storage.ScreenSizeManager.isLargeScreen
 import sasipca.ui.components.BarcodeInputField
+import sasipca.ui.components.GroupsSection
 import sasipca.ui.components.Header
 import sasipca.ui.components.LoadingWidget
-import sasipca.ui.components.products.LotCard
-import sasipca.ui.components.LotsSection
 import sasipca.ui.components.ReceiptInfoSection
+import sasipca.ui.components.products.GroupCard
 import sasipca.ui.theme.CardTitle
 import sasipca.viewmodels.ProductViewModel
 import sasipca.viewmodels.ReceiptsViewModel
@@ -54,8 +54,8 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
     var selectedCampaign by remember { mutableStateOf<ActiveCampaigns?>(null) }
 
     var note by remember { mutableStateOf("") }
-    var lots by remember { mutableStateOf(listOf(LotToEnter("", "", ""))) }
-    var lotsExpanded by remember { mutableStateOf(true) }
+    var groups by remember { mutableStateOf(listOf(GroupToEnter("", ""))) }
+    var groupsExpanded by remember { mutableStateOf(true) }
 
     var editableName by remember { mutableStateOf("") }
     var editableUnitSize by remember { mutableStateOf("") }
@@ -162,21 +162,21 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                         )
                     }
 
-                    // Right side - Lots and Register button
+                    // Right side - Groups and Register button
                     Column(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight(),
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        LotsSection(
-                            lots = lots,
-                            onAddLot = { lots = lots + LotToEnter("", "", "") },
-                            onLotChange = { index, updatedLot ->
-                                lots = lots.toMutableList().apply { set(index, updatedLot) }
+                        GroupsSection(
+                            groups = groups,
+                            onAddGroup = { groups = groups + GroupToEnter("", "") },
+                            onGroupChange = { index, updatedGroup ->
+                                groups = groups.toMutableList().apply { set(index, updatedGroup) }
                             },
-                            onRemoveLot = { index ->
-                                if (lots.size > 1) lots = lots.toMutableList().apply { removeAt(index) }
+                            onRemoveGroup = { index ->
+                                if (groups.size > 1) groups = groups.toMutableList().apply { removeAt(index) }
                             },
                             isWideScreen = true,
                             errors = uiState.errors,
@@ -190,7 +190,7 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                                 scope.launch {
                                     receiptsViewModel.submitReceipt(
                                         barcode = barcode,
-                                        lotsUi = lots,
+                                        groupsUi = groups,
                                         name = editableName,
                                         categoryId = selectedCategory?.id,
                                         unitId = selectedUnit?.id,
@@ -271,7 +271,7 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { lotsExpanded = !lotsExpanded },
+                                .clickable { groupsExpanded = !groupsExpanded },
                             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -284,16 +284,16 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    CardTitle("Lotes (${lots.size})")
+                                    CardTitle("Grupos (${groups.size})")
                                     Spacer(Modifier.width(8.dp))
                                     Icon(
-                                        imageVector = if (lotsExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                        imageVector = if (groupsExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                                         contentDescription = null,
                                         modifier = Modifier.size(24.dp)
                                     )
                                 }
-                                IconButton(onClick = { lots = lots + LotToEnter("", "", "") }) {
-                                    Icon(Icons.Outlined.Add, contentDescription = "Adicionar lote")
+                                IconButton(onClick = { groups = groups + GroupToEnter("", "") }) {
+                                    Icon(Icons.Outlined.Add, contentDescription = "Adicionar grupo")
                                 }
                             }
                         }
@@ -302,22 +302,22 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                     item {
                         Column {
                             AnimatedVisibility(
-                                visible = lotsExpanded,
+                                visible = groupsExpanded,
                                 enter = expandVertically(expandFrom = Alignment.Top),
                                 exit = shrinkVertically(shrinkTowards = Alignment.Top)
                             ) {
                                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    lots.forEachIndexed { index, lot ->
-                                        LotCard(
-                                            lot = lot,
+                                    groups.forEachIndexed { index, group ->
+                                        GroupCard(
+                                            group = group,
                                             index = index,
-                                            onLotChange = { updatedLot ->
-                                                lots = lots.toMutableList().apply { set(index, updatedLot) }
+                                            onGroupChange = { updatedGroup ->
+                                                groups = groups.toMutableList().apply { set(index, updatedGroup) }
                                             },
                                             onRemove = {
-                                                if (lots.size > 1) lots = lots.toMutableList().apply { removeAt(index) }
+                                                if (groups.size > 1) groups = groups.toMutableList().apply { removeAt(index) }
                                             },
-                                            canRemove = lots.size > 1
+                                            canRemove = groups.size > 1
                                         )
                                     }
                                 }
@@ -331,7 +331,7 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                                 scope.launch {
                                     receiptsViewModel.submitReceipt(
                                         barcode = barcode,
-                                        lotsUi = lots,
+                                        groupsUi = groups,
                                         name = editableName,
                                         categoryId = selectedCategory?.id,
                                         unitId = selectedUnit?.id,

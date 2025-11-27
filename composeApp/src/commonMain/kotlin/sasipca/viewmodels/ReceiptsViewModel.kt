@@ -6,9 +6,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import sasipca.models.ReceiptLotItem
+import sasipca.models.GroupToEnter
+import sasipca.models.ReceiptGroupItem
 import sasipca.models.ReceiptPost
-import sasipca.models.LotToEnter
 import sasipca.navigation.NavigationService
 import sasipca.repositories.ReceiptRepository
 import java.time.LocalDate
@@ -46,7 +46,7 @@ class ReceiptsViewModel(private val receiptRepository: ReceiptRepository) : View
      */
     fun submitReceipt(
         barcode: String,
-        lotsUi: List<LotToEnter>,
+        groupsUi: List<GroupToEnter>,
         name: String?,
         categoryId: Int?,
         unitId: Int?,
@@ -79,13 +79,10 @@ class ReceiptsViewModel(private val receiptRepository: ReceiptRepository) : View
                 errors["unitSize"] = "Quantidade por unidade tem de ser maior que 1"
             }
 
-            // validar lotes individuais
-            val validatedLots = mutableListOf<ReceiptLotItem>()
-            lotsUi.forEachIndexed { index, l ->
-                val prefix = "lot_$index"
-                if (l.lot.isBlank()) {
-                    errors["$prefix.lot"] = "Lote obrigatório"
-                }
+            // validar grupos individuais
+            val validatedGroups = mutableListOf<ReceiptGroupItem>()
+            groupsUi.forEachIndexed { index, l ->
+                val prefix = "group_$index"
                 if (l.quantity.isBlank()) {
                     errors["$prefix.quantity"] = "Quantidade obrigatória"
                 } else {
@@ -107,14 +104,14 @@ class ReceiptsViewModel(private val receiptRepository: ReceiptRepository) : View
                         // Se chegámos até aqui, quantity já foi validado
                         val qty = l.quantity.toIntOrNull()
                         if (qty != null && qty > 0) {
-                            validatedLots.add(ReceiptLotItem(lot = l.lot, quantity = qty, expiryDate = iso))
+                            validatedGroups.add(ReceiptGroupItem(quantity = qty, expiryDate = iso))
                         }
                     }
                 }
             }
 
-            if (validatedLots.isEmpty()) {
-                errors["lots"] = "Pelo menos um lote válido é necessário"
+            if (validatedGroups.isEmpty()) {
+                errors["groups"] = "Pelo menos um grupo válido é necessário"
             }
 
             // se existirem erros, atualiza estado e sai
@@ -126,7 +123,7 @@ class ReceiptsViewModel(private val receiptRepository: ReceiptRepository) : View
             // construir body
             val body = ReceiptPost(
                 barcode = barcode,
-                lots = validatedLots,
+                groups = validatedGroups,
                 name = name?.takeIf { it.isNotBlank() },
                 categoryId = categoryId,
                 unitId = unitId,

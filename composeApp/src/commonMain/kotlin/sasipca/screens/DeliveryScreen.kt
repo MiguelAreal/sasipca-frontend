@@ -34,7 +34,7 @@ import kotlinx.coroutines.delay
 import sasipca.ApiClient
 import sasipca.models.DeliveryItem
 import sasipca.models.BeneficiaryItem
-import sasipca.models.ProductLot // IMPORTANTE: Usar o modelo existente
+import sasipca.models.ProductGroup
 import sasipca.repositories.OFFRepository
 import sasipca.repositories.ProductRepository
 import sasipca.repositories.DeliveryRepository
@@ -52,39 +52,35 @@ import sasipca.viewmodels.BeneficiariesViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-// --- MODELOS DE UI (Wrappers necessários) ---
-
-// Mantemos este wrapper pois ele guarda estado de UI (expandido, erro, quantidade total a enviar)
-// mas agora usa os modelos oficiais da API internamente.
 data class DeliveryProductToSend(
     val barcode: String,
     val productName: String,
     val quantityToDeliver: Int = 0,
-    val selectedLots: List<DeliveryItem> = emptyList(), // Modelo existente
-    val availableLots: List<ProductLot> = emptyList(),  // Modelo existente (substitui LotInfo)
+    val selectedGroups: List<DeliveryItem> = emptyList(), // Modelo existente
+    val availableGroups: List<ProductGroup> = emptyList(),
     val isExpanded: Boolean = false,
     val hasError: Boolean = false
 ) {
     val totalStock: Int
-        get() = availableLots.sumOf { it.availableStock } // Propriedade direta de ProductLot
+        get() = availableGroups.sumOf { it.availableStock }
 }
 
 // --- LÓGICA FIFO ---
-fun recalculateLotsFIFO(
+fun recalculateFIFO(
     quantityToExport: Int,
-    availableLots: List<ProductLot>, // Agora recebe ProductLot
+    availableGroups: List<ProductGroup>,
     barcode: String
 ): List<DeliveryItem> {
     var remaining = quantityToExport
     val result = mutableListOf<DeliveryItem>()
     // Ordena por data de validade
-    val sortedLots = availableLots.sortedBy { it.expiryDate }
+    val sortedGroups = availableGroups.sortedBy { it.expiryDate }
 
-    for (lot in sortedLots) {
+    for (group in sortedGroups) {
         if (remaining <= 0) break
-        val quantityToTake = minOf(remaining, lot.availableStock) // Propriedade direta de ProductLot
+        val quantityToTake = minOf(remaining, group.availableStock)
         if (quantityToTake > 0) {
-            result.add(DeliveryItem(barcode = barcode, lot = lot.lot, quantity = quantityToTake))
+            result.add(DeliveryItem(barcode = barcode, groupId = group.id, quantity = quantityToTake))
             remaining -= quantityToTake
         }
     }
@@ -204,11 +200,11 @@ fun DeliveryScreen(
                 val currentProduct = productsToDeliver[existingIndex]
                 val newTotal = currentProduct.quantityToDeliver + 1
                 if (newTotal <= currentProduct.totalStock) {
-                    val newLots = recalculateLotsFIFO(newTotal, currentProduct.availableLots, barcode)
+                    val newGroups = recalculateFIFO(newTotal, currentProduct.availableGroups, barcode)
                     val updatedList = productsToDeliver.toMutableList()
                     updatedList[existingIndex] = currentProduct.copy(
                         quantityToDeliver = newTotal,
-                        selectedLots = newLots,
+                        selectedGroups = newGroups,
                         hasError = false
                     )
                     productsToDeliver = updatedList
@@ -229,10 +225,9 @@ fun DeliveryScreen(
 
     LaunchedEffect(productDetail) {
         if (productDetail != null && barcode.isNotEmpty()) {
-            // Agora usamos diretamente a lista de ProductLot que vem do productDetail
-            val lots = productDetail.productLots ?: emptyList()
+            val groups = productDetail.productGroups ?: emptyList()
 
-            if (lots.isEmpty()) {
+            if (groups.isEmpty()) {
                 SnackbarManager.show("Produto sem stock disponível.", SnackbarType.ERROR)
                 barcode = ""
                 isLoadingProduct = false
@@ -240,15 +235,15 @@ fun DeliveryScreen(
             }
 
             val initialQty = 1
-            val calculatedLots = recalculateLotsFIFO(initialQty, lots, barcode)
+            val calculatedGroups = recalculateFIFO(initialQty, groups, barcode)
 
             val newProduct = DeliveryProductToSend(
                 barcode = barcode,
                 productName = productDetail.name ?: "Produto sem nome",
                 quantityToDeliver = initialQty,
-                availableLots = lots, // Passamos a lista de ProductLot diretamente
-                selectedLots = calculatedLots,
-                hasError = initialQty > lots.sumOf { it.availableStock }
+                availableGroups = groups,
+                selectedGroups = calculatedGroups,
+                hasError = initialQty > groups.sumOf { it.availableStock }
             )
 
             if (!productsToDeliver.any { it.barcode == barcode }) {
@@ -467,9 +462,9 @@ fun DeliveryScreen(
                             onUpdateQuantity = { index, newTotal ->
                                 val product = productsToDeliver[index]
                                 val isValid = newTotal <= product.totalStock
-                                val newLots = recalculateLotsFIFO(newTotal, product.availableLots, product.barcode)
+                                val newGroups = recalculateFIFO(newTotal, product.availableGroups, product.barcode)
                                 val updatedList = productsToDeliver.toMutableList()
-                                updatedList[index] = product.copy(quantityToDeliver = newTotal, selectedLots = newLots, hasError = !isValid)
+                                updatedList[index] = product.copy(quantityToDeliver = newTotal, selectedGroups = newGroups, hasError = !isValid)
                                 productsToDeliver = updatedList
                             },
                             onProductExpanded = { index ->
@@ -674,9 +669,9 @@ fun DeliveryScreen(
                             },
                             onUpdateQuantity = { newTotal ->
                                 val isValid = newTotal <= product.totalStock
-                                val newLots = recalculateLotsFIFO(newTotal, product.availableLots, product.barcode)
+                                val newGroups = recalculateFIFO(newTotal, product.availableGroups, product.barcode)
                                 val updatedList = productsToDeliver.toMutableList()
-                                updatedList[index] = product.copy(quantityToDeliver = newTotal, selectedLots = newLots, hasError = !isValid)
+                                updatedList[index] = product.copy(quantityToDeliver = newTotal, selectedGroups = newGroups, hasError = !isValid)
                                 productsToDeliver = updatedList
                             }
                         )
@@ -923,26 +918,26 @@ fun DeliveryProductCard(
                         }
                     )
                     Spacer(Modifier.height(12.dp))
-                    if (product.selectedLots.isNotEmpty()) {
+                    if (product.selectedGroups.isNotEmpty()) {
                         Text(
-                            "Distribuição por Lotes",
+                            "Distribuição por Grupos",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(Modifier.height(4.dp))
 
-                        product.selectedLots.forEach { item ->
-                            val lotInfo = product.availableLots.find { it.lot == item.lot }
+                        product.selectedGroups.forEach { item ->
+                            val groupInfo = product.availableGroups.find { it.id == item.groupId }
 
                             // LÓGICA DE FORMATAÇÃO DA DATA (dd/MM/yyyy)
-                            val formattedDate = lotInfo?.expiryDate?.let { date ->
+                            val formattedDate = groupInfo?.expiryDate?.let { date ->
                                 "${date.dayOfMonth.toString().padStart(2, '0')}/${date.monthNumber.toString().padStart(2, '0')}/${date.year}"
                             } ?: "N/A"
 
                             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text(
                                     // Alterado aqui para usar a data formatada
-                                    "Lote ${item.lot} | Validade: $formattedDate",
+                                    "Validade: $formattedDate",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )

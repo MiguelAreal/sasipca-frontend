@@ -21,7 +21,7 @@ data class DeliveryPut(
 @Serializable
 data class DeliveryItem(
     val barcode: String,
-    val lot: String,
+    val groupId: Int,
     val quantity: Int
 )
 

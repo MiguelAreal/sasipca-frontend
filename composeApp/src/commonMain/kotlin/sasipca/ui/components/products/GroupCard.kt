@@ -11,36 +11,26 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import sasipca.models.LotToEnter
+import sasipca.models.GroupToEnter
 import sasipca.ui.components.ValidatedDateField
 import sasipca.ui.components.ValidatedTextField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LotCard(
-    lot: LotToEnter,
+fun GroupCard(
+    group: GroupToEnter,
     index: Int,
-    onLotChange: (LotToEnter) -> Unit,
+    onGroupChange: (GroupToEnter) -> Unit,
     onRemove: () -> Unit,
     canRemove: Boolean,
     errors: Map<String, String> = emptyMap()
@@ -63,10 +53,8 @@ fun LotCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
-                val title = if (lot.lot.isBlank()) {
-                    "Lote ${index + 1}"
-                } else {
-                    "Lote ${lot.lot}"
+                val title = group.expiryDate.ifBlank {
+                    "Grupo ${index + 1}"
                 }
 
                 Text(text = title, style = MaterialTheme.typography.titleSmall)
@@ -78,7 +66,7 @@ fun LotCard(
                     ) {
                         Icon(
                             Icons.Outlined.Delete,
-                            contentDescription = "Remover lote",
+                            contentDescription = "Remover grupo",
                             modifier = Modifier.size(20.dp),
                             tint = MaterialTheme.colorScheme.error
                         )
@@ -90,34 +78,25 @@ fun LotCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Lote (máx 255 caracteres)
-                ValidatedTextField(
-                    value = lot.lot,
-                    onValueChange = { onLotChange(lot.copy(lot = it)) },
-                    label = "Lote",
-                    maxLength = 255,
-                    error = errors["lot_$index.lot"],
-                    modifier = Modifier.weight(1f)
-                )
 
                 // Quantidade (apenas números, máx 11 caracteres)
                 ValidatedTextField(
-                    value = lot.quantity,
-                    onValueChange = { onLotChange(lot.copy(quantity = it)) },
+                    value = group.quantity,
+                    onValueChange = { onGroupChange(group.copy(quantity = it)) },
                     label = "Quant.",
                     maxLength = 11,
                     keyboardType = KeyboardType.Number,
-                    error = errors["lot_$index.quantity"],
+                    error = errors["group_$index.quantity"],
                     modifier = Modifier.weight(1f)
                 )
             }
 
             // Data de validade
             ValidatedDateField(
-                value = lot.expiryDate,
-                onValueChange = { onLotChange(lot.copy(expiryDate = it)) },
+                value = group.expiryDate,
+                onValueChange = { onGroupChange(group.copy(expiryDate = it)) },
                 label = "Data de Validade",
-                error = errors["lot_$index.expiryDate"],
+                error = errors["group_$index.expiryDate"],
                 modifier = Modifier.fillMaxWidth()
             )
 

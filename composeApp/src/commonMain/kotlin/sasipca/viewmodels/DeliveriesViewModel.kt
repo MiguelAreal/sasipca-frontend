@@ -111,7 +111,7 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
             if (products.isEmpty()) {
                 errors["products"] = "Adicione pelo menos um produto."
             } else {
-                val totalItemsCount = products.sumOf { it.selectedLots.sumOf { lot -> lot.quantity } }
+                val totalItemsCount = products.sumOf { it.selectedGroups.sumOf { group -> group.quantity } }
                 if (totalItemsCount <= 0) errors["products"] = "Quantidades devem ser superiores a zero."
 
                 products.forEach { product ->
@@ -132,8 +132,8 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
 
             // 3. Preparação dos dados
             val itemsToDeliverPayload = products.flatMap { product ->
-                product.selectedLots.map { lotItem ->
-                    DeliveryItem(barcode = product.barcode, lot = lotItem.lot, quantity = lotItem.quantity)
+                product.selectedGroups.map { groupItem ->
+                    DeliveryItem(barcode = product.barcode, groupId = groupItem.groupId, quantity = groupItem.quantity)
                 }
             }
 

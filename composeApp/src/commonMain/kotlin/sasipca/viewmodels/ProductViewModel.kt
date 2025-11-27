@@ -88,7 +88,7 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
                     totalQuantity = detail.totalQuantity,
                     reservedQuantity = detail.reservedQuantity,
                     availableStock = detail.availableStock,
-                    productLots = detail.productLots
+                    productGroups = detail.productGroups
                 ).also {
                     it.images = offImages
                 }
@@ -141,7 +141,7 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
                             totalQuantity = detail.totalQuantity,
                             reservedQuantity = detail.reservedQuantity,
                             availableStock = detail.availableStock,
-                            productLots = detail.productLots
+                            productGroups = detail.productGroups
                         ).also {
                             // Imagens sempre do OFF se disponíveis
                             it.images = offProduct?.images ?: emptyList()
@@ -160,7 +160,7 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
                             totalQuantity = null,
                             reservedQuantity = null,
                             availableStock = null,
-                            productLots = emptyList()
+                            productGroups = emptyList()
                         ).also {
                             it.images = offProduct.images
                         }

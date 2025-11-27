@@ -15,7 +15,7 @@ data class ProductDetail(
     val totalQuantity: Int? = null,
     val reservedQuantity: Int? = null,
     val availableStock: Int? = null,
-    val productLots: List<ProductLot> = emptyList(),
+    val productGroups: List<ProductGroup> = emptyList(),
     /*Imagens vêm sempre de OpenFoodFacts*/
     var images: List<String>? = emptyList()
 )
