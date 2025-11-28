@@ -179,12 +179,12 @@ fun SecondaryActionsSection() {
         CompactMenuItem(
             icon = Icons.Outlined.FilePresent,
             title = "Relatórios",
-            onClick = { NavigationService.navigateTo(Screen.Placeholder) }
+            onClick = { NavigationService.navigateTo(Screen.Reports) }
         )
         CompactMenuItem(
             icon = Icons.Outlined.History,
             title = "Histórico de Movimentos",
-            onClick = { NavigationService.navigateTo(Screen.Placeholder) }
+            onClick = { NavigationService.navigateTo(Screen.History) }
         )
     }
 }

@@ -28,13 +28,11 @@ class ReceiptsViewModel(private val receiptRepository: ReceiptRepository) : View
     val uiState: StateFlow<ReceiptUiState> = _uiState
 
     private val inputDateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-    private val outputInstantFormatter = DateTimeFormatter.ISO_INSTANT
 
     private fun dateToIsoZeroUtcOrNull(input: String): String? {
         return try {
             val localDate = LocalDate.parse(input, inputDateFormatter)
-            val zoned = localDate.atStartOfDay(ZoneOffset.UTC)
-            outputInstantFormatter.format(zoned.toInstant())
+            localDate.toString()
         } catch (e: Exception) {
             null
         }

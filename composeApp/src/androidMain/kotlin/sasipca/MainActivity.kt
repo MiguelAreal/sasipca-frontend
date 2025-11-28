@@ -21,6 +21,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        sasipca.utils.AndroidContext.set(this)
 
         val settings: Settings = SharedPreferencesSettings(PreferenceManager.getDefaultSharedPreferences(this))
         SessionManager.init(settings)

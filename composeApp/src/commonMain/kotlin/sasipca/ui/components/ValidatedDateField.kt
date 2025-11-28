@@ -1,20 +1,21 @@
 package sasipca.ui.components
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import sasipca.ui.theme.UnderlineError
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 fun ValidatedDateField(
     value: String,
@@ -64,13 +65,18 @@ fun ValidatedDateField(
                 TextButton(
                     onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
-                            val formatted = java.text.SimpleDateFormat(
-                                "dd/MM/yyyy",
-                                java.util.Locale.getDefault()
-                            ).format(java.util.Date(millis))
+
+                            val instant = Instant.fromEpochMilliseconds(millis)
+                            val date = instant.toLocalDateTime(TimeZone.UTC).date
+
+                            // Construção manual da string "dd-MM-yyyy"
+                            val day = date.dayOfMonth.toString().padStart(2, '0')
+                            val month = date.monthNumber.toString().padStart(2, '0')
+                            val year = date.year
+
+                            val formatted = "$day/$month/$year"
 
                             onValueChange(formatted)
-
                         }
                         showDatePicker = false
                     }
@@ -91,4 +97,3 @@ fun ValidatedDateField(
         }
     }
 }
-

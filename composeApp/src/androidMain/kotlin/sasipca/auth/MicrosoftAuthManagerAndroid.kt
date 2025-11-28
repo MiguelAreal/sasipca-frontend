@@ -105,11 +105,25 @@ class MicrosoftAuthManagerAndroid(private val context: Context) : MicrosoftAuthM
         )
     }
 
-    // ... manter signOut igual ...
-    override suspend fun signOut() {
-        mSingleAccountApp?.signOut(object : ISingleAccountPublicClientApplication.SignOutCallback {
-            override fun onSignOut() {}
-            override fun onError(exception: MsalException) {}
+    override suspend fun signOut() = suspendCoroutine { continuation ->
+        val app = mSingleAccountApp
+
+        if (app == null) {
+            continuation.resume(Unit)
+            return@suspendCoroutine
+        }
+
+        app.signOut(object : ISingleAccountPublicClientApplication.SignOutCallback {
+            override fun onSignOut() {
+                Log.d("MSAL_DEBUG", "MSAL Logout: Sucesso. Cache limpa.")
+                continuation.resume(Unit)
+            }
+
+            override fun onError(exception: MsalException) {
+                Log.e("MSAL_DEBUG", "MSAL Logout: Erro - ${exception.message}")
+                // Mesmo com erro, continuamos o fluxo para não prender o utilizador
+                continuation.resume(Unit)
+            }
         })
     }
 }

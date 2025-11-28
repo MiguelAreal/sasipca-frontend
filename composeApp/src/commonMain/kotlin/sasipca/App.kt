@@ -141,6 +141,8 @@ private fun AnimatedNavigation(
     val beneficiaryRepository = ApiClient.beneficiaryRepository
     val campaignRepository = ApiClient.campaignRepository
     val listsRepository = ApiClient.listsRepository
+    val reportsRepository = ApiClient.reportRepository
+    val historyRepository = ApiClient.historyRepository
 
     AnimatedContent(
         targetState = currentScreen,
@@ -172,6 +174,7 @@ private fun AnimatedNavigation(
                     onProductSelected(barcode)
                     NavigationService.navigateTo(Screen.Product)}
             )
+            Screen.History -> HistoryScreen(historyRepository)
 
             Screen.Reception -> ReceiptScreen(productRepository, receiptRepository)
             Screen.Delivery -> DeliveryScreen(productRepository, deliveryRepository, beneficiaryRepository)
@@ -192,6 +195,7 @@ private fun AnimatedNavigation(
                     deliveryRepository = deliveryRepository
                 )
             }
+            Screen.Reports -> ReportsScreen(reportsRepository,beneficiaryRepository)
             Screen.Settings -> SettingsScreen { onThemeChange(it) }
             Screen.Notifications -> PlaceholderScreen()
             Screen.Placeholder -> PlaceholderScreen()

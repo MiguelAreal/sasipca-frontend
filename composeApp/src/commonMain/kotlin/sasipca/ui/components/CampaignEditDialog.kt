@@ -182,14 +182,16 @@ fun CampaignEditDialog(
                             onValueChange = { viewModel.onNameChange(it) },
                             label = "Nome da Campanha",
                             error = formState.errors["name"],
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            maxLength = 80
                         )
                         ValidatedTextField(
                             value = formState.location,
                             onValueChange = { viewModel.onLocationChange(it) },
                             label = "Localização",
                             error = formState.errors["location"],
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            maxLength = 150
                         )
                     }
 
@@ -215,14 +217,15 @@ fun CampaignEditDialog(
 
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         CardTitle("Detalhes")
-                        OutlinedTextField(
-                            value = formState.description,
-                            onValueChange = { viewModel.onDescriptionChange(it) },
-                            label = { Text("Descrição") },
-                            modifier = Modifier.fillMaxWidth().height(120.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            maxLines = 5
+                        ValidatedTextField(
+                            value = formState.location,
+                            onValueChange = { viewModel.onLocationChange(it) },
+                            label = "Descrição",
+                            error = formState.errors["descricao"],
+                            modifier = Modifier.fillMaxWidth().height(240.dp),
+                            singleLine = false
                         )
+
                     }
                 }
 

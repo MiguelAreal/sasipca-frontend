@@ -23,6 +23,10 @@ object ApiClient {
         private set
     lateinit var campaignRepository: CampaignRepository
         private set
+    lateinit var reportRepository: ReportsRepository
+        private set
+    lateinit var historyRepository: HistoryRepository
+        private set
     lateinit var listsRepository: ListsRepository
         private set
 
@@ -42,6 +46,8 @@ object ApiClient {
         beneficiaryRepository = BeneficiaryRepository(client)
         listsRepository = ListsRepository(client)
         campaignRepository = CampaignRepository(client)
+        reportRepository = ReportsRepository(client)
+        historyRepository = HistoryRepository(client)
     }
 
     suspend fun refreshToken(): Result<AuthResponse> {
