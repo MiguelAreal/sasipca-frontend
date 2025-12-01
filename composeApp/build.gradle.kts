@@ -31,6 +31,7 @@ kotlin {
             implementation("androidx.camera:camera-camera2:1.3.4")
             implementation("androidx.camera:camera-lifecycle:1.3.4")
             implementation("androidx.camera:camera-view:1.3.4")
+            implementation("com.google.firebase:firebase-messaging:25.0.1")
             implementation("com.microsoft.identity.client:msal:8.1.0"){
                 exclude(group = "com.microsoft.device.display")
             }
@@ -70,6 +71,7 @@ kotlin {
             implementation("com.russhwolf:multiplatform-settings-jvm:1.3.0")
             implementation("org.slf4j:slf4j-simple:2.0.17")
             implementation("com.microsoft.azure:msal4j:1.23.1")
+            implementation("com.microsoft.signalr:signalr:10.0.0")
         }
 
     }

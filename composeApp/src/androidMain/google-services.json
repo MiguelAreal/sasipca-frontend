@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "692142729640",
+    "project_id": "sasipca-2ea18",
+    "storage_bucket": "sasipca-2ea18.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:692142729640:android:189471f3639388c6d1959d",
+        "android_client_info": {
+          "package_name": "app.sasipca"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6kyQDKCl3X_-MgV3SKsZSCY3sD-VNfAQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
