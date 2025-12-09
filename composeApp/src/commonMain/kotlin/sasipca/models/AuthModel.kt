@@ -12,6 +12,7 @@ data class AuthResponse(
     val accessToken: String,
     val refreshToken: String,
     val userID: Int,
-    val userName: String
+    val userName: String,
+    val role: String
 )
 

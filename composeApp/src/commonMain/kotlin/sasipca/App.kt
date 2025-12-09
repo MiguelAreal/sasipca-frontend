@@ -143,6 +143,7 @@ private fun AnimatedNavigation(
     val listsRepository = ApiClient.listsRepository
     val reportsRepository = ApiClient.reportRepository
     val historyRepository = ApiClient.historyRepository
+    val notificationRepository = ApiClient.notificationRepository
 
     AnimatedContent(
         targetState = currentScreen,

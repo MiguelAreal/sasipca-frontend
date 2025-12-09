@@ -7,7 +7,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     kotlin("plugin.serialization") version "1.9.0"
-
+    id("com.google.gms.google-services")
 }
 
 kotlin {
@@ -72,12 +72,12 @@ kotlin {
             implementation("org.slf4j:slf4j-simple:2.0.17")
             implementation("com.microsoft.azure:msal4j:1.23.1")
             implementation("com.microsoft.signalr:signalr:10.0.0")
+            implementation("com.squareup.okhttp3:okhttp:4.12.0")
         }
 
     }
 
 }
-
 
 
 android {

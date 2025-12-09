@@ -55,6 +55,7 @@
 
         var editName by remember { mutableStateOf(product.name) }
         var editUnitSize by remember { mutableStateOf(product.unitSize.toString()) }
+        var editExpNotif by remember { mutableStateOf(product.expNotif.toString()) }
         var selectedCategory by remember { mutableStateOf<Category?>(null) }
         var selectedUnit by remember { mutableStateOf<UnitType?>(null) }
 
@@ -62,6 +63,7 @@
             product.let {
                 editName = it.name
                 editUnitSize = it.unitSize.toString()
+                editExpNotif = it.expNotif.toString()
                 selectedCategory= categories.find { it.id == product.categoryId }
                 selectedUnit = units.find { it.id == product.unitId }
 
@@ -123,6 +125,15 @@
                                 maxLength = 11,
                                 keyboardType = KeyboardType.Number
                             )
+
+                            ValidatedTextField(
+                                    value = editExpNotif,
+                            onValueChange = { editExpNotif = it },
+                            label = "Dias de Notificação Prévia",
+                            error = errors["expNotif"],
+                            maxLength = 4,
+                            keyboardType = KeyboardType.Number
+                            )
                         }
                     }
                 }
@@ -135,7 +146,8 @@
                                 name = editName,
                                 unitSize = editUnitSize.toIntOrNull(),
                                 unitId = selectedUnit?.id,
-                                categoryId = selectedCategory?.id
+                                categoryId = selectedCategory?.id,
+                                expNotif = editExpNotif.toIntOrNull()
                             )
                             onSave(body)
                         },

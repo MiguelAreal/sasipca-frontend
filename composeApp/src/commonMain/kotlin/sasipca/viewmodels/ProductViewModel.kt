@@ -88,6 +88,7 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
                     totalQuantity = detail.totalQuantity,
                     reservedQuantity = detail.reservedQuantity,
                     availableStock = detail.availableStock,
+                    expNotif = detail.expNotif,
                     productGroups = detail.productGroups
                 ).also {
                     it.images = offImages
@@ -141,6 +142,7 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
                             totalQuantity = detail.totalQuantity,
                             reservedQuantity = detail.reservedQuantity,
                             availableStock = detail.availableStock,
+                            expNotif = detail.expNotif,
                             productGroups = detail.productGroups
                         ).also {
                             // Imagens sempre do OFF se disponíveis
@@ -160,6 +162,7 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
                             totalQuantity = null,
                             reservedQuantity = null,
                             availableStock = null,
+                            expNotif = null,
                             productGroups = emptyList()
                         ).also {
                             it.images = offProduct.images
@@ -247,6 +250,7 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
                 unitSize = body.unitSize,
                 categoryId = body.categoryId,
                 unitId = body.unitId,
+                expNotif = body.expNotif
             )
 
             // enviar

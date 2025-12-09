@@ -12,4 +12,5 @@ data class ProductPut(
     val unitSize: Int? = null,
     val categoryId: Int? = null,
     val unitId: Int? = null,
+    val expNotif: Int? = null
 )

@@ -30,7 +30,9 @@ object ApiClient {
     lateinit var listsRepository: ListsRepository
         private set
 
-    // ALTERAÇÃO AQUI: Recebe o manager como parâmetro
+    lateinit var notificationRepository: NotificationRepository
+        private set
+
     fun init(authManager: MicrosoftAuthManager) {
 
         // Criar HttpClient
@@ -48,6 +50,7 @@ object ApiClient {
         campaignRepository = CampaignRepository(client)
         reportRepository = ReportsRepository(client)
         historyRepository = HistoryRepository(client)
+        notificationRepository = NotificationRepository(client)
     }
 
     suspend fun refreshToken(): Result<AuthResponse> {
