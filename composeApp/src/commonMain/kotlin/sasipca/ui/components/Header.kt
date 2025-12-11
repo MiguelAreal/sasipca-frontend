@@ -31,19 +31,19 @@ fun Header(
     title: String,
     subTitle: String = ""
 ) {
-    // 1. Obter o Navigator atual do Voyager
-    val navigator = LocalNavigator.currentOrThrow
+
+    val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
+
     val currentScreen = navigator.lastItem
 
-    // 2. Lógica para mostrar/esconder o botão de voltar
-
+    // Lógica para mostrar/esconder o botão de voltar
     val isRootScreen = currentScreen is MainScreen || currentScreen is LoginScreen
 
     val showBackButton = navigator.canPop && !isRootScreen
 
+    // Esconde botão de settings se já estivermos nele
     val showSettings = currentScreen !is SettingsScreen
 
-    // Estado das notificações (mantido igual)
     val unreadCount by NotificationManager.unreadCount.collectAsState()
 
     BoxWithConstraints(
@@ -68,7 +68,7 @@ fun Header(
 
                 if (showBackButton) {
                     IconButton(
-                        onClick = { navigator.pop() }, // Voyager: Voltar atrás
+                        onClick = { navigator.pop() },
                         modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
@@ -102,6 +102,7 @@ fun Header(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if(showSettings) {
                     IconButton(
+                        // Agora este push vai para o Root Navigator, e não para as Tabs
                         onClick = { navigator.push(SettingsScreen()) },
                         modifier = Modifier.size(40.dp)
                     ) {
@@ -114,7 +115,8 @@ fun Header(
                 }
 
                 IconButton(
-                    onClick = { navigator.push(NotificationsScreen()) }, // Voyager: Navegar
+                    // Igual aqui para as notificações
+                    onClick = { navigator.push(NotificationsScreen()) },
                     modifier = Modifier.size(40.dp)
                 ) {
                     if (unreadCount > 0) {
