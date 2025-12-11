@@ -12,7 +12,7 @@ import com.google.firebase.messaging.RemoteMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import sasipca.ApiClient
+import sasipca.network.ApiClient
 import sasipca.MainActivity
 import sasipca.storage.SessionManager
 
@@ -44,7 +44,7 @@ class MessagingService : FirebaseMessagingService() {
         remoteMessage.notification?.let {
             println("FCM: Título: ${it.title}, Corpo: ${it.body}")
             showNotification(it.title ?: "SASIPCA", it.body ?: "")
-        }
+            sasipca.storage.NotificationManager.refreshCount()        }
     }
 
     // 3. EXIBIÇÃO DA NOTIFICAÇÃO

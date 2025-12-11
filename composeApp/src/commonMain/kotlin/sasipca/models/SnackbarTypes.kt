@@ -1,4 +1,4 @@
-package sasipca.utils
+package sasipca.models
 
 enum class SnackbarType {
     SUCCESS, ERROR, WARNING

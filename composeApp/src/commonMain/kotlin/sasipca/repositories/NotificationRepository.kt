@@ -1,11 +1,11 @@
 package sasipca.repositories
 
 import io.ktor.client.*
-import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.serialization.Serializable
-import sasipca.storage.ApiConfig
-import sasipca.storage.requestWithAuth
+import sasipca.models.Notification
+import sasipca.network.ApiConfig
+import sasipca.network.requestWithAuth
 
 @Serializable
 data class DeviceTokenDto(val token: String)
@@ -27,6 +27,56 @@ class NotificationRepository(private val client: HttpClient) {
         } catch (e: Exception) {
             println("NotificationRepo: ERRO ao registar dispositivo: ${e.message}")
             e.printStackTrace()
+        }
+    }
+
+    // Obter lista de notificações
+    suspend fun getNotifications(): List<Notification> {
+        return try {
+            client.requestWithAuth<List<Notification>>(
+                method = HttpMethod.Get,
+                url = "${ApiConfig.baseUrl()}/notifications"
+            )
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    // Obter contagem de não lidas (Badge)
+    suspend fun getUnreadCount(): Int {
+        return try {
+            client.requestWithAuth<Int>(
+                method = HttpMethod.Get,
+                url = "${ApiConfig.baseUrl()}/notifications/unread-count"
+            )
+        } catch (e: Exception) {
+            0
+        }
+    }
+
+    // Marcar como lida
+    suspend fun markAsRead(id: Int): Boolean {
+        return try {
+            client.requestWithAuth<Unit>(
+                method = HttpMethod.Put,
+                url = "${ApiConfig.baseUrl()}/notifications/$id/read"
+            )
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    // Arquivar
+    suspend fun archive(id: Int): Boolean {
+        return try {
+            client.requestWithAuth<Unit>(
+                method = HttpMethod.Delete,
+                url = "${ApiConfig.baseUrl()}/notifications/$id"
+            )
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 }

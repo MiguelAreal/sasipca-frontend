@@ -21,6 +21,7 @@ class WeekCalendarController(
 )
 
 
+@Suppress("UnusedBoxWithConstraintsScope")
 @Composable
 fun Calendar(
     month: YearMonth,

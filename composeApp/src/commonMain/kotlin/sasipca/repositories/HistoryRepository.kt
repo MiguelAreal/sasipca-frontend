@@ -3,8 +3,8 @@ package sasipca.repositories
 import io.ktor.client.*
 import io.ktor.http.*
 import sasipca.models.*
-import sasipca.storage.ApiConfig
-import sasipca.storage.requestWithAuth
+import sasipca.network.ApiConfig
+import sasipca.network.requestWithAuth
 
 class HistoryRepository(private val client: HttpClient) {
 
@@ -27,9 +27,20 @@ class HistoryRepository(private val client: HttpClient) {
         )
     }
 
+    // Busca o histórico filtrado por produto
+    suspend fun getProductHistory(barcode: String): List<MovementHistory> {
+        return try {
+            client.requestWithAuth<List<MovementHistory>>(
+                method = HttpMethod.Get,
+                url = "${ApiConfig.baseUrl()}/products/$barcode/history"
+            )
+        } catch (e: Exception) {
+            println("Erro ao carregar histórico do produto: ${e.message}")
+            emptyList()
+        }
+    }
+
     // --- ENTREGAS (Histórico) ---
-    // Nota: O teu DeliveryRepository já tinha getDeliveries, mas este endpoint
-    // usa a View VDelivery que é mais leve para listagens grandes.
     suspend fun getDeliveriesHistory(dateFrom: String? = null, dateTo: String? = null): List<DeliveryHistory> {
         return client.requestWithAuth(
             method = HttpMethod.Get,

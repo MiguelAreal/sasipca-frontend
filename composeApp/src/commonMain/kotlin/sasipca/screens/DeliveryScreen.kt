@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -25,13 +24,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
 import kotlinx.coroutines.delay
-import sasipca.ApiClient
+import sasipca.network.ApiClient
 import sasipca.models.DeliveryItem
 import sasipca.models.BeneficiaryItem
 import sasipca.models.ProductGroup
@@ -40,12 +39,13 @@ import sasipca.repositories.ProductRepository
 import sasipca.repositories.DeliveryRepository
 import sasipca.repositories.BeneficiaryRepository
 import sasipca.storage.ScreenSizeManager.isLargeScreen
+import sasipca.ui.components.BarcodeInputField // <--- O Componente Novo
 import sasipca.ui.components.Header
 import sasipca.ui.components.LoadingWidget
 import sasipca.ui.components.ValidatedDateField
 import sasipca.ui.theme.CardTitle
 import sasipca.utils.SnackbarManager
-import sasipca.utils.SnackbarType
+import sasipca.models.SnackbarType
 import sasipca.viewmodels.ProductViewModel
 import sasipca.viewmodels.DeliveriesViewModel
 import sasipca.viewmodels.BeneficiariesViewModel
@@ -56,7 +56,7 @@ data class DeliveryProductToSend(
     val barcode: String,
     val productName: String,
     val quantityToDeliver: Int = 0,
-    val selectedGroups: List<DeliveryItem> = emptyList(), // Modelo existente
+    val selectedGroups: List<DeliveryItem> = emptyList(),
     val availableGroups: List<ProductGroup> = emptyList(),
     val isExpanded: Boolean = false,
     val hasError: Boolean = false
@@ -73,7 +73,7 @@ fun recalculateFIFO(
 ): List<DeliveryItem> {
     var remaining = quantityToExport
     val result = mutableListOf<DeliveryItem>()
-    // Ordena por data de validade
+    // Ordena por data de validade (mais antiga primeiro)
     val sortedGroups = availableGroups.sortedBy { it.expiryDate }
 
     for (group in sortedGroups) {
@@ -95,6 +95,7 @@ fun DeliveryScreen(
     beneficiaryRepository: BeneficiaryRepository
 ) {
     val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
 
     // ViewModels
     val deliveriesViewModel = remember { DeliveriesViewModel(deliveryRepository) }
@@ -115,7 +116,7 @@ fun DeliveryScreen(
 
     var isLoadingProduct by remember { mutableStateOf(false) }
 
-    // --- ESTADOS AUTOCOMPLETE BENEFICIÁRIO ---
+    // --- ESTADOS AUTOCOMPLETE BENEFICIÁRIO (Mantido com ExposedDropdownMenu específico) ---
     var beneficiaryQuery by remember { mutableStateOf("") }
     var selectedBeneficiary by remember { mutableStateOf<BeneficiaryItem?>(null) }
     var isBeneficiaryDropdownExpanded by remember { mutableStateOf(false) }
@@ -123,19 +124,16 @@ fun DeliveryScreen(
     val isBeneficiaryLoading by remember { beneficiariesViewModel::isLoading }
     val beneficiaryFocusRequester = remember { FocusRequester() }
 
-    // --- ESTADOS AUTOCOMPLETE PRODUTO ---
+    // --- ESTADOS AUTOCOMPLETE PRODUTO (Simplificado) ---
     var productQuery by remember { mutableStateOf("") }
-    var isProductDropdownExpanded by remember { mutableStateOf(false) }
-    val productSearchResults by remember { productViewModel::filteredItems }
-    val isProductSearchLoading by remember { productViewModel::isLoading }
-    val productFocusRequester = remember { FocusRequester() }
+    val productSearchResults = productViewModel.filteredItems
+    val isProductSearchLoading = productViewModel.isLoading
 
     val productDetail = productViewModel.selectedProductDetail
 
     // --- EFEITOS COLATERAIS DE SUBMISSÃO ---
     LaunchedEffect(deliveryUiState.success) {
         if (deliveryUiState.success) {
-            // USA A MENSAGEM VINDA DA API, OU UMA DEFAULT
             val message = deliveryUiState.successMessage ?: "Entrega registada com sucesso!"
             SnackbarManager.show(message, SnackbarType.SUCCESS)
 
@@ -175,20 +173,17 @@ fun DeliveryScreen(
 
     // --- LÓGICA DE PESQUISA PRODUTO E AUTO-SCAN ---
     LaunchedEffect(productQuery) {
-        if (productQuery.isEmpty()) {
-            isProductDropdownExpanded = false
-            return@LaunchedEffect
-        }
-        delay(400) // Delay para scan
+        if (productQuery.isEmpty()) return@LaunchedEffect
+
+        delay(400) // Delay para scan/teclado
 
         val isPotentialBarcode = productQuery.all { it.isDigit() } && productQuery.length >= 8
 
         if (isPotentialBarcode) {
             barcode = productQuery
-            isProductDropdownExpanded = false
+            // Dropdown logic gerida pelo componente agora
         } else {
             productViewModel.loadProducts(search = productQuery)
-            isProductDropdownExpanded = true
         }
     }
 
@@ -197,6 +192,7 @@ fun DeliveryScreen(
         if (barcode.isNotEmpty()) {
             val existingIndex = productsToDeliver.indexOfFirst { it.barcode == barcode }
             if (existingIndex >= 0) {
+                // Produto já na lista: Incrementar
                 val currentProduct = productsToDeliver[existingIndex]
                 val newTotal = currentProduct.quantityToDeliver + 1
                 if (newTotal <= currentProduct.totalStock) {
@@ -215,6 +211,7 @@ fun DeliveryScreen(
                     barcode = ""
                 }
             } else {
+                // Produto novo: Carregar detalhes
                 isLoadingProduct = true
                 productViewModel.getProduct(barcode, offRepository)
             }
@@ -359,7 +356,7 @@ fun DeliveryScreen(
                             }
                         }
 
-                        // CARD PRODUTO
+                        // CARD PRODUTO (COM COMPONENTE NOVO)
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
@@ -370,74 +367,21 @@ fun DeliveryScreen(
                                 CardTitle("Adicionar Produto")
                                 Spacer(Modifier.height(8.dp))
 
-                                ExposedDropdownMenuBox(
-                                    expanded = isProductDropdownExpanded,
-                                    onExpandedChange = {
-                                        isProductDropdownExpanded = it
-                                        if(it) productFocusRequester.requestFocus()
+                                // --- BarcodeInputField Centralizado ---
+                                BarcodeInputField(
+                                    value = productQuery,
+                                    onValueChange = {
+                                        productQuery = it
+                                        if (it.isEmpty()) barcode = ""
+                                    },
+                                    suggestions = productSearchResults,
+                                    onSuggestionSelected = { product ->
+                                        barcode = product.barcode
+                                        productQuery = product.name ?: product.barcode
+                                        // A lógica de LaunchedEffect(barcode) vai disparar a adição
+                                        focusManager.clearFocus()
                                     }
-                                ) {
-                                    OutlinedTextField(
-                                        value = productQuery,
-                                        onValueChange = {
-                                            productQuery = it
-                                            productFocusRequester.requestFocus()
-                                        },
-                                        label = { Text("Produto") },
-                                        placeholder = { Text("Nome ou Código de Barras") },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .menuAnchor()
-                                            .focusRequester(productFocusRequester),
-                                        trailingIcon = {
-                                            if (isProductSearchLoading) {
-                                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                                            } else {
-                                                Icon(Icons.Default.Search, contentDescription = "Pesquisar")
-                                            }
-                                        },
-                                        singleLine = true,
-                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                        keyboardActions = KeyboardActions(
-                                            onDone = {
-                                                if (productQuery.isNotEmpty()) {
-                                                    barcode = productQuery
-                                                    isProductDropdownExpanded = false
-                                                }
-                                            }
-                                        )
-                                    )
-
-                                    DropdownMenu(
-                                        expanded = isProductDropdownExpanded,
-                                        onDismissRequest = { isProductDropdownExpanded = false },
-                                        modifier = Modifier
-                                            .exposedDropdownSize(true)
-                                            .background(MaterialTheme.colorScheme.surface),
-                                        properties = PopupProperties(focusable = false)
-                                    ) {
-                                        val list = productSearchResults
-                                        if (list.isEmpty() && !isProductSearchLoading) {
-                                            DropdownMenuItem(text = { Text("Não encontrado") }, onClick = {}, enabled = false)
-                                        } else {
-                                            list.forEach { product ->
-                                                DropdownMenuItem(
-                                                    text = {
-                                                        Column {
-                                                            Text(text = product.name ?: "Sem Nome", style = MaterialTheme.typography.bodyLarge)
-                                                            Text(text = product.barcode, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                        }
-                                                    },
-                                                    onClick = {
-                                                        barcode = product.barcode
-                                                        isProductDropdownExpanded = false
-                                                    },
-                                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
+                                )
                             }
                         }
 
@@ -576,6 +520,7 @@ fun DeliveryScreen(
                     }
 
                     item {
+                        // CARD PRODUTO (COM COMPONENTE NOVO)
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
@@ -585,74 +530,20 @@ fun DeliveryScreen(
                                 CardTitle("Adicionar Produto")
                                 Spacer(Modifier.height(8.dp))
 
-                                ExposedDropdownMenuBox(
-                                    expanded = isProductDropdownExpanded,
-                                    onExpandedChange = {
-                                        isProductDropdownExpanded = it
-                                        if(it) productFocusRequester.requestFocus()
+                                // --- BarcodeInputField Centralizado ---
+                                BarcodeInputField(
+                                    value = productQuery,
+                                    onValueChange = {
+                                        productQuery = it
+                                        if (it.isEmpty()) barcode = ""
+                                    },
+                                    suggestions = productSearchResults,
+                                    onSuggestionSelected = { product ->
+                                        barcode = product.barcode
+                                        productQuery = product.name ?: product.barcode
+                                        focusManager.clearFocus()
                                     }
-                                ) {
-                                    OutlinedTextField(
-                                        value = productQuery,
-                                        onValueChange = {
-                                            productQuery = it
-                                            productFocusRequester.requestFocus()
-                                        },
-                                        label = { Text("Produto") },
-                                        placeholder = { Text("Nome ou Código de Barras") },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .menuAnchor()
-                                            .focusRequester(productFocusRequester),
-                                        trailingIcon = {
-                                            if (isProductSearchLoading) {
-                                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                                            } else {
-                                                Icon(Icons.Default.Search, contentDescription = "Pesquisar")
-                                            }
-                                        },
-                                        singleLine = true,
-                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                        keyboardActions = KeyboardActions(
-                                            onDone = {
-                                                if (productQuery.isNotEmpty()) {
-                                                    barcode = productQuery
-                                                    isProductDropdownExpanded = false
-                                                }
-                                            }
-                                        )
-                                    )
-
-                                    DropdownMenu(
-                                        expanded = isProductDropdownExpanded,
-                                        onDismissRequest = { isProductDropdownExpanded = false },
-                                        modifier = Modifier
-                                            .exposedDropdownSize(true)
-                                            .background(MaterialTheme.colorScheme.surface),
-                                        properties = PopupProperties(focusable = false)
-                                    ) {
-                                        val list = productSearchResults
-                                        if (list.isEmpty() && !isProductSearchLoading) {
-                                            DropdownMenuItem(text = { Text("Não encontrado") }, onClick = {}, enabled = false)
-                                        } else {
-                                            list.forEach { product ->
-                                                DropdownMenuItem(
-                                                    text = {
-                                                        Column {
-                                                            Text(text = product.name ?: "Sem Nome", style = MaterialTheme.typography.bodyLarge)
-                                                            Text(text = product.barcode, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                        }
-                                                    },
-                                                    onClick = {
-                                                        barcode = product.barcode
-                                                        isProductDropdownExpanded = false
-                                                    },
-                                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
+                                )
                             }
                         }
                     }

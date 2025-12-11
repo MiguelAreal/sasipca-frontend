@@ -7,23 +7,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import sasipca.ApiClient
-import sasipca.models.Category
+import sasipca.models.MovementHistory
+import sasipca.network.ApiClient
 import sasipca.models.ProductDetail
-import sasipca.models.UnitType
-import sasipca.navigation.NavigationService
-import sasipca.repositories.BeneficiaryRepository
-import sasipca.repositories.DeliveryRepository
+import sasipca.repositories.HistoryRepository // Importar repo
 import sasipca.repositories.OFFRepository
 import sasipca.repositories.ProductRepository
-import sasipca.storage.ListsStore
 import sasipca.storage.ScreenSizeManager.isLargeScreen
-import sasipca.storage.ScreenSizeManager.updateSize
 import sasipca.ui.components.Header
-import sasipca.ui.components.beneficiaries.*
 import sasipca.ui.components.products.ProductEditForm
-import sasipca.viewmodels.BeneficiaryDetailViewModel
-import sasipca.viewmodels.DeliveriesViewModel
+import sasipca.ui.components.products.ProductHistoryTable // Importar componente
 import sasipca.viewmodels.ProductViewModel
 
 @Suppress("UnusedBoxWithConstraintsScope")
@@ -31,7 +24,8 @@ import sasipca.viewmodels.ProductViewModel
 @Composable
 fun ProductScreen(
     barcode: String,
-    productRepository: ProductRepository
+    productRepository: ProductRepository,
+    historyRepository: HistoryRepository = remember { HistoryRepository(ApiClient.client) } // Injeção default ou passada
 ) {
 
     val productViewModel = remember { ProductViewModel(productRepository) }
@@ -42,21 +36,34 @@ fun ProductScreen(
 
     val productDetail: ProductDetail? = productViewModel.selectedProductDetail
     val isLoading by remember { productViewModel::isLoading }
+
+    // --- ESTADOS DO HISTÓRICO ---
+    var history by remember { mutableStateOf<List<MovementHistory>>(emptyList()) }
+    var isHistoryLoading by remember { mutableStateOf(false) }
+    // ----------------------------
+
     var selectedTab by remember { mutableStateOf(0) }
 
-    // Carrega dados iniciais
+    // Carrega dados iniciais (Produto + Histórico)
     LaunchedEffect(barcode) {
-        productViewModel.getProduct(barcode,offRepository)
+        // 1. Carregar Produto
+        productViewModel.getProduct(barcode, offRepository)
+
+        // 2. Carregar Histórico
+        isHistoryLoading = true
+        history = historyRepository.getProductHistory(barcode)
+        isHistoryLoading = false
     }
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Header(
             title = "Produto",
-            subTitle = productDetail?.name?: ""
+            subTitle = productDetail?.name ?: ""
         )
 
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             if (isLargeScreen()) {
+                // --- LAYOUT DESKTOP (LADO A LADO) ---
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
@@ -72,10 +79,7 @@ fun ProductScreen(
                                 errors = uiState.errors,
                                 onSave = { body ->
                                     scope.launch {
-                                        productViewModel.putProduct(
-                                            barcode = barcode,
-                                            body = body
-                                        )
+                                        productViewModel.putProduct(barcode = barcode, body = body)
                                     }
                                 }
                             )
@@ -83,16 +87,20 @@ fun ProductScreen(
                     }
 
                     // Coluna da direita - Histórico
-                    Box(modifier = Modifier.weight(1f)) {}
+                    Box(modifier = Modifier.weight(1f)) {
+                        ProductHistoryTable(
+                            history = history,
+                            isLoading = isHistoryLoading
+                        )
+                    }
                 }
             } else {
-                // Layout com separadores para ecrãs pequenos
+                // --- LAYOUT MOBILE (SEPARADORES) ---
                 Column(modifier = Modifier.fillMaxSize()) {
 
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.Center,
-
                     ) {
                         FilterChip(
                             selected = selectedTab == 0,
@@ -103,11 +111,11 @@ fun ProductScreen(
                         FilterChip(
                             selected = selectedTab == 1,
                             onClick = { selectedTab = 1 },
-                            label = { Text("Stock") }
+                            label = { Text("Histórico") } // Mudado de "Stock" para "Histórico" ou podes ter os 3
                         )
                     }
 
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                         when (selectedTab) {
                             0 -> productDetail?.let {
                                 ProductEditForm(
@@ -116,15 +124,17 @@ fun ProductScreen(
                                     errors = uiState.errors,
                                     onSave = { body ->
                                         scope.launch {
-                                            productViewModel.putProduct(
-                                                barcode = barcode,
-                                                body = body
-                                            )
+                                            productViewModel.putProduct(barcode = barcode, body = body)
                                         }
                                     }
                                 )
                             }
-                            1 -> Box {}
+                            1 -> {
+                                ProductHistoryTable(
+                                    history = history,
+                                    isLoading = isHistoryLoading
+                                )
+                            }
                         }
                     }
                 }
@@ -132,6 +142,3 @@ fun ProductScreen(
         }
     }
 }
-
-
-

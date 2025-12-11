@@ -16,8 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import sasipca.utils.SnackbarMessage
-import sasipca.utils.SnackbarType
+import sasipca.models.SnackbarMessage
+import sasipca.models.SnackbarType
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable

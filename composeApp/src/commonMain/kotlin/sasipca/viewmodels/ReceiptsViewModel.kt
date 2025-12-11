@@ -12,12 +12,11 @@ import sasipca.models.ReceiptPost
 import sasipca.navigation.NavigationService
 import sasipca.repositories.ReceiptRepository
 import java.time.LocalDate
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 data class ReceiptUiState(
     val isLoading: Boolean = false,
-    val errors: Map<String, String> = emptyMap(), // chave -> mensagem (ex: "barcode" -> "Obrigatório")
+    val errors: Map<String, String> = emptyMap(),
     val lastErrorMessage: String? = null,
     val success: Boolean = false
 )
@@ -29,19 +28,20 @@ class ReceiptsViewModel(private val receiptRepository: ReceiptRepository) : View
 
     private val inputDateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
+    // Helper para limpar estado após sucesso (Chamado pelo UI)
+    fun clearUiState() {
+        _uiState.value = ReceiptUiState()
+    }
+
     private fun dateToIsoZeroUtcOrNull(input: String): String? {
         return try {
             val localDate = LocalDate.parse(input, inputDateFormatter)
-            localDate.toString()
+            localDate.toString() // Retorna yyyy-MM-dd
         } catch (e: Exception) {
             null
         }
     }
 
-    /**
-     * Valida e submete a receção.
-     * Parâmetros: valores exatamente tal como vêm do UI (strings para campos editáveis).
-     */
     fun submitReceipt(
         barcode: String,
         groupsUi: List<GroupToEnter>,
@@ -53,76 +53,64 @@ class ReceiptsViewModel(private val receiptRepository: ReceiptRepository) : View
         note: String?
     ) {
         viewModelScope.launch(Dispatchers.Default) {
-            // inicia limpeza de estado
-            _uiState.value = _uiState.value.copy(isLoading = false, errors = emptyMap(), lastErrorMessage = null, success = false)
+            _uiState.value = _uiState.value.copy(isLoading = true, errors = emptyMap(), lastErrorMessage = null, success = false)
 
             val errors = mutableMapOf<String, String>()
 
-            // barcode
-            if (barcode.isBlank()) {
-                errors["barcode"] = "Código de barras obrigatório"
-            }
+            // Validações
+            if (barcode.isBlank()) errors["barcode"] = "Código de barras obrigatório"
+            if (name.isNullOrBlank()) errors["name"] = "Nome de produto é obrigatório"
 
-            name?.let {
-                if (it.isBlank()) {
-                    errors["name"] = "Nome de produto é obrigatório"
-                }
-            }
-
-            // unitSize
             val unitSize = unitSizeStr.toIntOrNull()
-            if (unitSize == null) {
-                errors["unitSize"] = "Quantidade por unidade inválida"
-            } else if (unitSize <= 1) {
-                errors["unitSize"] = "Quantidade por unidade tem de ser maior que 1"
-            }
+            if (unitSize == null) errors["unitSize"] = "Qtd. inválida"
+            else if (unitSize < 1) errors["unitSize"] = "Mínimo 1"
 
-            // validar grupos individuais
+            // Validação de Grupos
             val validatedGroups = mutableListOf<ReceiptGroupItem>()
             groupsUi.forEachIndexed { index, l ->
                 val prefix = "group_$index"
+                var groupValid = true
+
+                // Valida Quantidade
+                val qty = l.quantity.toIntOrNull()
                 if (l.quantity.isBlank()) {
-                    errors["$prefix.quantity"] = "Quantidade obrigatória"
-                } else {
-                    val qty = l.quantity.toIntOrNull()
-                    if (qty == null) {
-                        errors["$prefix.quantity"] = "Quantidade inválida"
-                    } else if (qty <= 0) {
-                        errors["$prefix.quantity"] = "Quantidade deve ser maior que zero"
-                    }
+                    errors["$prefix.quantity"] = "Obrigatório"
+                    groupValid = false
+                } else if (qty == null || qty <= 0) {
+                    errors["$prefix.quantity"] = "> 0"
+                    groupValid = false
                 }
 
+                // Valida Data
                 if (l.expiryDate.isBlank()) {
-                    errors["$prefix.expiryDate"] = "Data de validade obrigatória"
+                    errors["$prefix.expiryDate"] = "Obrigatória"
+                    groupValid = false
                 } else {
                     val iso = dateToIsoZeroUtcOrNull(l.expiryDate)
                     if (iso == null) {
-                        errors["$prefix.expiryDate"] = "Data inválida (use dd/MM/yyyy)"
-                    } else {
-                        // Se chegámos até aqui, quantity já foi validado
-                        val qty = l.quantity.toIntOrNull()
-                        if (qty != null && qty > 0) {
-                            validatedGroups.add(ReceiptGroupItem(quantity = qty, expiryDate = iso))
-                        }
+                        errors["$prefix.expiryDate"] = "Inválida"
+                        groupValid = false
+                    } else if (groupValid) {
+                        // Só adiciona se tudo estiver válido
+                        validatedGroups.add(ReceiptGroupItem(quantity = qty!!, expiryDate = iso))
                     }
                 }
             }
 
             if (validatedGroups.isEmpty()) {
-                errors["groups"] = "Pelo menos um grupo válido é necessário"
+                errors["groups"] = "Adicione pelo menos um lote válido"
             }
 
-            // se existirem erros, atualiza estado e sai
             if (errors.isNotEmpty()) {
-                _uiState.value = _uiState.value.copy(isLoading = false, errors = errors, lastErrorMessage = "Existem erros no formulário")
+                _uiState.value = _uiState.value.copy(isLoading = false, errors = errors, lastErrorMessage = "Verifique os erros no formulário.")
                 return@launch
             }
 
-            // construir body
+            // Construir Body
             val body = ReceiptPost(
                 barcode = barcode,
                 groups = validatedGroups,
-                name = name?.takeIf { it.isNotBlank() },
+                name = name,
                 categoryId = categoryId,
                 unitId = unitId,
                 campaignId = campaignId,
@@ -130,19 +118,16 @@ class ReceiptsViewModel(private val receiptRepository: ReceiptRepository) : View
                 note = note?.takeIf { it.isNotBlank() }
             )
 
-            // enviar
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            // Enviar
             runCatching {
                 receiptRepository.postReceipt(body)
-            }.onSuccess { response ->
-                // considera sucesso — volta atrás na navegação
+            }.onSuccess {
                 _uiState.value = ReceiptUiState(success = true)
-                // navigation
                 NavigationService.goBack()
             }.onFailure { t ->
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    lastErrorMessage = t.message ?: "Erro ao submeter"
+                    lastErrorMessage = t.message ?: "Erro ao submeter receção."
                 )
             }
         }

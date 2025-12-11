@@ -1,4 +1,4 @@
-package sasipca.storage
+package sasipca.network
 
 import io.ktor.client.*
 import io.ktor.client.call.body
@@ -8,9 +8,9 @@ import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.http.content.PartData
-import sasipca.ApiClient
 import sasipca.navigation.NavigationService
 import sasipca.navigation.Screen
+import sasipca.storage.SessionManager
 
 /**
  * Faz uma requisição com autenticação JWT e tenta renovar o token automaticamente.

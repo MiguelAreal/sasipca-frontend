@@ -1,31 +1,25 @@
-package sasipca
+package sasipca.network
 
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
-import sasipca.models.AuthResponse
-import sasipca.storage.SessionManager
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
-import io.ktor.client.plugins.auth.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.auth.providers.*
-import io.ktor.client.request.header
-import io.ktor.http.HttpHeaders
-import io.ktor.http.encodedPath
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
 
 actual fun createHttpClient(): HttpClient {
     val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
-        override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
-        override fun checkServerTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
-        override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> = arrayOf()
+        override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+        override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
+        override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
     })
 
     val sslContext = SSLContext.getInstance("SSL").apply {
-        init(null, trustAllCerts, java.security.SecureRandom())
+        init(null, trustAllCerts, SecureRandom())
     }
     val trustManager = trustAllCerts[0] as X509TrustManager
 

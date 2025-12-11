@@ -26,9 +26,8 @@ import sasipca.composeapp.generated.resources.logo_white
 import sasipca.navigation.NavigationService
 import sasipca.navigation.Screen
 import sasipca.repositories.AuthRepository
-import sasipca.storage.ScreenSizeManager
 import sasipca.utils.SnackbarManager
-import sasipca.utils.SnackbarType
+import sasipca.models.SnackbarType
 
 @Composable
 fun LoginScreen(authRepository: AuthRepository) {

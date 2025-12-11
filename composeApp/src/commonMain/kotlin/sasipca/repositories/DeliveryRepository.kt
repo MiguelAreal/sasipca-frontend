@@ -1,8 +1,8 @@
 package sasipca.repositories
 
 import sasipca.models.*
-import sasipca.storage.ApiConfig
-import sasipca.storage.requestWithAuth
+import sasipca.network.ApiConfig
+import sasipca.network.requestWithAuth
 import io.ktor.client.*
 import io.ktor.http.*
 

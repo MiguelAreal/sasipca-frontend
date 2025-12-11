@@ -7,11 +7,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,7 +24,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import sasipca.navigation.NavigationService
 import sasipca.navigation.Screen
+import sasipca.storage.NotificationManager
 
+@Suppress("UnusedBoxWithConstraintsScope")
 @Composable
 fun Header(
     title: String,
@@ -29,6 +35,8 @@ fun Header(
     val currentScreen = NavigationService.currentScreen
     val showBackButton = Screen.isOverlay(currentScreen) && NavigationService.canGoBack()
     val showSettings = Screen.isSettings(currentScreen)
+
+    val unreadCount by NotificationManager.unreadCount.collectAsState()
 
     BoxWithConstraints(
         modifier = Modifier
@@ -101,11 +109,27 @@ fun Header(
                     onClick = { NavigationService.navigateTo(Screen.Notifications) },
                     modifier = Modifier.size(40.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = "Notificações",
-                        tint = Color.White
-                    )
+                    if (unreadCount > 0) {
+                        BadgedBox(
+                            badge = {
+                                Badge {
+                                    Text(text = if (unreadCount > 99) "99+" else unreadCount.toString())
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Notificações",
+                                tint = Color.White
+                            )
+                        }
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Notificações",
+                            tint = Color.White
+                        )
+                    }
                 }
             }
         }

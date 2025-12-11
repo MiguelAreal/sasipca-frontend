@@ -6,8 +6,8 @@ import io.ktor.http.URLBuilder
 import io.ktor.http.appendPathSegments
 import sasipca.models.ReceiptPost
 import sasipca.models.Resposta
-import sasipca.storage.ApiConfig
-import sasipca.storage.requestWithAuth
+import sasipca.network.ApiConfig
+import sasipca.network.requestWithAuth
 
 class ReceiptRepository(private val client: HttpClient) {
     /**

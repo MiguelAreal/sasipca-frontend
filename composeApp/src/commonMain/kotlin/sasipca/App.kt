@@ -19,8 +19,10 @@ import sasipca.ui.components.LoadingWidget
 import sasipca.ui.theme.SasIpcaTheme
 import sasipca.utils.HandleBackNavigation
 import sasipca.utils.SnackbarManager
-import sasipca.utils.SnackbarMessage
-import sasipca.utils.SnackbarType
+import sasipca.models.SnackbarMessage
+import sasipca.models.SnackbarType
+import sasipca.network.ApiClient
+import sasipca.storage.NotificationManager
 import sasipca.utils.getAsyncImageLoader
 
 /**
@@ -114,6 +116,7 @@ private fun InitializeApp(
             NavigationService.resetTo(Screen.Login)
         }
 
+        NotificationManager.refreshCount()
         onInitDone()
     }
 }
@@ -144,6 +147,8 @@ private fun AnimatedNavigation(
     val reportsRepository = ApiClient.reportRepository
     val historyRepository = ApiClient.historyRepository
     val notificationRepository = ApiClient.notificationRepository
+    val adjustmentRepository = ApiClient.adjustmentRepository
+
 
     AnimatedContent(
         targetState = currentScreen,
@@ -179,7 +184,10 @@ private fun AnimatedNavigation(
 
             Screen.Reception -> ReceiptScreen(productRepository, receiptRepository)
             Screen.Delivery -> DeliveryScreen(productRepository, deliveryRepository, beneficiaryRepository)
-            Screen.StockAdjustment -> PlaceholderScreen()
+            Screen.StockAdjustment -> StockAdjustmentScreen(
+                adjustmentRepository = adjustmentRepository,
+                productRepository = productRepository
+            )
             Screen.Campaigns -> CampaignsScreen(campaignRepository, listsRepository)
 
             Screen.Beneficiaries -> BeneficiariesScreen(
@@ -198,8 +206,7 @@ private fun AnimatedNavigation(
             }
             Screen.Reports -> ReportsScreen(reportsRepository,beneficiaryRepository)
             Screen.Settings -> SettingsScreen { onThemeChange(it) }
-            Screen.Notifications -> PlaceholderScreen()
-            Screen.Placeholder -> PlaceholderScreen()
+            Screen.Notifications -> NotificationsScreen(notificationRepository)
             Screen.Calendar -> CalendarScreen(deliveryRepository)
             Screen.Home -> HomeScreen()
             Screen.Profile -> ProfileScreen()

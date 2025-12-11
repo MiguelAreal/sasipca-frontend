@@ -5,6 +5,7 @@ import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import sasipca.models.SnackbarType
 import java.io.File
 import java.io.FileOutputStream
 
@@ -40,7 +41,7 @@ actual class PlatformFileSaver actual constructor(): FileSaver {
                     context.startActivity(intent)
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    SnackbarManager.show("Não foi possível abrir o ficheiro",SnackbarType.ERROR)
+                    SnackbarManager.show("Não foi possível abrir o ficheiro", SnackbarType.ERROR)
                 }
             }
         }

@@ -19,11 +19,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import sasipca.navigation.NavigationService
 import sasipca.navigation.Screen
-import sasipca.ApiClient
-import sasipca.repositories.AuthRepository
+import sasipca.network.ApiClient
 import sasipca.storage.SettingsManager
 import sasipca.ui.components.Header
-import sasipca.utils.SnackbarType
+import sasipca.models.SnackbarType
 import sasipca.utils.SnackbarManager
 import kotlinx.coroutines.launch
 import sasipca.storage.SessionManager
@@ -68,10 +67,6 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
                             isDarkTheme = enabled
                             SettingsManager.setDarkTheme(enabled)
                             onThemeChanged(enabled)
-                            SnackbarManager.show(
-                                message = "Tema alterado com sucesso",
-                                type = SnackbarType.SUCCESS
-                            )
                         }
                     )
                 }

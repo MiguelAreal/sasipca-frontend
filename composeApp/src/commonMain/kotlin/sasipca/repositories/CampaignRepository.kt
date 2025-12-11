@@ -6,8 +6,8 @@ import io.ktor.http.*
 import sasipca.models.Campaign
 import sasipca.models.PaginatedResponse
 import sasipca.models.Resposta
-import sasipca.storage.ApiConfig
-import sasipca.storage.requestWithAuth
+import sasipca.network.ApiConfig
+import sasipca.network.requestWithAuth
 
 class CampaignRepository(private val client: HttpClient) {
 

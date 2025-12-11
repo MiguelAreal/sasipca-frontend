@@ -4,6 +4,8 @@ import androidx.compose.runtime.MutableState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import sasipca.models.SnackbarMessage
+import sasipca.models.SnackbarType
 
 object SnackbarManager {
     lateinit var snackbarState: MutableState<SnackbarMessage?>

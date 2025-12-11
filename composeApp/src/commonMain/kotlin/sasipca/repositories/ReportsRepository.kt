@@ -4,8 +4,8 @@ import io.ktor.client.*
 import io.ktor.http.*
 import sasipca.models.ReportGetDTO
 import sasipca.models.ReportRequestDTO
-import sasipca.storage.ApiConfig
-import sasipca.storage.requestWithAuth
+import sasipca.network.ApiConfig
+import sasipca.network.requestWithAuth
 
 class ReportsRepository(private val client: HttpClient) {
 

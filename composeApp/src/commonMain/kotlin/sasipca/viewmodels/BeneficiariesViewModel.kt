@@ -8,11 +8,10 @@ import sasipca.repositories.BeneficiaryRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import sasipca.models.BeneficiaryPost
 import sasipca.utils.NotFoundException
 import sasipca.utils.RepositoryException
 import sasipca.utils.SnackbarManager
-import sasipca.utils.SnackbarType
+import sasipca.models.SnackbarType
 
 /**
  * ViewModel responsável por gerir o estado da lista de beneficiários

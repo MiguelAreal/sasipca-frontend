@@ -6,9 +6,8 @@ import io.ktor.client.plugins.*
 import io.ktor.client.request.get
 import io.ktor.http.*
 import sasipca.models.Lists
-import sasipca.storage.ApiConfig
+import sasipca.network.ApiConfig
 import sasipca.storage.ListsStore
-import sasipca.storage.requestWithAuth
 import sasipca.utils.NotFoundException
 import sasipca.utils.RepositoryException
 

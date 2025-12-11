@@ -1,4 +1,4 @@
-package sasipca
+package sasipca.network
 
 import io.ktor.client.*
 import sasipca.auth.MicrosoftAuthManager // <--- Importante
@@ -33,6 +33,9 @@ object ApiClient {
     lateinit var notificationRepository: NotificationRepository
         private set
 
+    lateinit var adjustmentRepository : AdjustmentRepository
+        private set
+
     fun init(authManager: MicrosoftAuthManager) {
 
         // Criar HttpClient
@@ -51,6 +54,7 @@ object ApiClient {
         reportRepository = ReportsRepository(client)
         historyRepository = HistoryRepository(client)
         notificationRepository = NotificationRepository(client)
+        adjustmentRepository = AdjustmentRepository(client)
     }
 
     suspend fun refreshToken(): Result<AuthResponse> {

@@ -1,4 +1,4 @@
-package sasipca.storage
+package sasipca.network
 
 import io.ktor.client.request.*
 import io.ktor.util.*

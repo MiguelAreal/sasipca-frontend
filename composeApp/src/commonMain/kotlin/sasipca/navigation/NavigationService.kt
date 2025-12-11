@@ -10,7 +10,6 @@ import androidx.compose.runtime.setValue
  */
 sealed class Screen {
     object Login : Screen()
-
     object Main : Screen()
     object Home : Screen()
     object Products : Screen()
@@ -28,8 +27,6 @@ sealed class Screen {
     object Beneficiary : Screen()
     object Settings : Screen()
     object Notifications : Screen()
-
-    object Placeholder : Screen()
 
     companion object {
 

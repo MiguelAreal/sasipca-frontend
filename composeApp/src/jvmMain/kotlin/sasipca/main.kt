@@ -13,10 +13,11 @@ import org.jetbrains.compose.resources.painterResource
 import sasipca.auth.MicrosoftAuthManagerDesktop
 import sasipca.composeapp.generated.resources.Res
 import sasipca.composeapp.generated.resources.icon512x512
+import sasipca.network.ApiClient
 import sasipca.storage.SessionManager
 import sasipca.storage.SettingsManager
 import sasipca.utils.ObserveScreenSize
-import sasipca.utils.SignalRManager // Certifica-te que este import existe
+import sasipca.utils.SignalRManager
 import java.util.prefs.Preferences
 
 fun main() = application {
@@ -69,7 +70,8 @@ fun main() = application {
             onCloseRequest = {
                 // Em vez de fechar a app, esconde a janela
                 isWindowVisible = false
-                // Opcional: Enviar notificação de sistema a avisar
+
+                // Envia notificação de sistema a avisar
                 trayState.sendNotification(
                     androidx.compose.ui.window.Notification(
                         "SASIPCA",

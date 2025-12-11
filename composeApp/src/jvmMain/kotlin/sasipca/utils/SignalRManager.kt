@@ -3,13 +3,13 @@ package sasipca.utils
 import com.microsoft.signalr.HubConnection
 import com.microsoft.signalr.HubConnectionBuilder
 import io.reactivex.rxjava3.core.Single
-import sasipca.storage.ApiConfig
+import sasipca.network.ApiConfig
+import sasipca.storage.NotificationManager
 import sasipca.storage.SessionManager
 import java.awt.SystemTray
 import java.awt.Toolkit
 import java.awt.TrayIcon
 import java.awt.TrayIcon.MessageType
-import okhttp3.OkHttpClient
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import javax.net.ssl.*
@@ -49,6 +49,8 @@ class SignalRManager {
 
             hubConnection?.on("ReceiveNotification", { title: String, msg: String ->
                 showDesktopNotification(title, msg)
+
+                NotificationManager.refreshCount()
             }, String::class.java, String::class.java)
 
             hubConnection?.start()?.blockingAwait()

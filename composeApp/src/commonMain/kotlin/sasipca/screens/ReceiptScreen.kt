@@ -16,26 +16,30 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import sasipca.ApiClient
+import sasipca.network.ApiClient
 import sasipca.models.ActiveCampaigns
 import sasipca.models.Category
 import sasipca.models.GroupToEnter
+import sasipca.models.SnackbarType
 import sasipca.models.UnitType
 import sasipca.repositories.OFFRepository
 import sasipca.repositories.ProductRepository
 import sasipca.repositories.ReceiptRepository
 import sasipca.storage.ListsStore
 import sasipca.storage.ScreenSizeManager.isLargeScreen
-import sasipca.ui.components.BarcodeInputField
-import sasipca.ui.components.GroupsSection
+import sasipca.ui.components.BarcodeInputField // Componente Centralizado
+import sasipca.ui.components.products.GroupsSection
 import sasipca.ui.components.Header
 import sasipca.ui.components.LoadingWidget
 import sasipca.ui.components.ReceiptInfoSection
 import sasipca.ui.components.products.GroupCard
 import sasipca.ui.theme.CardTitle
+import sasipca.utils.SnackbarManager
 import sasipca.viewmodels.ProductViewModel
 import sasipca.viewmodels.ReceiptsViewModel
 import kotlin.collections.plus
@@ -47,7 +51,13 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
     val receiptsViewModel = remember { ReceiptsViewModel(receiptRepository) }
     val uiState by receiptsViewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
 
+    // Inicializa o ViewModel com o repositório recebido
+    val productViewModel = remember { ProductViewModel(productRepository) }
+    val offRepository = remember { OFFRepository(ApiClient.client) }
+
+    // Campos do Formulário
     var barcode by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var selectedUnit by remember { mutableStateOf<UnitType?>(null) }
@@ -60,10 +70,9 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
     var editableName by remember { mutableStateOf("") }
     var editableUnitSize by remember { mutableStateOf("") }
 
-    val offRepository = remember { OFFRepository(ApiClient.client) }
-
-    // Inicializa o ViewModel com o repositório recebido
-    val productViewModel = remember { ProductViewModel(productRepository) }
+    // Estados de Pesquisa (Autocomplete)
+    var productQuery by remember { mutableStateOf("") }
+    val productSearchResults = productViewModel.filteredItems // Sugestões do VM
 
     // Observa os estados do ViewModel
     val productDetail = productViewModel.selectedProductDetail
@@ -75,7 +84,7 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
     val activeCampaigns: List<ActiveCampaigns> = remember { ListsStore.ActiveCampaigns.map { ActiveCampaigns(it.id, it.name) } }
     val images = productDetail?.images ?: emptyList()
 
-    // Atualiza selectedUnit automaticamente quando o produto muda
+    // 1. Atualiza dados do formulário quando o produto muda
     LaunchedEffect(productDetail) {
         editableName = productDetail?.name ?: ""
         editableUnitSize = productDetail?.unitSize?.toString() ?: ""
@@ -84,12 +93,54 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
         selectedCategory = categories.find{it.id == productDetail?.categoryId}
     }
 
-    // Busca produto ao alterar o barcode
+    // 2. Lógica de Pesquisa / Autocomplete
+    LaunchedEffect(productQuery) {
+        if (productQuery.isEmpty()) return@LaunchedEffect
+
+        delay(400) // Debounce
+
+        val isPotentialBarcode = productQuery.all { it.isDigit() } && productQuery.length >= 8
+        if (isPotentialBarcode) {
+            barcode = productQuery
+        } else {
+            productViewModel.loadProducts(search = productQuery)
+        }
+    }
+
+    // 3. Busca detalhes do produto ao alterar o barcode
     LaunchedEffect(barcode) {
         if (barcode.isNotEmpty()) {
             productViewModel.loadProductHybrid(barcode, offRepository)
         } else {
             productViewModel.resetProduct()
+            if(productQuery.isEmpty()) {
+                editableName = ""
+                editableUnitSize = ""
+                selectedCategory = null
+                selectedUnit = null
+            }
+        }
+    }
+
+    // 4. Feedback de Sucesso
+    LaunchedEffect(uiState.success) {
+        if (uiState.success) {
+            SnackbarManager.show("Receção registada com sucesso!", SnackbarType.SUCCESS)
+            // Limpar formulário após sucesso
+            barcode = ""
+            productQuery = ""
+            editableName = ""
+            editableUnitSize = ""
+            selectedCategory = null
+            selectedUnit = null
+            selectedCampaign = null
+            note = ""
+            groups = listOf(GroupToEnter("", ""))
+            productViewModel.resetProduct()
+            receiptsViewModel.clearUiState()
+        }
+        if (uiState.lastErrorMessage != null) {
+            SnackbarManager.show(uiState.lastErrorMessage!!, SnackbarType.ERROR)
         }
     }
 
@@ -117,7 +168,7 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                             .fillMaxHeight(),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Barcode input
+                        // Barcode input (Atualizado)
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
@@ -129,12 +180,23 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                                     .fillMaxWidth()
                                     .padding(16.dp)
                             ) {
-                                CardTitle("Código de Barras")
+                                CardTitle("Produto")
                                 Spacer(Modifier.height(8.dp))
+
+                                // COMPONENTE NOVO
                                 BarcodeInputField(
-                                    barcode = barcode,
-                                    onBarcodeScanned = { barcode = it} ,
-                                    uiState.errors["barcode"]
+                                    value = productQuery,
+                                    onValueChange = {
+                                        productQuery = it
+                                        if (it.isEmpty()) barcode = ""
+                                    },
+                                    error = uiState.errors["barcode"],
+                                    suggestions = productSearchResults,
+                                    onSuggestionSelected = { product ->
+                                        barcode = product.barcode
+                                        productQuery = product.name ?: product.barcode
+                                        focusManager.clearFocus()
+                                    }
                                 )
                             }
                         }
@@ -206,10 +268,7 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                             shape = RoundedCornerShape(12.dp),
                             enabled = !(isLoadingProduct || uiState.isLoading)
                         ) {
-                            Text(
-                                "Registar Receção",
-                                fontSize = 16.sp
-                            )
+                            Text("Registar Receção", fontSize = 16.sp)
                         }
                     }
                 }
@@ -234,12 +293,23 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                                     .fillMaxWidth()
                                     .padding(16.dp)
                             ) {
-                                CardTitle("Código de Barras")
+                                CardTitle("Produto")
                                 Spacer(Modifier.height(8.dp))
+
+                                // COMPONENTE NOVO (Mobile)
                                 BarcodeInputField(
-                                    barcode = barcode,
-                                    onBarcodeScanned = { barcode = it} ,
-                                    uiState.errors["barcode"]
+                                    value = productQuery,
+                                    onValueChange = {
+                                        productQuery = it
+                                        if (it.isEmpty()) barcode = ""
+                                    },
+                                    error = uiState.errors["barcode"],
+                                    suggestions = productSearchResults,
+                                    onSuggestionSelected = { product ->
+                                        barcode = product.barcode
+                                        productQuery = product.name ?: product.barcode
+                                        focusManager.clearFocus()
+                                    }
                                 )
                             }
                         }
@@ -300,7 +370,9 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                     }
 
                     item {
-                        Column {
+                        // --- CORREÇÃO AQUI ---
+                        // Adicionamos uma Column wrapper para satisfazer o ColumnScope do AnimatedVisibility
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             AnimatedVisibility(
                                 visible = groupsExpanded,
                                 enter = expandVertically(expandFrom = Alignment.Top),

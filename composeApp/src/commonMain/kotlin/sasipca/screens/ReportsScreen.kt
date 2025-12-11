@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -23,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
 import kotlinx.coroutines.delay
-import sasipca.ApiClient
 import sasipca.models.BeneficiaryItem
 import sasipca.models.ReportFormat
 import sasipca.models.ReportGetDTO
@@ -36,7 +34,7 @@ import sasipca.ui.components.LoadingWidget
 import sasipca.ui.components.ValidatedDateField
 import sasipca.utils.PlatformFileSaver
 import sasipca.utils.SnackbarManager
-import sasipca.utils.SnackbarType
+import sasipca.models.SnackbarType
 import sasipca.viewmodels.BeneficiariesViewModel
 import sasipca.viewmodels.ReportsViewModel
 

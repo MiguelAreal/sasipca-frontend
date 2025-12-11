@@ -1,14 +1,14 @@
 package sasipca.repositories
 
 import sasipca.models.*
-import sasipca.storage.ApiConfig
+import sasipca.network.ApiConfig
 import sasipca.utils.NotFoundException
 import sasipca.utils.RepositoryException
 import io.ktor.client.*
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.http.*
 import io.ktor.http.URLBuilder
-import sasipca.storage.requestWithAuth
+import sasipca.network.requestWithAuth
 
 class BeneficiaryRepository(private val client: HttpClient) {
 

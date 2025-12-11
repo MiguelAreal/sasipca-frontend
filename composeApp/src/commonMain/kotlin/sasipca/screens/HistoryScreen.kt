@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -255,7 +256,7 @@ fun MovementDetailDialog(detail: MovementDetail, onDismiss: () -> Unit) {
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(item.productName, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                            Text("Validade: ${item.groupExpiryDate})", fontSize = 12.sp, color = Color.Gray)
+                            Text("Validade: ${item.groupExpiryDate}", fontSize = 12.sp, color = Color.Gray)
                         }
                         Text(
                             "${if(item.itemQuantityAffected > 0) "+" else ""}${item.itemQuantityAffected}",
@@ -309,11 +310,8 @@ fun DeliveryDetailDialog(detail: DeliveryDetail, onDismiss: () -> Unit) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            // O backend não manda nome do produto no DeliveryItemDTO,
-                            // mas manda Barcode. Para ser perfeito precisarias de fazer lookup,
-                            // mas aqui mostramos o Barcode.
-                            Text("Item #${item.barcode}", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                            Text("Grupo #${item.groupId}", fontSize = 12.sp, color = Color.Gray)
+                            Text(item.name, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text("Validade: ${item.expiryDate}", fontSize = 12.sp, color = Color.Gray)
                         }
                         Text(
                             "${item.quantity} uni.",

@@ -7,15 +7,13 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import sasipca.utils.SnackbarManager
-import sasipca.utils.SnackbarMessage
-import sasipca.utils.SnackbarType
+import sasipca.models.SnackbarType
 import java.util.concurrent.Executors
 
 /**

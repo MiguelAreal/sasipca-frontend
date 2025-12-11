@@ -10,12 +10,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import sasipca.models.BeneficiaryGet
 import sasipca.models.BeneficiaryPost
-import sasipca.models.ProductPut
 import sasipca.models.Resposta
 import sasipca.navigation.NavigationService
 import sasipca.repositories.BeneficiaryRepository
 import sasipca.utils.SnackbarManager
-import sasipca.utils.SnackbarType
+import sasipca.models.SnackbarType
 
 data class BeneficiaryUIState(
     val isLoading: Boolean = false,

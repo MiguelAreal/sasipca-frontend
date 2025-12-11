@@ -1,6 +1,6 @@
 package sasipca.repositories
 
-import sasipca.storage.ApiConfig
+import sasipca.network.ApiConfig
 import sasipca.storage.SessionManager
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -8,9 +8,9 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import sasipca.auth.MicrosoftAuthManager
-import sasipca.storage.requestWithAuth
+import sasipca.network.requestWithAuth
 import sasipca.models.*
-import sasipca.storage.markAsRefreshTokenRequest
+import sasipca.network.markAsRefreshTokenRequest
 
 class AuthRepository(
     private val client: HttpClient,

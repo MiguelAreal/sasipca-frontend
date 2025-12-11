@@ -1,16 +1,14 @@
 package sasipca.repositories
 
 import sasipca.models.PaginatedResponse
-import sasipca.storage.ApiConfig
+import sasipca.network.ApiConfig
 import io.ktor.client.*
 import io.ktor.http.*
-import sasipca.models.Delivery
-import sasipca.models.DeliveryPut
 import sasipca.models.Product
 import sasipca.models.ProductDetail
 import sasipca.models.ProductPut
 import sasipca.models.Resposta
-import sasipca.storage.requestWithAuth
+import sasipca.network.requestWithAuth
 
 class ProductRepository(private val client: HttpClient) {
 

@@ -1,4 +1,4 @@
-package sasipca
+package sasipca.network
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*

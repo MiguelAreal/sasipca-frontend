@@ -63,10 +63,11 @@ data class DeliveryDetail(
 
 @Serializable
 data class DeliveryItemDetail(
-    val barcode: String,
-    val groupId: Int,
+    val name: String,
+    val expiryDate: String,
     val quantity: Int
 )
+
 
 // --- ENUMS AUXILIARES PARA UI ---
 enum class HistoryTab {
