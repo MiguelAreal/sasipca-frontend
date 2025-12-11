@@ -30,6 +30,7 @@
     import sasipca.models.BeneficiaryPost
     import sasipca.ui.components.LoadingWidget
     import sasipca.ui.components.ValidatedTextField
+    import sasipca.ui.components.formatPostalCode
     import sasipca.ui.theme.CardTitle
 
 
@@ -168,10 +169,11 @@
                             )
                             ValidatedTextField(
                                 value = editPostalcode,
-                                onValueChange = { editPostalcode = it },
-                                label = "Código-Postal",
+                                onValueChange = { editPostalcode = formatPostalCode(it) },
+                                label = "Código Postal",
                                 error = errors["postalCode"],
                                 maxLength = 8,
+                                keyboardType = KeyboardType.Phone,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }

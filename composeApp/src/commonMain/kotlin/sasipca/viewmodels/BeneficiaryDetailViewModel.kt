@@ -41,6 +41,10 @@ class BeneficiaryDetailViewModel(
         private set
 
 
+    fun clearUiState() {
+        _uiState.value = BeneficiaryUIState()
+    }
+
     /**
      * Carrega um beneficiário existente pelo ID.
      */
@@ -63,23 +67,100 @@ class BeneficiaryDetailViewModel(
     /**
      * Cria um novo beneficiário.
      */
-    fun createBeneficiary(dto: BeneficiaryPost, onSuccess: (() -> Unit)? = null) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                isLoading = true
-                val response: Resposta = beneficiaryRepository.postProfile(dto)
-                SnackbarManager.show(
-                    message = response.message ?: "Beneficiário criado com sucesso.",
-                    type = SnackbarType.SUCCESS
+    fun submitCreateBeneficiary(
+        name: String,
+        email: String,
+        contact: String,
+        nifStr: String,
+        street: String,
+        numberStr: String,
+        postalCode: String,
+        studentNumStr: String,
+        course: String,
+        curricularYearStr: String,
+        globalObs: String,
+        particularObs: String
+    ) {
+        viewModelScope.launch(Dispatchers.Default) {
+            // 1. Limpar estado anterior
+            _uiState.value = BeneficiaryUIState(isLoading = true)
+            val errors = mutableMapOf<String, String>()
+
+            // 2. Validações
+            if (name.isBlank()) errors["name"] = "O nome é obrigatório."
+
+            if (email.isNotBlank() && !email.contains("@")) errors["email"] = "Email inválido."
+
+            if (email.isBlank()) errors["email"] = "O email é obrigatório."
+
+            // Validação de Contacto (+351...)
+            if (contact.isNotBlank()) {
+                if (!contact.startsWith("+")) errors["contact"] = "Deve começar com indicativo (ex: +351)"
+                else {
+                    val digits = contact.filter { it.isDigit() }
+                    if (digits.length < 9) errors["contact"] = "Mínimo 9 dígitos."
+                    if (digits.length > 13) errors["contact"] = "Máximo 13 dígitos."
+                }
+            }
+
+            // Validação NIF (9 dígitos)
+            val nif = if (nifStr.isNotBlank()) {
+                val parsed = nifStr.toIntOrNull()
+                if (parsed == null || nifStr.length != 9) {
+                    errors["nif"] = "NIF deve ter 9 dígitos numéricos."
+                    null
+                } else parsed
+            } else null
+
+            // Validação Código Postal (xxxx-xxx)
+            if (postalCode.isNotBlank()) {
+                if (!postalCode.matches(Regex("^\\d{4}-\\d{3}$"))) {
+                    errors["postalCode"] = "Formato inválido (ex: 4700-000)."
+                }
+            }
+
+            // Conversões numéricas simples
+            val number = numberStr.toIntOrNull()
+            val studentNum = studentNumStr.toIntOrNull()
+            val curricularYear = curricularYearStr.toIntOrNull()
+
+            // 3. Verificar Erros
+            if (errors.isNotEmpty()) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errors = errors,
+                    lastErrorMessage = "Verifique os erros no formulário."
                 )
-                onSuccess?.invoke()
-            } catch (e: Exception) {
-                SnackbarManager.show(
-                    message = e.message ?: "Erro ao criar beneficiário.",
-                    type = SnackbarType.ERROR
+                return@launch
+            }
+
+            // 4. Preparar DTO
+            val dto = BeneficiaryPost(
+                name = name,
+                email = email,
+                contact = contact,
+                nif = nif,
+                street = street,
+                number = number,
+                postalCode = postalCode,
+                studentNum = studentNum,
+                course = course,
+                curricularYear = curricularYear,
+                globalObs = globalObs,
+                particularObs = particularObs
+            )
+
+            // 5. Enviar para API
+            runCatching {
+                beneficiaryRepository.postProfile(dto)
+            }.onSuccess { response ->
+                _uiState.value = BeneficiaryUIState(success = true)
+                SnackbarManager.show(response.message ?: "Beneficiário criado com sucesso!", SnackbarType.SUCCESS)
+            }.onFailure { t ->
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    lastErrorMessage = t.message ?: "Erro ao criar beneficiário."
                 )
-            } finally {
-                isLoading = false
             }
         }
     }

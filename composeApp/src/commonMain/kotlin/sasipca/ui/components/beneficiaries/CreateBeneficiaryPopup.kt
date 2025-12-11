@@ -21,7 +21,11 @@ import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.launch
 import sasipca.models.BeneficiaryPost
 import sasipca.repositories.BeneficiaryRepository
+import sasipca.ui.components.ValidatedTextField
+import sasipca.ui.components.formatPostalCode
 import sasipca.viewmodels.BeneficiaryDetailViewModel
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,14 +34,14 @@ fun CreateBeneficiaryPopup(
     onDismiss: () -> Unit,
     onCreated: () -> Unit
 ) {
-    // Inicializar ViewModel
     val viewModel = remember { BeneficiaryDetailViewModel(repository) }
+    val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
 
-    // --- ESTADOS DO FORMULÁRIO ---
+    // --- ESTADOS ---
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var contact by remember { mutableStateOf("") }
+    var contact by remember { mutableStateOf("+351") }
     var nif by remember { mutableStateOf("") }
 
     var street by remember { mutableStateOf("") }
@@ -51,26 +55,30 @@ fun CreateBeneficiaryPopup(
     var globalObs by remember { mutableStateOf("") }
     var particularObs by remember { mutableStateOf("") }
 
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    // Reagir ao Sucesso
+    LaunchedEffect(uiState.success) {
+        if (uiState.success) {
+            onCreated()
+            onDismiss()
+        }
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false) // Ocupa largura adequada
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
             modifier = Modifier
-                .fillMaxWidth(0.95f) // 95% da largura do ecrã
-                .fillMaxHeight(0.9f) // Máximo 90% da altura para caber o teclado
+                .fillMaxWidth(0.95f)
+                .fillMaxHeight(0.9f)
                 .padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                // --- CABEÇALHO ---
+            Column(modifier = Modifier.fillMaxSize()) {
+
+                // CABEÇALHO
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -92,7 +100,7 @@ fun CreateBeneficiaryPopup(
 
                 Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-                // --- CONTEÚDO COM SCROLL ---
+                // CONTEÚDO COM SCROLL
                 Column(
                     modifier = Modifier
                         .weight(1f)
@@ -103,64 +111,78 @@ fun CreateBeneficiaryPopup(
                     // 1. DADOS PESSOAIS
                     SectionTitle("Dados Pessoais")
 
-                    OutlinedTextField(
-                        value = name, onValueChange = { name = it },
-                        label = { Text("Nome Completo") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Next)
+                    ValidatedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = "Nome Completo",
+                        error = uiState.errors["name"],
+                        maxLength = 50
                     )
 
-                    OutlinedTextField(
-                        value = email, onValueChange = { email = it },
-                        label = { Text("Email") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next)
+                    ValidatedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = "Email",
+                        error = uiState.errors["email"],
+                        maxLength = 50,
+                        keyboardType = KeyboardType.Email
                     )
 
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedTextField(
-                            value = contact, onValueChange = { if (it.length <= 9 && it.all { c -> c.isDigit() }) contact = it },
-                            label = { Text("Telemóvel") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next)
+                        ValidatedTextField(
+                            value = contact,
+                            onValueChange = { contact = it },
+                            label = "Contacto",
+                            error = uiState.errors["contact"],
+                            maxLength = 13,
+                            keyboardType = KeyboardType.Phone,
+                            modifier = Modifier.weight(1f)
                         )
-                        OutlinedTextField(
-                            value = nif, onValueChange = { if (it.length <= 9 && it.all { c -> c.isDigit() }) nif = it },
-                            label = { Text("NIF") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next)
+                        ValidatedTextField(
+                            value = nif,
+                            // Garante apenas números no NIF
+                            onValueChange = { input -> if (input.all { it.isDigit() }) nif = input },
+                            label = "NIF",
+                            error = uiState.errors["nif"],
+                            maxLength = 9,
+                            keyboardType = KeyboardType.Number,
+                            modifier = Modifier.weight(1f)
                         )
                     }
 
                     // 2. MORADA
                     SectionTitle("Morada")
 
-                    OutlinedTextField(
-                        value = street, onValueChange = { street = it },
-                        label = { Text("Rua") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next)
+                    ValidatedTextField(
+                        value = street,
+                        onValueChange = { street = it },
+                        label = "Rua",
+                        error = uiState.errors["street"],
+                        maxLength = 255
                     )
 
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedTextField(
-                            value = number, onValueChange = { number = it },
-                            label = { Text("Nº Porta") },
-                            modifier = Modifier.weight(0.4f),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next)
+                        ValidatedTextField(
+                            value = number,
+                            // Garante apenas números
+                            onValueChange = { input -> if (input.all { it.isDigit() }) number = input },
+                            label = "Nº Porta",
+                            error = uiState.errors["number"],
+                            maxLength = 6,
+                            keyboardType = KeyboardType.Number,
+                            modifier = Modifier.weight(0.4f)
                         )
-                        OutlinedTextField(
-                            value = postalCode, onValueChange = { postalCode = it },
-                            label = { Text("Cód. Postal") },
-                            modifier = Modifier.weight(0.6f),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+
+                        // --- CAMPO CÓDIGO POSTAL ---
+                        ValidatedTextField(
+                            value = postalCode,
+                            // Aplica a formatação automática aqui
+                            onValueChange = { postalCode = formatPostalCode(it) },
+                            label = "Código Postal",
+                            error = uiState.errors["postalCode"],
+                            maxLength = 8,
+                            keyboardType = KeyboardType.Phone,
+                            modifier = Modifier.weight(0.6f)
                         )
                     }
 
@@ -168,50 +190,56 @@ fun CreateBeneficiaryPopup(
                     SectionTitle("Dados Académicos")
 
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedTextField(
-                            value = studentNum, onValueChange = { if (it.all { c -> c.isDigit() }) studentNum = it },
-                            label = { Text("Nº Estudante") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next)
+                        ValidatedTextField(
+                            value = studentNum,
+                            onValueChange = { input -> if (input.all { it.isDigit() }) studentNum = input },
+                            label = "Nº Mec.",
+                            error = uiState.errors["studentNum"],
+                            maxLength = 10,
+                            keyboardType = KeyboardType.Number,
+                            modifier = Modifier.weight(1f)
                         )
-                        OutlinedTextField(
-                            value = curricularYear, onValueChange = { if (it.length <= 1 && it.all { c -> c.isDigit() }) curricularYear = it },
-                            label = { Text("Ano") },
-                            modifier = Modifier.weight(0.5f),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next)
+                        ValidatedTextField(
+                            value = curricularYear,
+                            onValueChange = { input -> if (input.all { it.isDigit() }) curricularYear = input },
+                            label = "Ano",
+                            error = uiState.errors["curricularYear"],
+                            maxLength = 2,
+                            keyboardType = KeyboardType.Number,
+                            modifier = Modifier.weight(0.5f)
                         )
                     }
 
-                    OutlinedTextField(
-                        value = course, onValueChange = { course = it },
-                        label = { Text("Curso") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next)
+                    ValidatedTextField(
+                        value = course,
+                        onValueChange = { course = it },
+                        label = "Curso",
+                        error = uiState.errors["course"],
+                        maxLength = 50
                     )
 
                     // 4. OBSERVAÇÕES
                     SectionTitle("Observações")
 
-                    OutlinedTextField(
-                        value = globalObs, onValueChange = { globalObs = it },
-                        label = { Text("Observações Globais") },
-                        modifier = Modifier.fillMaxWidth().height(100.dp),
-                        maxLines = 4
+                    ValidatedTextField(
+                        value = globalObs,
+                        onValueChange = { globalObs = it },
+                        label = "Globais",
+                        singleLine = false,
+                        modifier = Modifier.height(80.dp)
                     )
 
-                    OutlinedTextField(
-                        value = particularObs, onValueChange = { particularObs = it },
-                        label = { Text("Observações Particulares") },
-                        modifier = Modifier.fillMaxWidth().height(100.dp),
-                        maxLines = 4
+                    ValidatedTextField(
+                        value = particularObs,
+                        onValueChange = { particularObs = it },
+                        label = "Particulares",
+                        singleLine = false,
+                        modifier = Modifier.height(80.dp)
                     )
 
-                    if (errorMessage != null) {
+                    if (uiState.lastErrorMessage != null) {
                         Text(
-                            text = errorMessage!!,
+                            text = uiState.lastErrorMessage!!,
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(top = 8.dp)
@@ -221,7 +249,7 @@ fun CreateBeneficiaryPopup(
 
                 Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-                // --- RODAPÉ COM AÇÕES ---
+                // --- RODAPÉ ---
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -229,10 +257,7 @@ fun CreateBeneficiaryPopup(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(
-                        onClick = onDismiss,
-                        enabled = !isLoading
-                    ) {
+                    TextButton(onClick = onDismiss, enabled = !uiState.isLoading) {
                         Text("Cancelar", color = MaterialTheme.colorScheme.error)
                     }
 
@@ -240,51 +265,16 @@ fun CreateBeneficiaryPopup(
 
                     Button(
                         onClick = {
-                            if (name.isBlank()) {
-                                errorMessage = "O nome é obrigatório."
-                                return@Button
-                            }
-
-                            isLoading = true
-                            errorMessage = null
-
-                            val dto = BeneficiaryPost(
-                                name = name,
-                                email = email,
-                                contact = contact,
-                                nif = nif.toIntOrNull(),
-                                street = street,
-                                number = number.toIntOrNull(),
-                                postalCode = postalCode,
-                                studentNum = studentNum.toIntOrNull(),
-                                course = course,
-                                curricularYear = curricularYear.toIntOrNull(),
-                                globalObs = globalObs,
-                                particularObs = particularObs
+                            viewModel.submitCreateBeneficiary(
+                                name, email, contact, nif, street, number, postalCode,
+                                studentNum, course, curricularYear, globalObs, particularObs
                             )
-
-                            scope.launch {
-                                viewModel.createBeneficiary(dto,
-                                    onSuccess = {
-                                        isLoading = false
-                                        onCreated()
-                                        onDismiss()
-                                    }
-                                )
-                                // Adiciona tratamento de erro aqui se o ViewModel suportar,
-                                // ou o isLoading fica true para sempre se falhar
-                                // isLoading = false
-                            }
                         },
-                        enabled = !isLoading,
+                        enabled = !uiState.isLoading,
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp
-                            )
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                         } else {
                             Text("Criar Beneficiário")
                         }
@@ -302,6 +292,6 @@ private fun SectionTitle(title: String) {
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+        modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
     )
 }
