@@ -34,7 +34,7 @@ fun SettingsScreen() {
     val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
 
     var serverIp by remember { mutableStateOf(SettingsManager.getServerIp()) }
-    var isDarkTheme by remember { mutableStateOf(SettingsManager.isDarkTheme()) }
+    val isDarkTheme by SettingsManager.isDarkThemeFlow.collectAsState()
     var showIpDialog by remember { mutableStateOf(false) }
     var tempIp by remember { mutableStateOf(serverIp) }
 
