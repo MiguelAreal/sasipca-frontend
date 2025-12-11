@@ -7,12 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -22,8 +17,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import sasipca.navigation.NavigationService
-import sasipca.navigation.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
+import sasipca.screens.navigation.LoginScreen
+import sasipca.screens.navigation.MainScreen
+import sasipca.screens.navigation.NotificationsScreen
+import sasipca.screens.navigation.SettingsScreen
 import sasipca.storage.NotificationManager
 
 @Suppress("UnusedBoxWithConstraintsScope")
@@ -32,10 +31,19 @@ fun Header(
     title: String,
     subTitle: String = ""
 ) {
-    val currentScreen = NavigationService.currentScreen
-    val showBackButton = Screen.isOverlay(currentScreen) && NavigationService.canGoBack()
-    val showSettings = Screen.isSettings(currentScreen)
+    // 1. Obter o Navigator atual do Voyager
+    val navigator = LocalNavigator.currentOrThrow
+    val currentScreen = navigator.lastItem
 
+    // 2. Lógica para mostrar/esconder o botão de voltar
+
+    val isRootScreen = currentScreen is MainScreen || currentScreen is LoginScreen
+
+    val showBackButton = navigator.canPop && !isRootScreen
+
+    val showSettings = currentScreen !is SettingsScreen
+
+    // Estado das notificações (mantido igual)
     val unreadCount by NotificationManager.unreadCount.collectAsState()
 
     BoxWithConstraints(
@@ -60,7 +68,7 @@ fun Header(
 
                 if (showBackButton) {
                     IconButton(
-                        onClick = { NavigationService.goBack() },
+                        onClick = { navigator.pop() }, // Voyager: Voltar atrás
                         modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
@@ -94,7 +102,7 @@ fun Header(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if(showSettings) {
                     IconButton(
-                        onClick = { NavigationService.navigateTo(Screen.Settings) },
+                        onClick = { navigator.push(SettingsScreen()) },
                         modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
@@ -106,7 +114,7 @@ fun Header(
                 }
 
                 IconButton(
-                    onClick = { NavigationService.navigateTo(Screen.Notifications) },
+                    onClick = { navigator.push(NotificationsScreen()) }, // Voyager: Navegar
                     modifier = Modifier.size(40.dp)
                 ) {
                     if (unreadCount > 0) {

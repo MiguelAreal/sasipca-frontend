@@ -57,6 +57,12 @@ kotlin {
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
             implementation("com.russhwolf:multiplatform-settings:1.3.0")
             implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1-0.6.x-compat")
+
+            val voyagerVersion = "1.0.1"
+            implementation("cafe.adriel.voyager:voyager-navigator:$voyagerVersion")
+            implementation("cafe.adriel.voyager:voyager-transitions:$voyagerVersion")
+            implementation("cafe.adriel.voyager:voyager-screenmodel:$voyagerVersion")
+            implementation("cafe.adriel.voyager:voyager-tab-navigator:$voyagerVersion")
         }
 
         commonTest.dependencies {

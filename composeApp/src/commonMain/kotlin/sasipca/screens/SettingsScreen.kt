@@ -17,26 +17,29 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import sasipca.navigation.NavigationService
-import sasipca.navigation.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import sasipca.network.ApiClient
 import sasipca.storage.SettingsManager
 import sasipca.ui.components.Header
 import sasipca.models.SnackbarType
 import sasipca.utils.SnackbarManager
 import kotlinx.coroutines.launch
+import sasipca.screens.navigation.LoginScreen
 import sasipca.storage.SessionManager
 
-
 @Composable
-fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
+fun SettingsScreen() {
+    // 1. Obter o Navigator Principal (para sair do Login se necessário)
+    val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
+
     var serverIp by remember { mutableStateOf(SettingsManager.getServerIp()) }
     var isDarkTheme by remember { mutableStateOf(SettingsManager.isDarkTheme()) }
     var showIpDialog by remember { mutableStateOf(false) }
     var tempIp by remember { mutableStateOf(serverIp) }
+
     val scope = rememberCoroutineScope()
     val authRepository = ApiClient.authRepository
-
 
     Column(
         modifier = Modifier
@@ -46,98 +49,81 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
     ) {
         Header("Definições", "Configure a aplicação")
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
 
-                /**
-                 * Secção de alteração de tema.
-                 */
-                SectionHeader("Aparência")
+            // --- APARÊNCIA ---
+            SectionHeader("Aparência")
+            SettingsCard {
+                SettingsToggleItem(
+                    icon = Icons.Default.DarkMode,
+                    title = "Modo Escuro",
+                    description = "Alterar tema da aplicação",
+                    checked = isDarkTheme,
+                    onCheckedChange = { enabled ->
+                        SettingsManager.setDarkTheme(enabled)
+                    }
+                )
+            }
+
+            // --- REDE ---
+            SectionHeader("Rede")
+            SettingsCard {
+                SettingsClickableItem(
+                    icon = Icons.Default.Storage,
+                    title = "Servidor",
+                    description = serverIp,
+                    onClick = {
+                        tempIp = serverIp
+                        showIpDialog = true
+                    },
+                )
+            }
+
+            // --- CONTA (LOGOUT) ---
+            if (SessionManager.isLoggedInNow()) {
+                SectionHeader("Conta")
                 SettingsCard {
-                    SettingsToggleItem(
-                        icon = Icons.Default.DarkMode,
-                        title = "Modo Escuro",
-                        description = "Alterar tema da aplicação",
-                        checked = isDarkTheme,
-                        onCheckedChange = { enabled ->
-                            isDarkTheme = enabled
-                            SettingsManager.setDarkTheme(enabled)
-                            onThemeChanged(enabled)
+                    SettingsClickableItem(
+                        icon = Icons.AutoMirrored.Filled.ExitToApp,
+                        title = "Terminar Sessão",
+                        description = "Sair da aplicação",
+                        onClick = {
+                            scope.launch {
+                                try {
+                                    authRepository.logout()
+                                } catch (e: Exception) {
+                                    // Ignora erro de rede no logout, limpa sessão local na mesma
+                                }
+                                // Redireciona para o Login e limpa a pilha
+                                navigator.replaceAll(LoginScreen())
+                            }
                         }
                     )
                 }
-
-                /**
-                 * Secção de definições de rede.
-                 */
-                SectionHeader("Rede")
-                SettingsCard {
-                    SettingsClickableItem(
-                        icon = Icons.Default.Storage,
-                        title = "Servidor",
-                        description = serverIp,
-                        onClick = {
-                            tempIp = serverIp
-                            showIpDialog = true
-                        },
-                    )
-                }
-
-                /**
-                 * Secção de Logout.
-                 * Apenas mostra secção se o utilizador estiver com sessão iniciada.
-                 */
-                if (SessionManager.isLoggedInNow()){
-                    SectionHeader("Conta")
-                    SettingsCard {
-                        SettingsClickableItem(
-                            icon = Icons.AutoMirrored.Filled.ExitToApp,
-                            title = "Terminar Sessão",
-                            description = "Sair da aplicação",
-                            onClick = {
-                                scope.launch {
-                                    try {
-                                        authRepository.logout()
-                                    } catch (e: Exception) {
-                                    }
-
-                                    NavigationService.resetTo(Screen.Login)
-                                }
-                            }
-                        )
-                    }
-                }
-
-
-                /**
-                 * Secção de Informações do Projeto
-                 */
-                SectionHeader("Sobre")
-                SettingsCard {
-                    SettingsTextItem(
-                        icon = Icons.Default.Info,
-                        title = "Projeto SASIPCA",
-                        description = "Aplicação desenvolvida por: João Lopes Nº12168 | Júlio Faria Nº22920 | Paulo Costa Nº22934 | Miguel Areal Nº29559",
-                    )
-                }
-
             }
+
+            // --- SOBRE ---
+            SectionHeader("Sobre")
+            SettingsCard {
+                SettingsTextItem(
+                    icon = Icons.Default.Info,
+                    title = "Projeto SASIPCA",
+                    description = "Aplicação desenvolvida por: João Lopes Nº12168 | Júlio Faria Nº22920 | Paulo Costa Nº22934 | Miguel Areal Nº29559",
+                )
+            }
+        }
     }
 
-    // Server IP Dialog
+    // --- DIALOG SERVER IP ---
     if (showIpDialog) {
         AlertDialog(
             onDismissRequest = { showIpDialog = false },
-            title = {
-                Text(
-                    text = "Configurar Servidor",
-                    fontWeight = FontWeight.Bold
-                )
-            },
+            title = { Text("Configurar Servidor", fontWeight = FontWeight.Bold) },
             text = {
                 Column {
                     Text(
@@ -167,34 +153,22 @@ fun SettingsScreen(onThemeChanged: (Boolean) -> Unit) {
                             serverIp = tempIp
                             SettingsManager.setServerIp(tempIp)
                             showIpDialog = false
-                            SnackbarManager.show(
-                                message = "Servidor atualizado: $tempIp",
-                                type = SnackbarType.SUCCESS
-                            )
+                            SnackbarManager.show("Servidor atualizado: $tempIp", SnackbarType.SUCCESS)
                         } else {
-                            SnackbarManager.show(
-                                message = "Endereço não pode estar vazio",
-                                type = SnackbarType.ERROR
-                            )
+                            SnackbarManager.show("Endereço não pode estar vazio", SnackbarType.ERROR)
                         }
                     }
-                ) {
-                    Text("Guardar")
-                }
+                ) { Text("Guardar") }
             },
             dismissButton = {
-                TextButton(onClick = { showIpDialog = false }) {
-                    Text("Cancelar")
-                }
+                TextButton(onClick = { showIpDialog = false }) { Text("Cancelar") }
             },
             shape = RoundedCornerShape(16.dp)
         )
     }
 }
 
-/**
- * Header de Secção
- */
+// ... (Resto dos componentes auxiliares SettingsCard, SectionHeader, etc. mantêm-se iguais) ...
 @Composable
 fun SectionHeader(title: String) {
     Text(
@@ -206,9 +180,6 @@ fun SectionHeader(title: String) {
     )
 }
 
-/**
- * Card para apresentar algum componente
- */
 @Composable
 fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
     Card(
@@ -225,9 +196,6 @@ fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
     }
 }
 
-/**
- * Item de toggle ON/OFF para opções
- */
 @Composable
 fun SettingsToggleItem(
     icon: ImageVector,
@@ -350,9 +318,6 @@ fun SettingsClickableItem(
     }
 }
 
-/**
- * Item de texto
- */
 @Composable
 fun SettingsTextItem(
     icon: ImageVector,
@@ -398,4 +363,3 @@ fun SettingsTextItem(
         }
     }
 }
-

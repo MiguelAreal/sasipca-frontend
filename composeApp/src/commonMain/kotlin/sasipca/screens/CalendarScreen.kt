@@ -34,15 +34,21 @@ import java.time.YearMonth
 
 @Suppress("UnusedBoxWithConstraintsScope")
 @Composable
-fun CalendarScreen(deliveryRepository: DeliveryRepository) {
+fun CalendarScreen(
+    deliveryRepository: DeliveryRepository,
+    onNavigateToDelivery: (LocalDate, Boolean) -> Unit
+) {
     val deliveriesViewModel = remember { DeliveriesViewModel(deliveryRepository) }
     val month by deliveriesViewModel.month.collectAsState()
     val selectedDate by deliveriesViewModel.selectedDate.collectAsState()
     val deliveries by deliveriesViewModel.deliveries.collectAsState()
-    val futureDeliveries by deliveriesViewModel.futureDeliveries.collectAsState() // <--- NOVO
+    val futureDeliveries by deliveriesViewModel.futureDeliveries.collectAsState()
     val isLoading by deliveriesViewModel.isLoading.collectAsState()
 
+    // Estado para VISUALIZAÇÃO/EDIÇÃO RÁPIDA de existentes
     var editorState by remember { mutableStateOf<Delivery?>(null) }
+
+    // Estado para o POPUP DE SELEÇÃO DO DIA
     var pickerState by remember { mutableStateOf<Pair<LocalDate, List<Delivery>>?>(null) }
 
     var showFutureDeliveries by remember { mutableStateOf(false) }
@@ -59,7 +65,6 @@ fun CalendarScreen(deliveryRepository: DeliveryRepository) {
         if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
-
 
         if (isSmallScreen()) {
             CompactLayout(
@@ -91,63 +96,40 @@ fun CalendarScreen(deliveryRepository: DeliveryRepository) {
             )
         }
 
-
+        // --- DIALOG DE ESCOLHA DO DIA ---
         pickerState?.let { (date, deliveriesForDate) ->
             EventPickerDialog(
                 date = date,
                 deliveries = deliveriesForDate,
                 onDismiss = { pickerState = null },
-                onSelect = { selected ->
+                onSelectExisting = { selected ->
+                    // Clicou numa entrega existente -> Abre popup de detalhes
                     pickerState = null
-                    editorState = selected ?: Delivery(
-                        deliveryId = 0,
-                        beneficiaryId = 0,
-                        beneficiaryName = null,
-                        scheduledDate = date.toString(),
-                        statusId = 1,
-                        note = null,
-                        userId = 0,
-                        userName = null
-                    )
+                    editorState = selected
+                },
+                onNewDelivery = {
+                    // Clicou "Nova Entrega" -> Navega para o ecrã de Delivery
+                    pickerState = null
+                    onNavigateToDelivery(date, true) // Chama o callback
                 }
             )
         }
 
+        // --- DIALOG DE DETALHES (EXISTENTES) ---
         editorState?.let { dto ->
             EventEditorDialog(
                 initial = dto,
                 onDismiss = { editorState = null },
                 onDelete = {
-                    // TODO: Implementar método de eliminação no ViewModel se necessário
+                    // TODO: Implementar delete no ViewModel
+                    editorState = null
                 },
                 onSave = { updated ->
-                    if (updated.deliveryId == 0) {
-                        /*deliveriesViewModel.scheduleDelivery(
-                            DeliveryPost(
-                                beneficiaryId = updated.beneficiaryId,
-                                scheduledDate = updated.scheduledDate, // já é String ISO
-                                note = updated.note,
-                                itemsToDeliver = emptyList() // TODO: substituir por itens reais quando disponível
-                            ),
-                            true
-                        )*/
-                    } else {
-                        // Atualizar entrega existente
-                        /*deliveriesViewModel.updateDelivery(
-                            updated.deliveryId,
-                            DeliveryPut(
-                                scheduledDate = updated.scheduledDate,
-                                newStatusId = updated.statusId,
-                                note = updated.note,
-                                itemsToDeliver = emptyList() // TODO: substituir por itens reais quando disponível
-                            )
-                        )*/
-                    }
+                    // TODO: Implementar update no ViewModel
                     editorState = null
                 }
             )
         }
-
     }
 }
 
@@ -305,7 +287,6 @@ fun FutureDeliveriesList(
                 )
             }
         } else {
-            // 🚀 Implementação para mostrar as entregas
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)
@@ -361,7 +342,8 @@ fun EventPickerDialog(
     date: LocalDate,
     deliveries: List<Delivery>,
     onDismiss: () -> Unit,
-    onSelect: (Delivery?) -> Unit
+    onSelectExisting: (Delivery) -> Unit, // Para editar/ver
+    onNewDelivery: () -> Unit           // Para criar
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -370,7 +352,7 @@ fun EventPickerDialog(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "Entregas em ${getFormattedDatePt()}",
+                    text = "Entregas em ${getFormattedDatePt()}", // Podes usar a data passada se quiseres
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 18.sp
                 )
@@ -378,7 +360,7 @@ fun EventPickerDialog(
                 Spacer(Modifier.height(8.dp))
 
                 if (deliveries.isEmpty()) {
-                    Text("Sem entregas - Criar nova?")
+                    Text("Sem entregas agendadas.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -390,7 +372,7 @@ fun EventPickerDialog(
                                 shape = RoundedCornerShape(8.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { onSelect(dto) }
+                                    .clickable { onSelectExisting(dto) }
                                     .padding(4.dp)
                             ) {
                                 Column(modifier = Modifier.padding(8.dp)) {
@@ -399,7 +381,7 @@ fun EventPickerDialog(
                                         fontWeight = FontWeight.Medium
                                     )
                                     Text(
-                                        dto.statusId.toString() ?: "Agendada",
+                                        "Estado: ${dto.statusId}",
                                         fontSize = 12.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -409,7 +391,7 @@ fun EventPickerDialog(
                     }
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(16.dp))
 
                 Row(
                     horizontalArrangement = Arrangement.End,
@@ -417,7 +399,7 @@ fun EventPickerDialog(
                 ) {
                     TextButton(onClick = onDismiss) { Text("Cancelar") }
                     Spacer(Modifier.width(8.dp))
-                    Button(onClick = { onSelect(null) }) {
+                    Button(onClick = onNewDelivery) {
                         Text("Nova Entrega")
                     }
                 }
@@ -425,6 +407,7 @@ fun EventPickerDialog(
         }
     }
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventEditorDialog(

@@ -17,22 +17,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import sasipca.composeapp.generated.resources.Res
 import sasipca.composeapp.generated.resources.login_bg
 import sasipca.composeapp.generated.resources.logo_white
-import sasipca.navigation.NavigationService
-import sasipca.navigation.Screen
 import sasipca.repositories.AuthRepository
+import sasipca.screens.navigation.SettingsScreen // Voyager Screen
 import sasipca.utils.SnackbarManager
 import sasipca.models.SnackbarType
 
 @Composable
-fun LoginScreen(authRepository: AuthRepository) {
+fun LoginScreen(
+    authRepository: AuthRepository,
+    onLoginSuccess: () -> Unit // <--- ADICIONADO AQUI
+) {
     val coroutineScope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
+
+    // Obter navigator para o botão de Settings
+    val navigator = LocalNavigator.currentOrThrow
 
     Box(
         modifier = Modifier
@@ -50,6 +57,8 @@ fun LoginScreen(authRepository: AuthRepository) {
                 .graphicsLayer { alpha = 0.15f }
         )
 
+        // ... (Logo e textos iguais ao teu código) ...
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -57,7 +66,6 @@ fun LoginScreen(authRepository: AuthRepository) {
                 .padding(vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             Spacer(modifier = Modifier.weight(1f))
 
             Column(
@@ -95,7 +103,10 @@ fun LoginScreen(authRepository: AuthRepository) {
                             isLoading = true
                             val result = authRepository.loginMicrosoft()
                             result.fold(
-                                onSuccess = { NavigationService.resetTo(Screen.Main) },
+                                onSuccess = {
+                                    // CHAMA O CALLBACK EM VEZ DO NAVIGATIONSERVICE
+                                    onLoginSuccess()
+                                },
                                 onFailure = {
                                     isLoading = false
                                     SnackbarManager.show("Falha na autenticação: ${it.message}", SnackbarType.ERROR)
@@ -133,15 +144,15 @@ fun LoginScreen(authRepository: AuthRepository) {
                 Text(
                     text = "Utilize as suas credenciais institucionais",
                     color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 12.sp, // Tamanho fixo
+                    fontSize = 12.sp,
                     textAlign = TextAlign.Center
                 )
             }
         }
 
-
+        // Botão Settings Atualizado para Voyager
         IconButton(
-            onClick = { NavigationService.navigateTo(Screen.Settings) },
+            onClick = { navigator.push(SettingsScreen()) },
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(16.dp)

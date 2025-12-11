@@ -9,7 +9,6 @@ import kotlinx.coroutines.launch
 import sasipca.models.GroupToEnter
 import sasipca.models.ReceiptGroupItem
 import sasipca.models.ReceiptPost
-import sasipca.navigation.NavigationService
 import sasipca.repositories.ReceiptRepository
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -123,7 +122,6 @@ class ReceiptsViewModel(private val receiptRepository: ReceiptRepository) : View
                 receiptRepository.postReceipt(body)
             }.onSuccess {
                 _uiState.value = ReceiptUiState(success = true)
-                NavigationService.goBack()
             }.onFailure { t ->
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,

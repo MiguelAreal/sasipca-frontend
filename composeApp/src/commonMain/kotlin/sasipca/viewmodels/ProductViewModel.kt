@@ -13,7 +13,6 @@ import sasipca.models.Product
 import sasipca.models.ProductDetail
 import sasipca.models.ProductPut
 import sasipca.models.UnitTypeInfo
-import sasipca.navigation.NavigationService
 import sasipca.repositories.OFFRepository
 import sasipca.storage.ListsStore
 
@@ -261,8 +260,6 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
                 // considera sucesso — volta atrás na navegação
                 _uiState.value = ProductUiState(success = true)
 
-                // navigation
-                NavigationService.goBack()
             }.onFailure { t ->
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,

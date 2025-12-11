@@ -2,40 +2,43 @@ package sasipca.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import sasipca.repositories.ProductRepository
+import sasipca.ui.components.BarcodeInputField // <--- Usamos o componente com Scanner
 import sasipca.ui.components.Header
+import sasipca.ui.components.products.ProductsTable
 import sasipca.utils.getFormattedDatePt
 import sasipca.viewmodels.ProductViewModel
-import androidx.compose.material.icons.Icons
-import sasipca.ui.components.products.ProductsTable
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductsScreen(
     productRepository: ProductRepository,
-    onOpenProduct: (String) -> Unit = {}
+    onOpenProduct: (String) -> Unit // Removemos o valor por defeito para obrigar a passar a navegação
 ) {
-    val productviewModel = remember { ProductViewModel(productRepository) }
+    val productViewModel = remember { ProductViewModel(productRepository) }
+    val focusManager = LocalFocusManager.current
 
     // Chamada inicial
-    LaunchedEffect(Unit) { productviewModel.loadProducts() }
+    LaunchedEffect(Unit) {
+        productViewModel.loadProducts()
+    }
 
-    val filteredItems by remember { productviewModel::filteredItems }
-    val isLoading by remember { productviewModel::isLoading }
-    val searchQuery by remember { productviewModel::searchQuery }
-    val currentPage by remember { productviewModel::currentPage }
-    val totalPages by remember { productviewModel::totalPages }
+    // Acesso direto aos estados (visto que o VM usa mutableStateOf)
+    val filteredItems = productViewModel.filteredItems
+    val isLoading = productViewModel.isLoading
+    val searchQuery = productViewModel.searchQuery
+    val currentPage = productViewModel.currentPage
+    val totalPages = productViewModel.totalPages
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -51,37 +54,34 @@ fun ProductsScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Barra de pesquisa
-            OutlinedTextField(
+
+            // --- BARRA DE PESQUISA COM SCANNER ---
+            // Usamos o BarcodeInputField mas sem sugestões (lista vazia),
+            // apenas para aproveitar o design e o botão de scan.
+            BarcodeInputField(
                 value = searchQuery,
-                onValueChange = { productviewModel.loadProducts(it) },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(65.dp),
-                placeholder = {
-                    Text("Pesquisar produto...")
+                onValueChange = {
+                    productViewModel.loadProducts(it)
                 },
-                leadingIcon = {
-                    Icon(
-                        Icons.Default.Search,
-                        contentDescription = "Pesquisar"
-                    )
-                },
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true
+                label = "Pesquisar",
+                placeholder = "Nome ou Scan...",
+                suggestions = emptyList(), // Não queremos dropdown aqui, é filtro de lista
+                onSuggestionSelected = {},
+                modifier = Modifier.weight(1f)
             )
 
             // Botão de filtro
             IconButton(
-                onClick = { /* TODO: Implementar filtro */ },
+                onClick = { /* TODO: Implementar filtro avançado */ },
                 modifier = Modifier
-                    .size(50.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface)
+                    .size(56.dp) // Altura padrão do TextField para alinhar
+                    .clip(RoundedCornerShape(8.dp)) // Quadrado arredondado igual ao input
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Icon(
                     Icons.Outlined.FilterList,
-                    contentDescription = "Filtrar"
+                    contentDescription = "Filtrar",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -90,17 +90,17 @@ fun ProductsScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .padding(horizontal = 20.dp, vertical = 0.dp) // Ajustei padding vertical
         ) {
             ProductsTable(
                 products = filteredItems,
                 isLoading = isLoading,
-                // 1. Passar estados de Paginação
+                // Passar estados de Paginação
                 currentPage = currentPage,
                 totalPages = totalPages,
-                // 2. Passar funções de Paginação
-                onNextPage = { productviewModel.goToNextPage() },
-                onPreviousPage = { productviewModel.goToPreviousPage() },
+                // Passar funções de Paginação
+                onNextPage = { productViewModel.goToNextPage() },
+                onPreviousPage = { productViewModel.goToPreviousPage() },
                 onProductClick = onOpenProduct
             )
         }

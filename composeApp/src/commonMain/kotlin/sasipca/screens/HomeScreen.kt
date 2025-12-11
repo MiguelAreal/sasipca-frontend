@@ -14,8 +14,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
-import sasipca.navigation.NavigationService
-import sasipca.navigation.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
+import sasipca.screens.navigation.CampaignsScreen
+import sasipca.screens.navigation.DeliveryScreen
+import sasipca.screens.navigation.HistoryScreen
+import sasipca.screens.navigation.ReceptionScreen
+import sasipca.screens.navigation.ReportsScreen
+import sasipca.screens.navigation.StockAdjustmentScreen
 import sasipca.storage.SessionManager
 import sasipca.ui.components.CompactMenuItem
 import sasipca.ui.components.CompactStatCard
@@ -74,6 +80,9 @@ fun HomeScreen() {
 
 @Composable
 fun QuickActionsSection() {
+    // Obtém o navegador principal (para sair da Tab e ir para um ecrã de detalhe)
+    val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -82,21 +91,24 @@ fun QuickActionsSection() {
             icon = Icons.Filled.ArrowCircleDown,
             title = "Receção",
             modifier = Modifier.weight(1f),
-            onClick = { NavigationService.navigateTo(Screen.Reception) }
+            // Alterado para Voyager
+            onClick = { navigator.push(ReceptionScreen()) }
         )
 
         QuickActionButton(
             icon = Icons.Filled.ArrowCircleUp,
             title = "Entrega",
             modifier = Modifier.weight(1f),
-            onClick = { NavigationService.navigateTo(Screen.Delivery) }
+            // Alterado para Voyager (instanciando a data class com defaults)
+            onClick = { navigator.push(DeliveryScreen()) }
         )
 
         QuickActionButton(
             icon = Icons.Filled.SwapHoriz,
             title = "Ajuste",
             modifier = Modifier.weight(1f),
-            onClick = { NavigationService.navigateTo(Screen.StockAdjustment) }
+            // Alterado para Voyager
+            onClick = { navigator.push(StockAdjustmentScreen()) }
         )
     }
 }
@@ -139,12 +151,11 @@ fun MonthlyStatsSection() {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // ✅ FlowRow para ajuste automático em ecrãs pequenos
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                maxItemsInEachRow = 3 // Máximo de 3 cards por linha
+                maxItemsInEachRow = 3
             ) {
                 CompactStatCard(
                     icon = Icons.Outlined.Schedule,
@@ -168,24 +179,29 @@ fun MonthlyStatsSection() {
 
 @Composable
 fun SecondaryActionsSection() {
+    // Obtém o navegador principal
+    val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
+
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         CompactMenuItem(
             icon = Icons.Outlined.Campaign,
             title = "Campanhas",
-            onClick = { NavigationService.navigateTo(Screen.Campaigns) }
+            // Alterado para Voyager
+            onClick = { navigator.push(CampaignsScreen()) }
         )
         CompactMenuItem(
             icon = Icons.Outlined.FilePresent,
             title = "Relatórios",
-            onClick = { NavigationService.navigateTo(Screen.Reports) }
+            // Alterado para Voyager
+            onClick = { navigator.push(ReportsScreen()) }
         )
         CompactMenuItem(
             icon = Icons.Outlined.History,
             title = "Histórico de Movimentos",
-            onClick = { NavigationService.navigateTo(Screen.History) }
+            // Alterado para Voyager
+            onClick = { navigator.push(HistoryScreen()) }
         )
     }
 }
-

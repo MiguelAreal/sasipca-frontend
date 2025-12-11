@@ -3,16 +3,15 @@ package sasipca.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.ArrowDownward
+import androidx.compose.material.icons.outlined.ArrowUpward
+import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,65 +20,49 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import sasipca.repositories.BeneficiaryRepository
 import sasipca.ui.components.beneficiaries.CreateBeneficiaryPopup
 import sasipca.ui.components.Header
 import sasipca.ui.components.LoadingWidget
-import sasipca.ui.components.beneficiaries.*
+import sasipca.ui.components.beneficiaries.BeneficiaryListItemCard
 import sasipca.utils.getFormattedDatePt
 import sasipca.viewmodels.BeneficiariesViewModel
 
-@Suppress("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BeneficiariesScreen(
     beneficiaryRepository: BeneficiaryRepository,
-    onAddBeneficiary: () -> Unit = {},
-    onOpenBeneficiary: (Int) -> Unit = {}
+    onOpenBeneficiary: (Int) -> Unit
 ) {
     val viewModel = remember { BeneficiariesViewModel(beneficiaryRepository) }
+
+    // Estados do ViewModel
+    val isLoading = viewModel.isLoading
+    val beneficiaries = viewModel.beneficiaries
+    val orderBy = viewModel.orderBy
+
+    // Estados Locais
     var showFilters by remember { mutableStateOf(false) }
-
-    val isLoading by remember { viewModel::isLoading }
-    val beneficiaries by remember { viewModel::beneficiaries }
-    val currentPage by remember { viewModel::currentPage }
-    var searchTerm by remember { mutableStateOf("") } // texto local da pesquisa
-    val orderBy by remember { viewModel::orderBy }
-
+    var searchTerm by remember { mutableStateOf("") }
     var showCreatePopup by remember { mutableStateOf(false) }
 
-    // Debounce de 500ms: só pesquisa depois de parar de digitar
+    // Debounce de pesquisa
     LaunchedEffect(searchTerm) {
-        kotlinx.coroutines.delay(500) // intervalo entre digitação e pesquisa
-        viewModel.loadBeneficiaries(search = searchTerm, page = 1)
+        if (searchTerm.isEmpty()) {
+            viewModel.loadBeneficiaries()
+        } else {
+            delay(500)
+            viewModel.loadBeneficiaries(search = searchTerm, page = 1)
+        }
     }
 
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showCreatePopup = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                shape = CircleShape
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Adicionar beneficiário")
-            }
-            if (showCreatePopup) {
-                CreateBeneficiaryPopup(
-                    repository = beneficiaryRepository,
-                    onDismiss = { showCreatePopup = false },
-                    onCreated = { viewModel.loadBeneficiaries() } // recarrega a lista após criar
-                )
-            }
-        }
-    ) { paddingValues ->
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            Header("Beneficiários",getFormattedDatePt())
+        Column(modifier = Modifier.fillMaxSize()) {
+            Header("Beneficiários", getFormattedDatePt())
 
-            // Barra de pesquisa + botões
+            // --- BARRA DE PESQUISA E FILTROS ---
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -90,103 +73,106 @@ fun BeneficiariesScreen(
                 OutlinedTextField(
                     value = searchTerm,
                     onValueChange = { searchTerm = it },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(65.dp),
+                    modifier = Modifier.weight(1f).height(60.dp), // Altura fixa ajustada
                     placeholder = { Text("Pesquisar beneficiário...") },
-                    leadingIcon = {
-                        Icon(Icons.Default.Search, contentDescription = "Pesquisar")
-                    },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true,
-                    textStyle = TextStyle(
-                        fontSize = 14.sp,
-                        lineHeight = 18.sp
+                    textStyle = TextStyle(fontSize = 14.sp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
                     )
                 )
 
-                // Filtro (abre/fecha painel)
                 IconButton(
                     onClick = { showFilters = !showFilters },
                     modifier = Modifier
-                        .size(50.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surface)
+                        .size(56.dp) // Alinhado com a altura do input
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
-                    Icon(
-                        Icons.Outlined.FilterList,
-                        contentDescription = "Filtrar"
-                    )
+                    Icon(Icons.Outlined.FilterList, contentDescription = "Filtrar", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-
             }
 
-            // Painel de filtros
+            // --- PAINEL DE FILTROS ---
             if (showFilters) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-                        .padding(bottom = 12.dp),
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     FilterChip(
                         selected = orderBy == "asc",
                         onClick = { viewModel.loadBeneficiaries(order = "asc") },
                         label = { Text("A-Z") },
-                        leadingIcon = {
-                            Icon(Icons.Outlined.ArrowUpward, contentDescription = null)
-                        }
+                        leadingIcon = { Icon(Icons.Outlined.ArrowUpward, null) }
                     )
                     FilterChip(
                         selected = orderBy == "desc",
                         onClick = { viewModel.loadBeneficiaries(order = "desc") },
                         label = { Text("Z-A") },
-                        leadingIcon = {
-                            Icon(Icons.Outlined.ArrowDownward, contentDescription = null)
-                        }
+                        leadingIcon = { Icon(Icons.Outlined.ArrowDownward, null) }
                     )
                 }
             }
 
-            when {
-                isLoading -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            // --- LISTA DE CONTEÚDO ---
+            Box(modifier = Modifier.weight(1f)) {
+                when {
+                    isLoading && beneficiaries == null -> { // Loading inicial
                         LoadingWidget()
                     }
-                }
-
-                beneficiaries == null -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Sem dados disponíveis")
+                    beneficiaries?.data.isNullOrEmpty() && !isLoading -> {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("Nenhum beneficiário encontrado", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
+                        }
                     }
-                }
-
-                beneficiaries!!.data.isEmpty() -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Nenhum beneficiário encontrado")
-                    }
-                }
-
-                else -> {
-                    val list = beneficiaries!!.data
-
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 20.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(bottom = 80.dp)
-                    ) {
-                        items(list) { beneficiary ->
-                            BeneficiaryListItemCard(
-                                beneficiary = beneficiary,
-                                onClick = { onOpenBeneficiary(beneficiary.beneficiaryId) }
-                            )
+                    else -> {
+                        val list = beneficiaries?.data ?: emptyList()
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 80.dp), // Padding bottom para o FAB
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(list, key = { it.beneficiaryId }) { beneficiary ->
+                                BeneficiaryListItemCard(
+                                    beneficiary = beneficiary,
+                                    onClick = { onOpenBeneficiary(beneficiary.beneficiaryId) }
+                                )
+                            }
                         }
                     }
                 }
+
+                // Loading Overlay se estiver a paginar ou filtrar mas já tiver dados
+                if (isLoading && beneficiaries != null) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter))
+                }
             }
+        }
+
+        // --- FAB (FLOATING ACTION BUTTON) ---
+        FloatingActionButton(
+            onClick = { showCreatePopup = true },
+            containerColor = MaterialTheme.colorScheme.primary,
+            shape = CircleShape,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(24.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "Adicionar", tint = MaterialTheme.colorScheme.onPrimary)
+        }
+
+        // --- POPUP DE CRIAÇÃO ---
+        if (showCreatePopup) {
+            CreateBeneficiaryPopup(
+                repository = beneficiaryRepository,
+                onDismiss = { showCreatePopup = false },
+                onCreated = { viewModel.loadBeneficiaries() }
+            )
         }
     }
 }

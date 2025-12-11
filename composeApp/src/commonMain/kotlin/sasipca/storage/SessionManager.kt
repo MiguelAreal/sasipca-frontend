@@ -1,50 +1,83 @@
 package sasipca.storage
 
 import com.russhwolf.settings.Settings
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import sasipca.navigation.NavigationService
-import kotlin.time.ExperimentalTime
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 object SessionManager {
     private lateinit var settings: Settings
 
-    /**
-     * Estado de sessão reativo (true se logado, falso se não)
-     */
+    // Keys
+    private const val KEY_ACCESS_TOKEN = "access_token"
+    private const val KEY_REFRESH_TOKEN = "refresh_token"
+    private const val KEY_USER_ID = "user_id"
+    private const val KEY_USER_NAME = "user_name"
+
+    // --- ESTADO REATIVO DE SESSÃO ---
     private val _isLoggedIn = MutableStateFlow(false)
-    val isLoggedIn: StateFlow<Boolean> get() = _isLoggedIn
+    val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
+
+    // --- EVENTO DE LOGOUT FORÇADO ---
+    // Usado pelo Network Layer para avisar a UI que o token expirou
+    private val _logoutEvent = MutableSharedFlow<Unit>(replay = 0)
+    val logoutEvent = _logoutEvent.asSharedFlow()
 
     fun init(settingsInstance: Settings) {
         settings = settingsInstance
 
-        // Inicializar estado de login baseado em dados de sessão guardados
-        _isLoggedIn.value = settings.getStringOrNull("access_token") != null &&
-                settings.getStringOrNull("user_name") != null
+        // Inicializar estado de login baseado se temos token guardado
+        if (settings.getStringOrNull(KEY_ACCESS_TOKEN) != null) {
+            _isLoggedIn.value = true
+        }
     }
 
     /**
      * Guarda dados do utilizador localmente
      */
-    @OptIn(ExperimentalTime::class)
     fun saveSession(
         token: String,
         refreshToken: String,
         userID: Int,
         userName: String
     ) {
-        settings.putString("access_token", token)
-        settings.putString("refresh_token", refreshToken)
-        settings.putInt("user_id", userID)
-        settings.putString("user_name", userName)
+        if (!::settings.isInitialized) return
+
+        settings.putString(KEY_ACCESS_TOKEN, token)
+        settings.putString(KEY_REFRESH_TOKEN, refreshToken)
+        settings.putInt(KEY_USER_ID, userID)
+        settings.putString(KEY_USER_NAME, userName)
+
         _isLoggedIn.value = true
     }
 
-    fun getAccessToken(): String? = settings.getStringOrNull("access_token")
-    fun getRefreshToken(): String? = settings.getStringOrNull("refresh_token")
-    fun getUserName(): String? = settings.getStringOrNull("user_name")
+    // Getters seguros
+    fun getAccessToken(): String? {
+        if (!::settings.isInitialized) return null
+        return settings.getStringOrNull(KEY_ACCESS_TOKEN)
+    }
+
+    fun getRefreshToken(): String? {
+        if (!::settings.isInitialized) return null
+        return settings.getStringOrNull(KEY_REFRESH_TOKEN)
+    }
+
+    fun getUserName(): String? {
+        if (!::settings.isInitialized) return null
+        return settings.getStringOrNull(KEY_USER_NAME)
+    }
+
+    fun getUserId(): Int? {
+        if (!::settings.isInitialized) return null
+        return settings.getIntOrNull(KEY_USER_ID)
+    }
+
     fun setAccessToken(newToken: String) {
-        settings.putString("access_token", newToken)
+        if (::settings.isInitialized) {
+            settings.putString(KEY_ACCESS_TOKEN, newToken)
+        }
     }
 
     /**
@@ -53,16 +86,26 @@ object SessionManager {
     fun isLoggedInNow(): Boolean = _isLoggedIn.value
 
     /**
+     * Dispara um logout forçado (ex: Refresh token expirado).
+     * Notifica a UI via Flow.
+     */
+    suspend fun triggerLogout() {
+        clear()
+        _logoutEvent.emit(Unit)
+    }
+
+    /**
      * Limpa dados de sessão e marca utilizador como sessão terminada.
      */
     fun clear() {
-        settings.remove("access_token")
-        settings.remove("refresh_token")
-        settings.remove("user_id")
-        settings.remove("user_name")
+        if (!::settings.isInitialized) return
+
+        settings.remove(KEY_ACCESS_TOKEN)
+        settings.remove(KEY_REFRESH_TOKEN)
+        settings.remove(KEY_USER_ID)
+        settings.remove(KEY_USER_NAME)
+
         _isLoggedIn.value = false
 
-        //Aproveita e faz reset aos separadores
-        NavigationService.resetMainTabIndex()
     }
 }

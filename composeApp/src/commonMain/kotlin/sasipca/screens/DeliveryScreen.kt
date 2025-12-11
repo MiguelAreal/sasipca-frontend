@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -39,10 +38,11 @@ import sasipca.repositories.ProductRepository
 import sasipca.repositories.DeliveryRepository
 import sasipca.repositories.BeneficiaryRepository
 import sasipca.storage.ScreenSizeManager.isLargeScreen
-import sasipca.ui.components.BarcodeInputField // <--- O Componente Novo
+import sasipca.ui.components.BarcodeInputField
 import sasipca.ui.components.Header
 import sasipca.ui.components.LoadingWidget
 import sasipca.ui.components.ValidatedDateField
+import sasipca.ui.components.ValidatedTextField // <--- IMPORTADO
 import sasipca.ui.theme.CardTitle
 import sasipca.utils.SnackbarManager
 import sasipca.models.SnackbarType
@@ -52,6 +52,7 @@ import sasipca.viewmodels.BeneficiariesViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+// Modelo de UI local
 data class DeliveryProductToSend(
     val barcode: String,
     val productName: String,
@@ -61,9 +62,11 @@ data class DeliveryProductToSend(
     val isExpanded: Boolean = false,
     val hasError: Boolean = false
 ) {
-    val totalStock: Int
-        get() = availableGroups.sumOf { it.availableStock }
+    val totalStock: Int get() = availableGroups.sumOf { it.availableStock }
 }
+
+// Formatter estático para evitar recriação constante
+private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
 // --- LÓGICA FIFO ---
 fun recalculateFIFO(
@@ -92,7 +95,10 @@ fun recalculateFIFO(
 fun DeliveryScreen(
     productRepository: ProductRepository,
     deliveryRepository: DeliveryRepository,
-    beneficiaryRepository: BeneficiaryRepository
+    beneficiaryRepository: BeneficiaryRepository,
+    // NOVOS PARÂMETROS PARA REDIRECIONAMENTO
+    initialScheduledDate: LocalDate? = null,
+    initialIsScheduled: Boolean = false
 ) {
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
@@ -103,20 +109,21 @@ fun DeliveryScreen(
     val productViewModel = remember { ProductViewModel(productRepository) }
     val offRepository = remember { OFFRepository(ApiClient.client) }
 
-    // Observar UI State do DeliveriesViewModel
+    // Estados UI
     val deliveryUiState by deliveriesViewModel.uiState.collectAsState()
 
-    // Estados Produto e Entrega
+    // Estados Locais
     var barcode by remember { mutableStateOf("") }
     var productsToDeliver by remember { mutableStateOf(listOf<DeliveryProductToSend>()) }
     var deliveryNote by remember { mutableStateOf("") }
 
-    var isScheduled by remember { mutableStateOf(false) }
-    var scheduledDate by remember { mutableStateOf<LocalDate?>(null) }
+    // Inicialização Inteligente com os parâmetros
+    var isScheduled by remember { mutableStateOf(initialIsScheduled) }
+    var scheduledDate by remember { mutableStateOf(initialScheduledDate) }
 
     var isLoadingProduct by remember { mutableStateOf(false) }
 
-    // --- ESTADOS AUTOCOMPLETE BENEFICIÁRIO (Mantido com ExposedDropdownMenu específico) ---
+    // --- BENEFICIÁRIO ---
     var beneficiaryQuery by remember { mutableStateOf("") }
     var selectedBeneficiary by remember { mutableStateOf<BeneficiaryItem?>(null) }
     var isBeneficiaryDropdownExpanded by remember { mutableStateOf(false) }
@@ -124,77 +131,70 @@ fun DeliveryScreen(
     val isBeneficiaryLoading by remember { beneficiariesViewModel::isLoading }
     val beneficiaryFocusRequester = remember { FocusRequester() }
 
-    // --- ESTADOS AUTOCOMPLETE PRODUTO (Simplificado) ---
+    // --- PRODUTO ---
     var productQuery by remember { mutableStateOf("") }
     val productSearchResults = productViewModel.filteredItems
-    val isProductSearchLoading = productViewModel.isLoading
-
     val productDetail = productViewModel.selectedProductDetail
 
-    // --- EFEITOS COLATERAIS DE SUBMISSÃO ---
+    // 1. Feedback Sucesso/Erro
     LaunchedEffect(deliveryUiState.success) {
         if (deliveryUiState.success) {
-            val message = deliveryUiState.successMessage ?: "Entrega registada com sucesso!"
-            SnackbarManager.show(message, SnackbarType.SUCCESS)
-
-            // Limpar
+            SnackbarManager.show(deliveryUiState.successMessage ?: "Entrega registada com sucesso!", SnackbarType.SUCCESS)
+            // Reset Total
             productsToDeliver = emptyList()
             selectedBeneficiary = null
             beneficiaryQuery = ""
             deliveryNote = ""
             isScheduled = false
             scheduledDate = null
-
             deliveriesViewModel.clearUiState()
         }
     }
 
     LaunchedEffect(deliveryUiState.lastErrorMessage) {
-        deliveryUiState.lastErrorMessage?.let { msg ->
-            SnackbarManager.show(msg, SnackbarType.ERROR)
-        }
+        deliveryUiState.lastErrorMessage?.let { SnackbarManager.show(it, SnackbarType.ERROR) }
     }
 
-    // --- LÓGICA DE PESQUISA BENEFICIÁRIO ---
+    // 2. Pesquisa Beneficiário (Otimizada)
     LaunchedEffect(beneficiaryQuery) {
-        if (selectedBeneficiary == null || beneficiaryQuery != selectedBeneficiary?.name) {
-            if (selectedBeneficiary != null && beneficiaryQuery != selectedBeneficiary?.name) {
-                selectedBeneficiary = null
-            }
-            if (beneficiaryQuery.length >= 2) {
-                delay(250)
-                beneficiariesViewModel.loadBeneficiaries(search = beneficiaryQuery)
-                isBeneficiaryDropdownExpanded = true
-            } else {
-                isBeneficiaryDropdownExpanded = false
-            }
+        // Se o texto mudou e não corresponde ao selecionado, limpa a seleção
+        if (selectedBeneficiary != null && beneficiaryQuery != selectedBeneficiary?.name) {
+            selectedBeneficiary = null
+        }
+
+        if (beneficiaryQuery.length >= 2 && selectedBeneficiary == null) {
+            delay(300) // Debounce
+            beneficiariesViewModel.loadBeneficiaries(search = beneficiaryQuery)
+            isBeneficiaryDropdownExpanded = true
+        } else {
+            isBeneficiaryDropdownExpanded = false
         }
     }
 
-    // --- LÓGICA DE PESQUISA PRODUTO E AUTO-SCAN ---
+    // 3. Pesquisa Produto (Autocomplete)
     LaunchedEffect(productQuery) {
         if (productQuery.isEmpty()) return@LaunchedEffect
+        delay(400)
 
-        delay(400) // Delay para scan/teclado
-
+        // Detetar scan manual (apenas dígitos e longo)
         val isPotentialBarcode = productQuery.all { it.isDigit() } && productQuery.length >= 8
-
         if (isPotentialBarcode) {
             barcode = productQuery
-            // Dropdown logic gerida pelo componente agora
         } else {
             productViewModel.loadProducts(search = productQuery)
         }
     }
 
-    // --- LÓGICA PRINCIPAL DE ADIÇÃO ---
+    // 4. Adicionar Produto à Lista (Lógica Principal)
     LaunchedEffect(barcode) {
         if (barcode.isNotEmpty()) {
             val existingIndex = productsToDeliver.indexOfFirst { it.barcode == barcode }
+
             if (existingIndex >= 0) {
-                // Produto já na lista: Incrementar
+                // Produto já existe na lista: Incrementar +1
                 val currentProduct = productsToDeliver[existingIndex]
                 val newTotal = currentProduct.quantityToDeliver + 1
+
                 if (newTotal <= currentProduct.totalStock) {
                     val newGroups = recalculateFIFO(newTotal, currentProduct.availableGroups, barcode)
                     val updatedList = productsToDeliver.toMutableList()
@@ -204,14 +204,16 @@ fun DeliveryScreen(
                         hasError = false
                     )
                     productsToDeliver = updatedList
+
+                    // Limpar input para permitir nova adição
                     barcode = ""
                     productQuery = ""
                 } else {
-                    SnackbarManager.show("Stock insuficiente para adicionar mais um item.", SnackbarType.WARNING)
+                    SnackbarManager.show("Stock insuficiente para adicionar mais.", SnackbarType.WARNING)
                     barcode = ""
                 }
             } else {
-                // Produto novo: Carregar detalhes
+                // Produto novo: Carregar da API
                 isLoadingProduct = true
                 productViewModel.getProduct(barcode, offRepository)
             }
@@ -220,6 +222,7 @@ fun DeliveryScreen(
         }
     }
 
+    // 5. Processar Produto Carregado da API
     LaunchedEffect(productDetail) {
         if (productDetail != null && barcode.isNotEmpty()) {
             val groups = productDetail.productGroups ?: emptyList()
@@ -227,163 +230,80 @@ fun DeliveryScreen(
             if (groups.isEmpty()) {
                 SnackbarManager.show("Produto sem stock disponível.", SnackbarType.ERROR)
                 barcode = ""
-                isLoadingProduct = false
-                return@LaunchedEffect
+            } else {
+                val initialQty = 1
+                val calculatedGroups = recalculateFIFO(initialQty, groups, barcode)
+
+                val newProduct = DeliveryProductToSend(
+                    barcode = barcode,
+                    productName = productDetail.name ?: "Produto sem nome",
+                    quantityToDeliver = initialQty,
+                    availableGroups = groups,
+                    selectedGroups = calculatedGroups,
+                    hasError = initialQty > groups.sumOf { it.availableStock }
+                )
+
+                // Dupla verificação para evitar duplicados por recomposição rápida
+                if (!productsToDeliver.any { it.barcode == barcode }) {
+                    productsToDeliver = productsToDeliver + newProduct
+                    barcode = ""
+                    productQuery = ""
+                }
             }
-
-            val initialQty = 1
-            val calculatedGroups = recalculateFIFO(initialQty, groups, barcode)
-
-            val newProduct = DeliveryProductToSend(
-                barcode = barcode,
-                productName = productDetail.name ?: "Produto sem nome",
-                quantityToDeliver = initialQty,
-                availableGroups = groups,
-                selectedGroups = calculatedGroups,
-                hasError = initialQty > groups.sumOf { it.availableStock }
-            )
-
-            if (!productsToDeliver.any { it.barcode == barcode }) {
-                productsToDeliver = productsToDeliver + newProduct
-                barcode = ""
-                productQuery = ""
-                isLoadingProduct = false
-            }
-        } else if (isLoadingProduct && barcode.isNotEmpty()) {
             isLoadingProduct = false
-            if (productDetail == null) {
-                SnackbarManager.show("Produto não encontrado", SnackbarType.ERROR)
-                barcode = ""
-            }
+        } else if (isLoadingProduct && barcode.isNotEmpty() && productViewModel.errorMessage != null) {
+            // Tratamento de erro se a API falhar
+            isLoadingProduct = false
+            SnackbarManager.show("Produto não encontrado.", SnackbarType.ERROR)
+            barcode = ""
         }
     }
 
-    // --- UI ---
+    // --- LAYOUT ---
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Header(title = "Agendamento de Entrega")
 
         Box(modifier = Modifier.fillMaxSize()) {
+            val anyLoading = isLoadingProduct || deliveryUiState.isLoading
+
             if (isLargeScreen()) {
+                // --- DESKTOP ---
                 Row(modifier = Modifier.fillMaxSize().padding(20.dp), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-
-                    val leftColumnScrollState = rememberScrollState()
-
-                    // Coluna Esquerda
+                    // Coluna Esquerda: Inputs
                     Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .verticalScroll(leftColumnScrollState),
+                        modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
+                        BeneficiarySelectorCard(
+                            query = beneficiaryQuery,
+                            onQueryChange = { beneficiaryQuery = it },
+                            selectedBeneficiary = selectedBeneficiary,
+                            onSelect = {
+                                selectedBeneficiary = it
+                                beneficiaryQuery = it.name
+                                isBeneficiaryDropdownExpanded = false
+                            },
+                            expanded = isBeneficiaryDropdownExpanded,
+                            onExpandedChange = { isBeneficiaryDropdownExpanded = it },
+                            results = beneficiarySearchResults?.data ?: emptyList(),
+                            isLoading = isBeneficiaryLoading,
+                            focusRequester = beneficiaryFocusRequester,
+                            hasError = deliveryUiState.errors.containsKey("beneficiary")
+                        )
 
-                        // CARD BENEFICIÁRIO
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                        ) {
-                            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                                CardTitle("Beneficiário")
-                                Spacer(Modifier.height(8.dp))
-
-                                ExposedDropdownMenuBox(
-                                    expanded = isBeneficiaryDropdownExpanded,
-                                    onExpandedChange = {
-                                        isBeneficiaryDropdownExpanded = it
-                                        if(it) beneficiaryFocusRequester.requestFocus()
-                                    }
-                                ) {
-                                    OutlinedTextField(
-                                        value = beneficiaryQuery,
-                                        onValueChange = {
-                                            beneficiaryQuery = it
-                                            if (selectedBeneficiary != null && it != selectedBeneficiary?.name) {
-                                                selectedBeneficiary = null
-                                            }
-                                            beneficiaryFocusRequester.requestFocus()
-                                        },
-                                        label = { Text("Pesquisar Beneficiário") },
-                                        placeholder = { Text("Digite o nome...") },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .menuAnchor()
-                                            .focusRequester(beneficiaryFocusRequester),
-                                        trailingIcon = {
-                                            if (isBeneficiaryLoading) {
-                                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                                            } else {
-                                                Icon(Icons.Default.Search, contentDescription = "Pesquisar")
-                                            }
-                                        },
-                                        singleLine = true,
-                                        isError = (beneficiaryQuery.isNotEmpty() && selectedBeneficiary == null) ||
-                                                deliveryUiState.errors.containsKey("beneficiary")
-                                    )
-
-                                    DropdownMenu(
-                                        expanded = isBeneficiaryDropdownExpanded,
-                                        onDismissRequest = { isBeneficiaryDropdownExpanded = false },
-                                        modifier = Modifier
-                                            .exposedDropdownSize(true)
-                                            .background(MaterialTheme.colorScheme.surface),
-                                        properties = PopupProperties(focusable = false)
-                                    ) {
-                                        val list = beneficiarySearchResults?.data ?: emptyList()
-                                        if (list.isEmpty() && !isBeneficiaryLoading) {
-                                            DropdownMenuItem(text = { Text("Sem resultados") }, onClick = {}, enabled = false)
-                                        } else {
-                                            list.forEach { beneficiary ->
-                                                DropdownMenuItem(
-                                                    text = {
-                                                        Column {
-                                                            Text(text = beneficiary.name, style = MaterialTheme.typography.bodyLarge)
-                                                            Text(text = beneficiary.email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                        }
-                                                    },
-                                                    onClick = {
-                                                        selectedBeneficiary = beneficiary
-                                                        beneficiaryQuery = beneficiary.name
-                                                        isBeneficiaryDropdownExpanded = false
-                                                    },
-                                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
+                        ProductAddCard(
+                            query = productQuery,
+                            onQueryChange = {
+                                productQuery = it
+                                if (it.isEmpty()) barcode = ""
+                            },
+                            suggestions = productSearchResults,
+                            onSuggestionSelected = {
+                                barcode = it.barcode
+                                productQuery = ""
+                                focusManager.clearFocus()
                             }
-                        }
-
-                        // CARD PRODUTO (COM COMPONENTE NOVO)
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                        ) {
-                            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                                CardTitle("Adicionar Produto")
-                                Spacer(Modifier.height(8.dp))
-
-                                // --- BarcodeInputField Centralizado ---
-                                BarcodeInputField(
-                                    value = productQuery,
-                                    onValueChange = {
-                                        productQuery = it
-                                        if (it.isEmpty()) barcode = ""
-                                    },
-                                    suggestions = productSearchResults,
-                                    onSuggestionSelected = { product ->
-                                        barcode = product.barcode
-                                        productQuery = product.name ?: product.barcode
-                                        // A lógica de LaunchedEffect(barcode) vai disparar a adição
-                                        focusManager.clearFocus()
-                                    }
-                                )
-                            }
-                        }
+                        )
 
                         DeliveryOptionsCard(
                             isScheduled = isScheduled,
@@ -394,21 +314,25 @@ fun DeliveryScreen(
                             onNoteChange = { deliveryNote = it },
                             dateError = deliveryUiState.errors["date"]
                         )
-
-                        Spacer(Modifier.height(16.dp))
                     }
 
-                    // Coluna Direita
+                    // Coluna Direita: Lista e Ação
                     Column(modifier = Modifier.weight(1.5f).fillMaxHeight()) {
                         DeliveryProductsListSection(
                             products = productsToDeliver,
                             onProductRemove = { index -> productsToDeliver = productsToDeliver.toMutableList().apply { removeAt(index) } },
                             onUpdateQuantity = { index, newTotal ->
+                                // Atualizar quantidade e recalcular FIFO
                                 val product = productsToDeliver[index]
                                 val isValid = newTotal <= product.totalStock
                                 val newGroups = recalculateFIFO(newTotal, product.availableGroups, product.barcode)
+
                                 val updatedList = productsToDeliver.toMutableList()
-                                updatedList[index] = product.copy(quantityToDeliver = newTotal, selectedGroups = newGroups, hasError = !isValid)
+                                updatedList[index] = product.copy(
+                                    quantityToDeliver = newTotal,
+                                    selectedGroups = newGroups,
+                                    hasError = !isValid
+                                )
                                 productsToDeliver = updatedList
                             },
                             onProductExpanded = { index ->
@@ -420,7 +344,7 @@ fun DeliveryScreen(
                         )
                         Spacer(Modifier.height(12.dp))
                         SubmitButton(
-                            enabled = !deliveryUiState.isLoading,
+                            enabled = !anyLoading,
                             onClick = {
                                 deliveriesViewModel.scheduleDelivery(
                                     beneficiaryId = selectedBeneficiary?.beneficiaryId,
@@ -430,122 +354,50 @@ fun DeliveryScreen(
                                     note = deliveryNote
                                 )
                             },
-                            isLoading = deliveryUiState.isLoading
+                            isLoading = anyLoading
                         )
                     }
                 }
             } else {
-                // LAYOUT MOBILE
+                // --- MOBILE ---
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
                 ) {
                     item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                CardTitle("Beneficiário")
-                                Spacer(Modifier.height(8.dp))
-
-                                ExposedDropdownMenuBox(
-                                    expanded = isBeneficiaryDropdownExpanded,
-                                    onExpandedChange = {
-                                        isBeneficiaryDropdownExpanded = it
-                                        if(it) beneficiaryFocusRequester.requestFocus()
-                                    }
-                                ) {
-                                    OutlinedTextField(
-                                        value = beneficiaryQuery,
-                                        onValueChange = {
-                                            beneficiaryQuery = it
-                                            if (selectedBeneficiary != null && it != selectedBeneficiary?.name) {
-                                                selectedBeneficiary = null
-                                            }
-                                            beneficiaryFocusRequester.requestFocus()
-                                        },
-                                        label = { Text("Pesquisar Beneficiário") },
-                                        placeholder = { Text("Digite o nome...") },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .menuAnchor()
-                                            .focusRequester(beneficiaryFocusRequester),
-                                        trailingIcon = {
-                                            if (isBeneficiaryLoading) {
-                                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                                            } else {
-                                                Icon(Icons.Default.Search, contentDescription = "Pesquisar")
-                                            }
-                                        },
-                                        singleLine = true,
-                                        isError = (beneficiaryQuery.isNotEmpty() && selectedBeneficiary == null) || deliveryUiState.errors.containsKey("beneficiary")
-                                    )
-
-                                    DropdownMenu(
-                                        expanded = isBeneficiaryDropdownExpanded,
-                                        onDismissRequest = { isBeneficiaryDropdownExpanded = false },
-                                        modifier = Modifier
-                                            .exposedDropdownSize(true)
-                                            .background(MaterialTheme.colorScheme.surface),
-                                        properties = PopupProperties(focusable = false)
-                                    ) {
-                                        val list = beneficiarySearchResults?.data ?: emptyList()
-                                        if (list.isEmpty() && !isBeneficiaryLoading) {
-                                            DropdownMenuItem(text = { Text("Sem resultados") }, onClick = {}, enabled = false)
-                                        } else {
-                                            list.forEach { beneficiary ->
-                                                DropdownMenuItem(
-                                                    text = {
-                                                        Column {
-                                                            Text(beneficiary.name, style = MaterialTheme.typography.bodyLarge)
-                                                            Text(beneficiary.email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                        }
-                                                    },
-                                                    onClick = {
-                                                        selectedBeneficiary = beneficiary
-                                                        beneficiaryQuery = beneficiary.name
-                                                        isBeneficiaryDropdownExpanded = false
-                                                    },
-                                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        BeneficiarySelectorCard(
+                            query = beneficiaryQuery,
+                            onQueryChange = { beneficiaryQuery = it },
+                            selectedBeneficiary = selectedBeneficiary,
+                            onSelect = {
+                                selectedBeneficiary = it
+                                beneficiaryQuery = it.name
+                                isBeneficiaryDropdownExpanded = false
+                            },
+                            expanded = isBeneficiaryDropdownExpanded,
+                            onExpandedChange = { isBeneficiaryDropdownExpanded = it },
+                            results = beneficiarySearchResults?.data ?: emptyList(),
+                            isLoading = isBeneficiaryLoading,
+                            focusRequester = beneficiaryFocusRequester,
+                            hasError = deliveryUiState.errors.containsKey("beneficiary")
+                        )
                     }
 
                     item {
-                        // CARD PRODUTO (COM COMPONENTE NOVO)
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                CardTitle("Adicionar Produto")
-                                Spacer(Modifier.height(8.dp))
-
-                                // --- BarcodeInputField Centralizado ---
-                                BarcodeInputField(
-                                    value = productQuery,
-                                    onValueChange = {
-                                        productQuery = it
-                                        if (it.isEmpty()) barcode = ""
-                                    },
-                                    suggestions = productSearchResults,
-                                    onSuggestionSelected = { product ->
-                                        barcode = product.barcode
-                                        productQuery = product.name ?: product.barcode
-                                        focusManager.clearFocus()
-                                    }
-                                )
+                        ProductAddCard(
+                            query = productQuery,
+                            onQueryChange = {
+                                productQuery = it
+                                if (it.isEmpty()) barcode = ""
+                            },
+                            suggestions = productSearchResults,
+                            onSuggestionSelected = {
+                                barcode = it.barcode
+                                productQuery = "" // Limpar para permitir scan seguinte
+                                focusManager.clearFocus()
                             }
-                        }
+                        )
                     }
 
                     itemsIndexed(productsToDeliver) { index, product ->
@@ -559,11 +411,12 @@ fun DeliveryScreen(
                                 productsToDeliver = updated
                             },
                             onUpdateQuantity = { newTotal ->
-                                val isValid = newTotal <= product.totalStock
-                                val newGroups = recalculateFIFO(newTotal, product.availableGroups, product.barcode)
-                                val updatedList = productsToDeliver.toMutableList()
-                                updatedList[index] = product.copy(quantityToDeliver = newTotal, selectedGroups = newGroups, hasError = !isValid)
-                                productsToDeliver = updatedList
+                                val p = productsToDeliver[index]
+                                val isValid = newTotal <= p.totalStock
+                                val newGroups = recalculateFIFO(newTotal, p.availableGroups, p.barcode)
+                                val updated = productsToDeliver.toMutableList()
+                                updated[index] = p.copy(quantityToDeliver = newTotal, selectedGroups = newGroups, hasError = !isValid)
+                                productsToDeliver = updated
                             }
                         )
                     }
@@ -582,7 +435,7 @@ fun DeliveryScreen(
 
                     item {
                         SubmitButton(
-                            enabled = !deliveryUiState.isLoading,
+                            enabled = !anyLoading,
                             onClick = {
                                 deliveriesViewModel.scheduleDelivery(
                                     beneficiaryId = selectedBeneficiary?.beneficiaryId,
@@ -592,18 +445,117 @@ fun DeliveryScreen(
                                     note = deliveryNote
                                 )
                             },
-                            isLoading = deliveryUiState.isLoading
+                            isLoading = anyLoading
                         )
                     }
                 }
             }
 
-            if (isLoadingProduct || deliveryUiState.isLoading) LoadingWidget()
+            if (anyLoading) {
+                LoadingWidget()
+            }
         }
     }
 }
 
-// --- COMPONENTES REUTILIZÁVEIS ---
+// ----------------------------------------------------
+// COMPONENTES (ATUALIZADOS)
+// ----------------------------------------------------
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BeneficiarySelectorCard(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    selectedBeneficiary: BeneficiaryItem?,
+    onSelect: (BeneficiaryItem) -> Unit,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    results: List<BeneficiaryItem>,
+    isLoading: Boolean,
+    focusRequester: FocusRequester,
+    hasError: Boolean
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(1.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            CardTitle("Beneficiário")
+            Spacer(Modifier.height(8.dp))
+
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { onExpandedChange(it); if(it) focusRequester.requestFocus() }
+            ) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
+                    label = { Text("Pesquisar") },
+                    placeholder = { Text("Nome ou Email...") },
+                    modifier = Modifier.fillMaxWidth().menuAnchor().focusRequester(focusRequester),
+                    trailingIcon = {
+                        if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        else Icon(Icons.Default.Search, null)
+                    },
+                    singleLine = true,
+                    isError = (query.isNotEmpty() && selectedBeneficiary == null) || hasError
+                )
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { onExpandedChange(false) },
+                    modifier = Modifier.exposedDropdownSize(true).background(MaterialTheme.colorScheme.surface),
+                    properties = PopupProperties(focusable = false)
+                ) {
+                    if (results.isEmpty() && !isLoading) {
+                        DropdownMenuItem(text = { Text("Sem resultados") }, onClick = {}, enabled = false)
+                    } else {
+                        results.forEach { beneficiary ->
+                            DropdownMenuItem(
+                                text = {
+                                    Column {
+                                        Text(beneficiary.name, style = MaterialTheme.typography.bodyLarge)
+                                        Text(beneficiary.email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                },
+                                onClick = { onSelect(beneficiary) },
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ProductAddCard(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    suggestions: List<sasipca.models.Product>,
+    onSuggestionSelected: (sasipca.models.Product) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(1.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            CardTitle("Adicionar Produto")
+            Spacer(Modifier.height(8.dp))
+
+            BarcodeInputField(
+                value = query,
+                onValueChange = onQueryChange,
+                suggestions = suggestions,
+                onSuggestionSelected = onSuggestionSelected
+            )
+        }
+    }
+}
 
 @Composable
 fun DeliveryOptionsCard(
@@ -617,15 +569,14 @@ fun DeliveryOptionsCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(1.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             CardTitle("Detalhes")
             Spacer(Modifier.height(12.dp))
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
                     onClick = { onTypeChange(false) },
                     modifier = Modifier.weight(1f),
@@ -648,32 +599,30 @@ fun DeliveryOptionsCard(
 
             if (isScheduled) {
                 Spacer(Modifier.height(12.dp))
-                val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-
                 ValidatedDateField(
-                    value = scheduledDate?.format(formatter) ?: "",
-                    onValueChange = { newDateStr ->
-                        if (newDateStr.isNotBlank()) {
+                    value = scheduledDate?.format(dateFormatter) ?: "",
+                    onValueChange = { str ->
+                        if (str.isNotBlank()) {
                             try {
-                                val date = LocalDate.parse(newDateStr, formatter)
-                                onDateChange(date)
-                            } catch (e: Exception) {
-                                // Ignorar erro
-                            }
+                                onDateChange(LocalDate.parse(str, dateFormatter))
+                            } catch (_: Exception) {}
                         }
                     },
-                    label = "Data da Entrega",
+                    label = "Data Entrega",
                     error = dateError,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
             Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
-                value = deliveryNote, onValueChange = onNoteChange,
-                label = { Text("Observações") },
-                modifier = Modifier.fillMaxWidth().height(80.dp),
-                maxLines = 3
+
+            // --- ATUALIZADO PARA USAR ValidatedTextField ---
+            ValidatedTextField(
+                value = deliveryNote,
+                onValueChange = onNoteChange,
+                label = "Observações",
+                singleLine = false,
+                modifier = Modifier.fillMaxWidth().height(100.dp)
             )
         }
     }
@@ -687,14 +636,8 @@ fun SubmitButton(enabled: Boolean, onClick: () -> Unit, isLoading: Boolean = fal
         shape = RoundedCornerShape(12.dp),
         enabled = enabled
     ) {
-        if (isLoading) {
-            CircularProgressIndicator(
-                color = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(24.dp)
-            )
-        } else {
-            Text("Agendar Entrega", fontSize = 16.sp)
-        }
+        if (isLoading) CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
+        else Text("Agendar Entrega", fontSize = 16.sp)
     }
 }
 
@@ -735,6 +678,7 @@ fun DeliveryProductsListSection(
         }
     }
 }
+
 @Composable
 fun DeliveryProductCard(
     product: DeliveryProductToSend,
@@ -758,11 +702,7 @@ fun DeliveryProductCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = product.productName,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    Text(text = product.productName, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
                     Text(
                         text = "Qtd.: ${product.quantityToDeliver} | Total: ${product.totalStock}",
                         style = MaterialTheme.typography.labelSmall,
@@ -770,68 +710,38 @@ fun DeliveryProductCard(
                     )
                 }
                 Row {
-                    Icon(
-                        imageVector = if (product.isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
+                    Icon(imageVector = if (product.isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
                     IconButton(onClick = onRemove, modifier = Modifier.size(32.dp)) {
-                        Icon(
-                            Icons.Outlined.Close,
-                            contentDescription = "Remover",
-                            modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
+                        Icon(Icons.Outlined.Close, contentDescription = "Remover", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             }
 
             AnimatedVisibility(visible = product.isExpanded, enter = expandVertically(), exit = shrinkVertically()) {
                 Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
-                    Text(
-                        "Quantidade a Exportar",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    Text("Quantidade a Exportar", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(4.dp))
-                    OutlinedTextField(
+
+                    // --- ATUALIZADO PARA USAR ValidatedTextField ---
+                    ValidatedTextField(
                         value = if (product.quantityToDeliver == 0) "" else product.quantityToDeliver.toString(),
-                        onValueChange = {
-                            val newValue = it.toIntOrNull() ?: 0
-                            onUpdateQuantity(newValue)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Total") },
-                        isError = product.hasError,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        supportingText = {
-                            if (product.hasError) Text("Quantidade excede o stock disponível (${product.totalStock})")
-                        }
+                        onValueChange = { onUpdateQuantity(it.toIntOrNull() ?: 0) },
+                        label = "Total",
+                        error = if (product.hasError) "Quantidade excede o stock disponível" else null,
+                        keyboardType = KeyboardType.Number,
+                        modifier = Modifier.fillMaxWidth()
                     )
+
                     Spacer(Modifier.height(12.dp))
                     if (product.selectedGroups.isNotEmpty()) {
-                        Text(
-                            "Distribuição por Grupos",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Text("Distribuição por Grupos", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(Modifier.height(4.dp))
-
                         product.selectedGroups.forEach { item ->
                             val groupInfo = product.availableGroups.find { it.id == item.groupId }
-
-                            // LÓGICA DE FORMATAÇÃO DA DATA (dd/MM/yyyy)
-                            val formattedDate = groupInfo?.expiryDate?.let { date ->
-                                "${date.dayOfMonth.toString().padStart(2, '0')}/${date.monthNumber.toString().padStart(2, '0')}/${date.year}"
-                            } ?: "N/A"
-
+                            val date = groupInfo?.expiryDate
+                            val formattedDate = if(date != null) "${date.dayOfMonth}/${date.monthNumber}/${date.year}" else "N/A"
                             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text(
-                                    // Alterado aqui para usar a data formatada
-                                    "Validade: $formattedDate",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
+                                Text("Validade: $formattedDate", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
                                 Text("${item.quantity} uni.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                             }
                         }

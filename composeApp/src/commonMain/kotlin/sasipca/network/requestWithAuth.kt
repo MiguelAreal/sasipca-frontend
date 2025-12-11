@@ -8,8 +8,6 @@ import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.http.content.PartData
-import sasipca.navigation.NavigationService
-import sasipca.navigation.Screen
 import sasipca.storage.SessionManager
 
 /**
@@ -20,9 +18,11 @@ suspend inline fun <reified T> HttpClient.requestWithAuth(
     method: HttpMethod,
     url: String,
     body: Any? = null,
-    formData: List<PartData>? = null // Adicionado suporte a Multipart
+    formData: List<PartData>? = null
 ): T {
+    // Evita loop infinito se for o próprio request de refresh
     val isRefreshRequest = attributes.contains(RefreshTokenRequestKey)
+
     if (isRefreshRequest) {
         val response = request(url) {
             this.method = method
@@ -48,17 +48,15 @@ suspend inline fun <reified T> HttpClient.requestWithAuth(
 
     // Se der 401 (Unauthorized)
     if (response.status == HttpStatusCode.Unauthorized) {
-        // Verifica header (opcional dependendo da API, mas recomendado)
-        // val www = response.headers["WWW-Authenticate"]
-        // if (www?.contains("expired_token") == true) { ... }
 
-        // 🔄 Tenta refresh
-        val refreshResult = ApiClient.refreshToken()
+        // Tenta refresh
+        val refreshResult = ApiClient.refreshToken() // Certifica-te que este método existe no teu ApiClient
+
         if (refreshResult.isSuccess) {
             val newToken = refreshResult.getOrThrow().accessToken
             SessionManager.setAccessToken(newToken)
 
-            // 🔁 Repetir request com novo token
+            // Repetir request com novo token
             val retryResponse = executeRequest(this, method, url, newToken, body, formData)
             if (retryResponse.status.isSuccess()) {
                 return retryResponse.body()
@@ -66,16 +64,15 @@ suspend inline fun <reified T> HttpClient.requestWithAuth(
                 throw ClientRequestException(retryResponse, "Retry failed: ${retryResponse.status}")
             }
         } else {
-            SessionManager.clear()
-            NavigationService.resetTo(Screen.Login)
-            throw Exception("Não foi possível renovar o token.")
+            // Falha no refresh: A sessão expirou definitivamente.
+            SessionManager.triggerLogout()
+            throw Exception("Sessão expirada. Por favor faça login novamente.")
         }
     }
 
     if (response.status.isSuccess()) {
         return response.body()
     } else {
-        // Tenta ler a mensagem de erro da API se existir
         val errorBody = try { response.body<String>() } catch (_: Exception) { "Erro desconhecido" }
         throw Exception("Request falhou (${response.status}): $errorBody")
     }
@@ -97,11 +94,8 @@ suspend fun executeRequest(
         header(HttpHeaders.Authorization, "Bearer $token")
 
         if (formData != null) {
-            // Multipart Request
             setBody(MultiPartFormDataContent(formData))
-            // Nota: Não definir Content-Type manual aqui, o Ktor define boundary automaticamente
         } else if (body != null) {
-            // JSON Request
             setBody(body)
             contentType(ContentType.Application.Json)
         }

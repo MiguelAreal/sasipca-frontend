@@ -1,12 +1,21 @@
 package sasipca.storage
 
 import com.russhwolf.settings.Settings
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 object SettingsManager {
     private lateinit var settings: Settings
 
+    // --- ESTADO REATIVO DO TEMA ---
+    private val _isDarkThemeFlow = MutableStateFlow(false)
+    val isDarkThemeFlow: StateFlow<Boolean> = _isDarkThemeFlow.asStateFlow()
+
     fun init(settingsInstance: Settings) {
         settings = settingsInstance
+        // Carrega o valor inicial da persistência para o fluxo
+        _isDarkThemeFlow.value = settings.getBoolean(KEY_DARK_THEME, false)
     }
 
     // Keys
@@ -16,25 +25,34 @@ object SettingsManager {
 
     // Server IP
     fun getServerIp(): String {
+        // Verifica se settings foi inicializado para evitar crash em previews ou testes
+        if (!::settings.isInitialized) return DEFAULT_SERVER_IP
         return settings.getStringOrNull(KEY_SERVER_IP) ?: DEFAULT_SERVER_IP
     }
 
     fun setServerIp(ip: String) {
-        settings.putString(KEY_SERVER_IP, ip)
+        if (::settings.isInitialized) settings.putString(KEY_SERVER_IP, ip)
     }
 
-    // Theme
+    // Theme (Método antigo mantido por compatibilidade, mas o Flow é preferido)
     fun isDarkTheme(): Boolean {
+        if (!::settings.isInitialized) return false
         return settings.getBoolean(KEY_DARK_THEME, false)
     }
 
     fun setDarkTheme(isDark: Boolean) {
-        settings.putBoolean(KEY_DARK_THEME, isDark)
+        if (::settings.isInitialized) {
+            settings.putBoolean(KEY_DARK_THEME, isDark)
+            // IMPORTANTE: Atualiza o fluxo para notificar quem estiver a ouvir (App.kt)
+            _isDarkThemeFlow.value = isDark
+        }
     }
 
     // Reset to defaults
     fun resetToDefaults() {
-        settings.putString(KEY_SERVER_IP, DEFAULT_SERVER_IP)
-        settings.putBoolean(KEY_DARK_THEME, false)
+        if (::settings.isInitialized) {
+            settings.putString(KEY_SERVER_IP, DEFAULT_SERVER_IP)
+            setDarkTheme(false) // Isto já atualiza o fluxo
+        }
     }
 }

@@ -266,11 +266,11 @@ fun HistoryRow(
 
         // 3. QUANTIDADE (+/-)
         val qty = move.totalQuantityAffected ?: 0.0
-        val qtyText = if (move.movementTypeId == 2) "-${qty.toInt()}" else "+${qty.toInt()}"
+
         val qtyColor = if (move.movementTypeId == 2) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
 
         Text(
-            text = qtyText,
+            text = qty.toString(),
             modifier = Modifier.weight(0.7f),
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,

@@ -11,11 +11,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import sasipca.navigation.NavigationService
-import sasipca.navigation.Screen
+// --- IMPORTS VOYAGER ---
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
+import sasipca.screens.navigation.NotificationsScreen
+import sasipca.screens.navigation.SettingsScreen
 import sasipca.storage.ScreenSizeManager.isSmallScreen
 import sasipca.utils.convertMonthPt
 import java.time.YearMonth
@@ -28,7 +30,12 @@ fun CalendarHeader(
     onNext: () -> Unit,
     onToday: () -> Unit
 ) {
+    // 1. Obter o Navigator
+    // Usamos .parent porque estamos dentro de uma Tab e queremos navegar no contexto global (App)
+    val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
+
     val small = isSmallScreen()
+
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
@@ -54,7 +61,6 @@ fun CalendarHeader(
             Row(verticalAlignment = Alignment.CenterVertically) {
 
                 if (small) {
-                    // Small-screen version: Icon only
                     IconButton(
                         onClick = onToday,
                         modifier = Modifier.size(40.dp)
@@ -66,7 +72,6 @@ fun CalendarHeader(
                         )
                     }
                 } else {
-                    // Large-screen version: Text button
                     Button(
                         onClick = onToday,
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.15f))
@@ -119,7 +124,8 @@ fun CalendarHeader(
             // 🔹 Right side: actions (Settings, Notifications)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
-                    onClick = { NavigationService.navigateTo(Screen.Settings) },
+                    // Alterado para navigator.push
+                    onClick = { navigator.push(SettingsScreen()) },
                     modifier = Modifier.size(if (small) 32.dp else 40.dp)
                 ) {
                     Icon(
@@ -130,7 +136,8 @@ fun CalendarHeader(
                 }
 
                 IconButton(
-                    onClick = { NavigationService.navigateTo(Screen.Notifications) },
+                    // Alterado para navigator.push
+                    onClick = { navigator.push(NotificationsScreen()) },
                     modifier = Modifier.size(if (small) 32.dp else 40.dp)
                 ) {
                     Icon(

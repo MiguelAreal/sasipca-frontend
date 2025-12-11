@@ -14,7 +14,6 @@ import sasipca.models.DeliveryGet
 import sasipca.models.DeliveryItem
 import sasipca.models.DeliveryPost
 import sasipca.models.Resposta
-import sasipca.navigation.NavigationService
 import sasipca.repositories.DeliveryRepository
 import sasipca.screens.DeliveryProductToSend
 import java.time.LocalDate
@@ -154,7 +153,6 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
                     isLoading = false,
                     successMessage = response.message
                 )
-                NavigationService.goBack()
 
             } catch (e: ClientRequestException) {
                 // ERRO 4xx: Tenta ler o JSON de erro da API (ex: {"message": "Stock insuficiente"})

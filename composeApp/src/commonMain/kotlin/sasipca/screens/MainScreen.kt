@@ -1,99 +1,86 @@
+package sasipca.screens
+
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import sasipca.navigation.Screen
-import sasipca.repositories.ProductRepository
-import sasipca.screens.CalendarScreen
-import sasipca.screens.HomeScreen
-import sasipca.screens.ProductsScreen
+import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
+import cafe.adriel.voyager.navigator.tab.TabNavigator
 import kotlinx.coroutines.launch
-import sasipca.navigation.NavigationService
-import sasipca.repositories.BeneficiaryRepository
-import sasipca.repositories.CampaignRepository
-import sasipca.repositories.DeliveryRepository
-import sasipca.screens.BeneficiariesScreen
+import sasipca.screens.navigation.BeneficiariesTab
+import sasipca.screens.navigation.CalendarTab
+import sasipca.screens.navigation.HomeTab
+import sasipca.screens.navigation.ProductsTab
 
 @Composable
-fun MainScreen(deliveryRepository: DeliveryRepository,
-               productRepository: ProductRepository,
-               beneficiaryRepository: BeneficiaryRepository,
-               campaignRepository: CampaignRepository,
-               onOpenBeneficiary: (Int) -> Unit = {},onOpenProduct: (String) -> Unit = {})
-{
-    val tabs = listOf(Screen.Home, Screen.Products, Screen.Calendar, Screen.Beneficiaries)
-    val pagerState = rememberPagerState(
-        initialPage = NavigationService.mainScreenTabIndex,
-        pageCount ={ tabs.size }
-    )
-    val scope = rememberCoroutineScope()
-
-    LaunchedEffect(pagerState.currentPage) {
-        NavigationService.mainScreenTabIndex = pagerState.currentPage
+fun MainScreen() {
+    // 1. Definir a lista de Tabs pela ordem que queres
+    val tabs = remember {
+        listOf(HomeTab, ProductsTab, CalendarTab, BeneficiariesTab)
     }
 
-    Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            NavigationBar {
-                tabs.forEachIndexed { index, screen ->
-                    NavigationBarItem(
-                        selected = pagerState.currentPage == index,
-                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                        icon = {
-                            val icon = when (screen) {
-                                Screen.Home -> Icons.Default.Home
-                                Screen.Products -> Icons.Default.Inventory
-                                Screen.Calendar -> Icons.Default.CalendarMonth
-                                Screen.Beneficiaries -> Icons.Default.People
-                                else -> Icons.Default.Home
-                            }
-                            Icon(icon, contentDescription = null)
-                        },
-                        label = {
-                            val label = when (screen) {
-                                Screen.Home -> "Home"
-                                Screen.Products -> "Inventário"
-                                Screen.Calendar -> "Calendário"
-                                Screen.Beneficiaries -> "Beneficiários"
-                                else -> ""
-                            }
-                            Text(label)
-                        }
-                    )
-                }
-            }
-        }
-    ) { paddingValues ->
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize().padding(paddingValues)
-        ) { page ->
-            val screen = tabs[page]
+    // 2. Configurar o estado do Pager
+    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val scope = rememberCoroutineScope()
 
-            // Só compõe a página atual
-            if (page == pagerState.currentPage) {
-                when (screen) {
-                    Screen.Home -> HomeScreen()
-                    Screen.Products -> ProductsScreen(productRepository,onOpenProduct)
-                    Screen.Calendar -> CalendarScreen(deliveryRepository)
-                    Screen.Beneficiaries -> BeneficiariesScreen(
-                        beneficiaryRepository = beneficiaryRepository,
-                        onOpenBeneficiary = onOpenBeneficiary
-                    )
-                    else -> Box(modifier = Modifier.fillMaxSize())
-                }
-            } else {
-                Box(modifier = Modifier.fillMaxSize())
+    // Mantemos o TabNavigator para ter acesso ao LocalTabNavigator dentro dos ecrãs
+    TabNavigator(HomeTab) {
+        val tabNavigator = LocalTabNavigator.current
+
+        // 3. Sincronização: Quando o Pager muda (Swipe), atualiza o TabNavigator
+        LaunchedEffect(pagerState.currentPage) {
+            tabNavigator.current = tabs[pagerState.currentPage]
+        }
+
+        // 4. Sincronização: Quando o TabNavigator muda (ex: via código), atualiza o Pager
+        LaunchedEffect(tabNavigator.current) {
+            val index = tabs.indexOf(tabNavigator.current)
+            if (index != -1 && pagerState.currentPage != index) {
+                pagerState.animateScrollToPage(index)
             }
         }
 
+        Scaffold(
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            bottomBar = {
+                NavigationBar {
+                    // Renderizamos os itens com base na lista 'tabs'
+                    tabs.forEachIndexed { index, tab ->
+                        NavigationBarItem(
+                            selected = tabNavigator.current == tab,
+                            onClick = {
+                                // Ao clicar, movemos o Pager (o LaunchedEffect acima tratará de atualizar o Navigator)
+                                scope.launch {
+                                    pagerState.animateScrollToPage(index)
+                                }
+                            },
+                            icon = {
+                                Icon(
+                                    painter = tab.options.icon!!,
+                                    contentDescription = tab.options.title
+                                )
+                            },
+                            label = { Text(tab.options.title) }
+                        )
+                    }
+                }
+            }
+        ) { paddingValues ->
+            // 5. Em vez de CurrentTab(), usamos o HorizontalPager
+            Box(modifier = Modifier.padding(paddingValues)) {
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize()
+                ) { page ->
+                    // Renderiza o conteúdo da Tab correspondente à página
+                    tabs[page].Content()
+                }
+            }
+        }
     }
 }

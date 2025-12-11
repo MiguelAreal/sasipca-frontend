@@ -7,11 +7,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import sasipca.navigation.NavigationService
 import sasipca.repositories.BeneficiaryRepository
 import sasipca.repositories.DeliveryRepository
 import sasipca.storage.ScreenSizeManager.isLargeScreen
-import sasipca.storage.ScreenSizeManager.updateSize
 import sasipca.ui.components.Header
 import sasipca.ui.components.beneficiaries.*
 import sasipca.viewmodels.BeneficiaryDetailViewModel
