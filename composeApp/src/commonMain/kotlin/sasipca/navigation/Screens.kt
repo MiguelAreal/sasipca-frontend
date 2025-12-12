@@ -1,28 +1,21 @@
 package sasipca.screens.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.padding
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.People
-import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import cafe.adriel.voyager.navigator.tab.CurrentTab
-import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
-import cafe.adriel.voyager.navigator.tab.TabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import sasipca.network.ApiClient
-import sasipca.screens.*
+import sasipca.models.Delivery
 import java.time.LocalDate
 
 // ==================================================================
@@ -45,36 +38,11 @@ class LoginScreen : Screen {
 class MainScreen : Screen {
     @Composable
     override fun Content() {
-        // TabNavigator gere o BottomBar e o conteúdo
-        TabNavigator(HomeTab) {
-            Scaffold(
-                bottomBar = {
-                    NavigationBar {
-                        TabNavigationItem(HomeTab)
-                        TabNavigationItem(ProductsTab)
-                        TabNavigationItem(CalendarTab)
-                        TabNavigationItem(BeneficiariesTab)
-                    }
-                }
-            ) { innerPadding ->
-                Box(modifier = Modifier.padding(innerPadding)) {
-                    CurrentTab()
-                }
-            }
-        }
+        // Chama a função visual que está no outro ficheiro
+        MainScreenContent()
     }
 }
 
-@Composable
-private fun RowScope.TabNavigationItem(tab: Tab) {
-    val tabNavigator = LocalTabNavigator.current
-    NavigationBarItem(
-        selected = tabNavigator.current == tab,
-        onClick = { tabNavigator.current = tab },
-        icon = { Icon(painter = tab.options.icon!!, contentDescription = tab.options.title) },
-        label = { Text(tab.options.title) }
-    )
-}
 
 // ==================================================================
 // --- BOTTOM TABS (Principal) ---
@@ -131,8 +99,8 @@ object CalendarTab : Tab {
 
         sasipca.screens.CalendarScreen(
             deliveryRepository = remember { ApiClient.deliveryRepository },
-            onNavigateToDelivery = { date, isScheduled ->
-                navigator.push(DeliveryScreen(date, isScheduled))
+            onNavigateToDelivery = { date, isScheduled, delivery ->
+                navigator.push(DeliveryScreen(date, isScheduled, delivery))
             }
         )
     }
@@ -186,10 +154,11 @@ data class ProductDetailScreen(val barcode: String) : Screen {
     }
 }
 
-// Criar Entrega (Com parâmetros opcionais)
+// Criar ou Editar Entrega
 data class DeliveryScreen(
     val initialDate: LocalDate? = null,
-    val isScheduled: Boolean = false
+    val isScheduled: Boolean = false,
+    val existingDelivery: sasipca.models.Delivery? = null // NOVO PARÂMETRO
 ) : Screen {
     @Composable
     override fun Content() {
@@ -198,11 +167,11 @@ data class DeliveryScreen(
             deliveryRepository = remember { ApiClient.deliveryRepository },
             beneficiaryRepository = remember { ApiClient.beneficiaryRepository },
             initialScheduledDate = initialDate,
-            initialIsScheduled = isScheduled
+            initialIsScheduled = isScheduled,
+            existingDelivery = existingDelivery // Passa para o ecrã
         )
     }
 }
-
 // Receção de Stock
 class ReceptionScreen : Screen {
     @Composable
@@ -282,5 +251,15 @@ class ProfileScreen : Screen {
     @Composable
     override fun Content() {
         sasipca.screens.ProfileScreen()
+    }
+}
+
+// Gestão de Administradores
+class AdminsScreen : Screen {
+    @Composable
+    override fun Content() {
+        sasipca.screens.AdminsScreen(
+            adminRepository = remember { ApiClient.adminRepository }
+        )
     }
 }

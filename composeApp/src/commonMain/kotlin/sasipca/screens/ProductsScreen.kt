@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,7 +14,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import sasipca.repositories.ProductRepository
-import sasipca.ui.components.BarcodeInputField // <--- Usamos o componente com Scanner
+import sasipca.storage.ListsStore
+import sasipca.ui.components.BarcodeInputField
 import sasipca.ui.components.Header
 import sasipca.ui.components.products.ProductsTable
 import sasipca.utils.getFormattedDatePt
@@ -23,30 +25,32 @@ import sasipca.viewmodels.ProductViewModel
 @Composable
 fun ProductsScreen(
     productRepository: ProductRepository,
-    onOpenProduct: (String) -> Unit // Removemos o valor por defeito para obrigar a passar a navegação
+    onOpenProduct: (String) -> Unit
 ) {
     val productViewModel = remember { ProductViewModel(productRepository) }
     val focusManager = LocalFocusManager.current
 
-    // Chamada inicial
+    // Carregar Inicial
     LaunchedEffect(Unit) {
         productViewModel.loadProducts()
     }
 
-    // Acesso direto aos estados (visto que o VM usa mutableStateOf)
+    // Estados do ViewModel
     val filteredItems = productViewModel.filteredItems
     val isLoading = productViewModel.isLoading
     val searchQuery = productViewModel.searchQuery
     val currentPage = productViewModel.currentPage
     val totalPages = productViewModel.totalPages
+    val selectedCategoryId = productViewModel.selectedCategoryId
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    // Estado Local para Menu
+    var showFilterMenu by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
 
         Header("Inventário", getFormattedDatePt())
 
-        // Barra de pesquisa e botão de filtro
+        // --- BARRA SUPERIOR (PESQUISA + FILTRO) ---
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -55,50 +59,81 @@ fun ProductsScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-            // --- BARRA DE PESQUISA COM SCANNER ---
-            // Usamos o BarcodeInputField mas sem sugestões (lista vazia),
-            // apenas para aproveitar o design e o botão de scan.
             BarcodeInputField(
                 value = searchQuery,
-                onValueChange = {
-                    productViewModel.loadProducts(it)
-                },
+                onValueChange = { productViewModel.loadProducts(search = it) },
                 label = "Pesquisar",
                 placeholder = "Nome ou Scan...",
-                suggestions = emptyList(), // Não queremos dropdown aqui, é filtro de lista
+                suggestions = emptyList(),
                 onSuggestionSelected = {},
                 modifier = Modifier.weight(1f)
             )
 
-            // Botão de filtro
-            IconButton(
-                onClick = { /* TODO: Implementar filtro avançado */ },
-                modifier = Modifier
-                    .size(56.dp) // Altura padrão do TextField para alinhar
-                    .clip(RoundedCornerShape(8.dp)) // Quadrado arredondado igual ao input
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Icon(
-                    Icons.Outlined.FilterList,
-                    contentDescription = "Filtrar",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            // --- BOTÃO DE FILTRO COM DROPDOWN ---
+            Box {
+                IconButton(
+                    onClick = { showFilterMenu = true },
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(
+                            if (selectedCategoryId != null) MaterialTheme.colorScheme.primaryContainer
+                            else MaterialTheme.colorScheme.surfaceVariant
+                        )
+                ) {
+                    Icon(
+                        Icons.Outlined.FilterList,
+                        contentDescription = "Filtrar por Categoria",
+                        tint = if (selectedCategoryId != null) MaterialTheme.colorScheme.onPrimaryContainer
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = showFilterMenu,
+                    onDismissRequest = { showFilterMenu = false },
+                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Todas as Categorias") },
+                        onClick = {
+                            productViewModel.onCategoryChange(null)
+                            showFilterMenu = false
+                        },
+                        leadingIcon = {
+                            if (selectedCategoryId == null) Icon(Icons.Default.Check, null)
+                        }
+                    )
+
+                    Divider()
+
+                    ListsStore.categoriestypes.forEach { category ->
+                        DropdownMenuItem(
+                            text = { Text(category.type) },
+                            onClick = {
+                                productViewModel.onCategoryChange(category.id)
+                                showFilterMenu = false
+                            },
+                            leadingIcon = {
+                                if (selectedCategoryId == category.id) Icon(Icons.Default.Check, null)
+                            }
+                        )
+                    }
+                }
             }
         }
 
-        // Tabela de produtos
+        // --- TABELA RESPONSIVA ---
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp, vertical = 0.dp) // Ajustei padding vertical
+                .padding(horizontal = 20.dp)
         ) {
             ProductsTable(
                 products = filteredItems,
                 isLoading = isLoading,
-                // Passar estados de Paginação
                 currentPage = currentPage,
                 totalPages = totalPages,
-                // Passar funções de Paginação
                 onNextPage = { productViewModel.goToNextPage() },
                 onPreviousPage = { productViewModel.goToPreviousPage() },
                 onProductClick = onOpenProduct

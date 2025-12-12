@@ -28,12 +28,13 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
         private set
 
     private val _uiState = MutableStateFlow(ProductUiState())
-
     val uiState: StateFlow<ProductUiState> = _uiState
 
+    // Lista completa (resultado da pesquisa)
     var stockItems by mutableStateOf<List<Product>>(emptyList())
         private set
 
+    // Lista paginada e filtrada para a UI
     var filteredItems by mutableStateOf<List<Product>>(emptyList())
         private set
 
@@ -46,12 +47,25 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
     var searchQuery by mutableStateOf("")
         private set
 
+    // Estado para filtro de Categoria
+    var selectedCategoryId by mutableStateOf<Int?>(null)
+        private set
+
     var currentPage by mutableStateOf(1)
         private set
 
     var pageSize: Int = 10
     var totalPages by mutableStateOf(1)
         private set
+
+    /**
+     * Atualiza a categoria selecionada e recarrega a lista
+     */
+    fun onCategoryChange(categoryId: Int?) {
+        selectedCategoryId = categoryId
+        currentPage = 1 // Reset paginação ao mudar filtro
+        loadProducts(searchQuery)
+    }
 
     /**
      * Desseleciona um produto
@@ -107,10 +121,10 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
      * Através do código de barras carrega um produto.
      * Isto serve para receção de produtos
      * - Se o produto existir na nossa base de dados, carrega primeiro esses dados:
-     *      - Nome de produto
-     *      - Categoria
-     *      - Tipo de unidade
-     *      - Quantidade unitária
+     * - Nome de produto
+     * - Categoria
+     * - Tipo de unidade
+     * - Quantidade unitária
      * - Se não existir connosco, vem tudo do OpenFoodFacts.
      *
      * As imagens vêm sempre do OpenFoodFacts.
@@ -180,33 +194,54 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
         }
     }
 
-
-
     /**
-     * Carrega lista paginada de produtos
+     * Carrega lista de produtos e aplica filtros (Texto e Categoria) e Paginação Local
      */
     fun loadProducts(search: String = searchQuery) {
+        // Se mudarmos a pesquisa de texto, resetamos a página
+        if (search != searchQuery) {
+            currentPage = 1
+        }
         searchQuery = search
         isLoading = true
         errorMessage = null
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                // Obtém todos os produtos que correspondem à pesquisa de texto do servidor
+                // (Assumindo que o endpoint retorna a lista completa ou filtrada por nome)
                 val response = productRepository.getProducts(search).data
-                stockItems = response
+
+                // 1. Aplicar Filtro de Categoria (Localmente)
+                val categoryFilteredList = if (selectedCategoryId != null) {
+                    response.filter { it.categoryId == selectedCategoryId }
+                } else {
+                    response
+                }
+
+                stockItems = categoryFilteredList
+
+                // 2. Calcular Paginação baseada na lista filtrada
+                totalPages = (categoryFilteredList.size + pageSize - 1) / pageSize
+                if (totalPages < 1) totalPages = 1 // Evitar 0 páginas
+
+                // Garantir que a página atual é válida após filtragem
+                if (currentPage > totalPages) currentPage = 1
 
                 val startIndex = (currentPage - 1) * pageSize
-                filteredItems = response.drop(startIndex).take(pageSize)
 
-                totalPages = (response.size + pageSize - 1) / pageSize
+                // 3. Fatiar a lista para a página atual
+                filteredItems = categoryFilteredList.drop(startIndex).take(pageSize)
+
             } catch (e: Exception) {
                 errorMessage = e.message
+                filteredItems = emptyList()
+                stockItems = emptyList()
             } finally {
                 isLoading = false
             }
         }
     }
-
 
     /**
      * Valida e submete alteração a cabeçalho do produto.
@@ -235,7 +270,6 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
             if (body.unitSize == null || body.unitSize <= 1) {
                 errors["unitSize"] = "Quantidade por unidade tem de ser no mínimo 1"
             }
-
 
             // se existirem erros, atualiza estado e sai
             if (errors.isNotEmpty()) {

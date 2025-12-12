@@ -18,10 +18,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.time.delay
 import sasipca.models.Campaign
 import sasipca.repositories.CampaignRepository
 import sasipca.repositories.ListsRepository
 import sasipca.ui.components.Header
+import sasipca.ui.components.SearchInputField
 import sasipca.ui.components.campaigns.CampaignEditDialog
 import sasipca.ui.components.campaigns.CampaignsGrid
 import sasipca.utils.getFormattedDatePt
@@ -50,6 +53,13 @@ fun CampaignsScreen(
 
     LaunchedEffect(Unit) { campaignViewModel.loadCampaigns() }
 
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.isNotEmpty()) {
+            delay(500)
+        }
+        campaignViewModel.loadCampaigns(searchQuery)
+    }
+
     // Estado local para Dialog
     var selectedCampaign by remember { mutableStateOf<Campaign?>(null) }
 
@@ -69,43 +79,21 @@ fun CampaignsScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { campaignViewModel.loadCampaigns(it) },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(65.dp),
-                placeholder = { Text("Pesquisar campanha...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Pesquisar") },
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                )
-            )
 
-            // Botão Filtro
-            IconButton(
-                onClick = { /* TODO: Implementar Filtros Avançados */ },
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface) // Fundo branco/surface no botão
-            ) {
-                Icon(
-                    Icons.Outlined.FilterList,
-                    contentDescription = "Filtrar",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            }
+            // --- COMPONENTE DE PESQUISA REUTILIZÁVEL ---
+            SearchInputField(
+                query = searchQuery,
+                onQueryChange = { campaignViewModel.loadCampaigns(it) },
+                placeholder = "Pesquisar campanha...",
+                modifier = Modifier.weight(1f)
+            )
 
             // Botão Nova Campanha
             FloatingActionButton(
                 onClick = { campaignViewModel.startNewCampaign() },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(50.dp),
+                modifier = Modifier.size(56.dp), // Tamanho consistente
                 shape = CircleShape
             ) {
                 Icon(Icons.Default.Add, "Nova")

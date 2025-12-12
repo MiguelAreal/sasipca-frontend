@@ -36,7 +36,7 @@ import java.time.YearMonth
 @Composable
 fun CalendarScreen(
     deliveryRepository: DeliveryRepository,
-    onNavigateToDelivery: (LocalDate, Boolean) -> Unit
+    onNavigateToDelivery: (LocalDate?, Boolean, Delivery?) -> Unit
 ) {
     val deliveriesViewModel = remember { DeliveriesViewModel(deliveryRepository) }
     val month by deliveriesViewModel.month.collectAsState()
@@ -103,33 +103,20 @@ fun CalendarScreen(
                 deliveries = deliveriesForDate,
                 onDismiss = { pickerState = null },
                 onSelectExisting = { selected ->
-                    // Clicou numa entrega existente -> Abre popup de detalhes
+                    // Clicou numa entrega existente -> NAVEGA PARA EDIÇÃO
                     pickerState = null
-                    editorState = selected
+                    // Passa a entrega existente para o ecrã de edição
+                    onNavigateToDelivery(null, true, selected)
                 },
                 onNewDelivery = {
-                    // Clicou "Nova Entrega" -> Navega para o ecrã de Delivery
+                    // Clicou "Nova Entrega" -> Navega para criação
                     pickerState = null
-                    onNavigateToDelivery(date, true) // Chama o callback
+                    onNavigateToDelivery(date, true, null)
                 }
             )
         }
 
-        // --- DIALOG DE DETALHES (EXISTENTES) ---
-        editorState?.let { dto ->
-            EventEditorDialog(
-                initial = dto,
-                onDismiss = { editorState = null },
-                onDelete = {
-                    // TODO: Implementar delete no ViewModel
-                    editorState = null
-                },
-                onSave = { updated ->
-                    // TODO: Implementar update no ViewModel
-                    editorState = null
-                }
-            )
-        }
+
     }
 }
 
@@ -401,125 +388,6 @@ fun EventPickerDialog(
                     Spacer(Modifier.width(8.dp))
                     Button(onClick = onNewDelivery) {
                         Text("Nova Entrega")
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun EventEditorDialog(
-    initial: Delivery,
-    onDismiss: () -> Unit,
-    onSave: (Delivery) -> Unit,
-    onDelete: (Delivery) -> Unit
-) {
-    var beneficiaryId by remember { mutableStateOf(initial.beneficiaryId.toString()) }
-    var date by remember { mutableStateOf(initial.scheduledDate) }
-    var note by remember { mutableStateOf(initial.note ?: "") }
-    var statusId by remember { mutableStateOf(initial.statusId) }
-
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
-                .widthIn(max = 520.dp)
-                .fillMaxWidth(0.95f)
-                .fillMaxHeight(0.5f)
-        ) {
-            Column(
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = if (initial.deliveryId == 0) "Nova Entrega" else "Editar Entrega",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 18.sp
-                    )
-
-                    // Se estivermos a editar uma entrega, mostra botão de eliminar.
-                    if (initial.deliveryId != 0) {
-                        IconButton(
-                            onClick = { onDelete(initial) },
-                            colors = IconButtonDefaults.iconButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Eliminar entrega"
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = beneficiaryId,
-                    onValueChange = { beneficiaryId = it.filter(Char::isDigit) },
-                    label = { Text("ID Beneficiário") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = date,
-                    onValueChange = { date = it },
-                    label = { Text("Data (YYYY-MM-DD)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text("Nota") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 2
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Campo de estado textual (Agendada, Entregue, Cancelada)
-                OutlinedTextField(
-                    value = statusId.toString(),
-                    onValueChange = { input ->
-                        statusId = input.filter(Char::isDigit).toIntOrNull() ?: statusId
-                    },
-                    label = { Text("Estado (ID)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    TextButton(onClick = onDismiss) { Text("Cancelar") }
-                    Spacer(Modifier.width(8.dp))
-                    Button(onClick = {
-                        val updated = initial.copy(
-                            beneficiaryId = beneficiaryId.toIntOrNull() ?: 0,
-                            scheduledDate = date,
-                            note = note.ifBlank { null },
-                            statusId = statusId
-                        )
-                        onSave(updated)
-                    }) {
-                        Text("Guardar")
                     }
                 }
             }

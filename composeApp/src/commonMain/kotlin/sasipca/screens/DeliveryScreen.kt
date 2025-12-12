@@ -28,8 +28,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.delay
 import sasipca.network.ApiClient
+import sasipca.models.Delivery
 import sasipca.models.DeliveryItem
 import sasipca.models.BeneficiaryItem
 import sasipca.models.ProductGroup
@@ -42,7 +45,7 @@ import sasipca.ui.components.BarcodeInputField
 import sasipca.ui.components.Header
 import sasipca.ui.components.LoadingWidget
 import sasipca.ui.components.ValidatedDateField
-import sasipca.ui.components.ValidatedTextField // <--- IMPORTADO
+import sasipca.ui.components.ValidatedTextField
 import sasipca.ui.theme.CardTitle
 import sasipca.utils.SnackbarManager
 import sasipca.models.SnackbarType
@@ -52,12 +55,13 @@ import sasipca.viewmodels.BeneficiariesViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-// Modelo de UI local
+// --- MODELO DE UI LOCAL ---
 data class DeliveryProductToSend(
     val barcode: String,
     val productName: String,
     val quantityToDeliver: Int = 0,
     val selectedGroups: List<DeliveryItem> = emptyList(),
+    // 'availableGroups' contém o stock ajustado (Real + O que já tínhamos reservado)
     val availableGroups: List<ProductGroup> = emptyList(),
     val isExpanded: Boolean = false,
     val hasError: Boolean = false
@@ -65,10 +69,9 @@ data class DeliveryProductToSend(
     val totalStock: Int get() = availableGroups.sumOf { it.availableStock }
 }
 
-// Formatter estático para evitar recriação constante
 private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
-// --- LÓGICA FIFO ---
+// --- LÓGICA FIFO (First-In, First-Out) ---
 fun recalculateFIFO(
     quantityToExport: Int,
     availableGroups: List<ProductGroup>,
@@ -76,7 +79,7 @@ fun recalculateFIFO(
 ): List<DeliveryItem> {
     var remaining = quantityToExport
     val result = mutableListOf<DeliveryItem>()
-    // Ordena por data de validade (mais antiga primeiro)
+    // Ordena por validade (mais antiga primeiro)
     val sortedGroups = availableGroups.sortedBy { it.expiryDate }
 
     for (group in sortedGroups) {
@@ -96,11 +99,11 @@ fun DeliveryScreen(
     productRepository: ProductRepository,
     deliveryRepository: DeliveryRepository,
     beneficiaryRepository: BeneficiaryRepository,
-    // NOVOS PARÂMETROS PARA REDIRECIONAMENTO
     initialScheduledDate: LocalDate? = null,
-    initialIsScheduled: Boolean = false
+    initialIsScheduled: Boolean = false,
+    existingDelivery: Delivery? = null
 ) {
-    val scope = rememberCoroutineScope()
+    val navigator = LocalNavigator.currentOrThrow
     val focusManager = LocalFocusManager.current
 
     // ViewModels
@@ -115,15 +118,26 @@ fun DeliveryScreen(
     // Estados Locais
     var barcode by remember { mutableStateOf("") }
     var productsToDeliver by remember { mutableStateOf(listOf<DeliveryProductToSend>()) }
-    var deliveryNote by remember { mutableStateOf("") }
+    var deliveryNote by remember { mutableStateOf(existingDelivery?.note ?: "") }
 
-    // Inicialização Inteligente com os parâmetros
-    var isScheduled by remember { mutableStateOf(initialIsScheduled) }
-    var scheduledDate by remember { mutableStateOf(initialScheduledDate) }
+    // Configuração de Data e Tipo
+    var isScheduled by remember {
+        mutableStateOf(if (existingDelivery != null) true else initialIsScheduled)
+    }
+
+    var scheduledDate by remember {
+        mutableStateOf(
+            if (existingDelivery != null) {
+                try { LocalDate.parse(existingDelivery.scheduledDate) } catch (e: Exception) { LocalDate.now() }
+            } else {
+                initialScheduledDate
+            }
+        )
+    }
 
     var isLoadingProduct by remember { mutableStateOf(false) }
 
-    // --- BENEFICIÁRIO ---
+    // Beneficiário
     var beneficiaryQuery by remember { mutableStateOf("") }
     var selectedBeneficiary by remember { mutableStateOf<BeneficiaryItem?>(null) }
     var isBeneficiaryDropdownExpanded by remember { mutableStateOf(false) }
@@ -131,23 +145,109 @@ fun DeliveryScreen(
     val isBeneficiaryLoading by remember { beneficiariesViewModel::isLoading }
     val beneficiaryFocusRequester = remember { FocusRequester() }
 
-    // --- PRODUTO ---
+    // Produto
     var productQuery by remember { mutableStateOf("") }
     val productSearchResults = productViewModel.filteredItems
     val productDetail = productViewModel.selectedProductDetail
 
-    // 1. Feedback Sucesso/Erro
+    // --- LÓGICA DE PRÉ-PREENCHIMENTO (EDIÇÃO) ---
+    LaunchedEffect(existingDelivery) {
+        if (existingDelivery != null) {
+            isLoadingProduct = true
+
+            // 1. Carregar Detalhes Completos da API
+            val fullDetails = deliveriesViewModel.getDeliveryDetails(existingDelivery.deliveryId)
+
+            if (fullDetails != null) {
+                // A. Preencher Beneficiário
+                val ownerName = fullDetails.beneficiaryName ?: existingDelivery.beneficiaryName ?: ""
+                try {
+                    // Tentativa de obter o objeto completo do beneficiário
+                    beneficiariesViewModel.loadBeneficiaries(search = ownerName)
+                    delay(300)
+                    val beneficiaryMatch = beneficiariesViewModel.beneficiaries?.data?.find {
+                        it.beneficiaryId == (fullDetails.beneficiaryId ?: existingDelivery.beneficiaryId)
+                    }
+                    if (beneficiaryMatch != null) {
+                        selectedBeneficiary = beneficiaryMatch
+                        beneficiaryQuery = beneficiaryMatch.name
+                    } else {
+                        beneficiaryQuery = ownerName
+                        selectedBeneficiary = BeneficiaryItem(
+                            beneficiaryId = fullDetails.beneficiaryId ?: existingDelivery.beneficiaryId ?: 0,
+                            name = ownerName,
+                            email = ""
+                        )
+                    }
+                } catch (e: Exception) {
+                    beneficiaryQuery = ownerName
+                }
+
+                // B. Preencher Produtos com Lógica de Ajuste de Stock
+                val items = fullDetails.items
+                if (items.isNotEmpty()) {
+                    val itemsGrouped = items.groupBy { it.barcode }
+
+                    itemsGrouped.forEach { (barcode, groupItems) ->
+                        if (!barcode.isNullOrEmpty()) {
+                            try {
+                                // 1. Stock Atual (Real na BD)
+                                val productDetails = productRepository.getProduct(barcode)
+
+                                // 2. Quantidade que ESTA entrega tem atualmente
+                                val totalQtyInThisDelivery = groupItems.sumOf { it.quantity }
+
+                                // 3. Grupos vindos da API
+                                val apiGroups = productDetails.productGroups ?: emptyList()
+
+                                // [CRUCIAL] CORREÇÃO DE STOCK PRÓPRIO
+                                // Somamos o que é "nosso" ao stock disponível para permitir edição correta
+                                val adjustedGroups = apiGroups.map { apiGroup ->
+                                    val qtyUsedByUs = groupItems
+                                        .filter { it.groupId == apiGroup.id }
+                                        .sumOf { it.quantity }
+
+                                    apiGroup.copy(availableStock = apiGroup.availableStock + qtyUsedByUs)
+                                }
+
+                                // 4. Recalcular FIFO com os grupos ajustados
+                                val calculatedGroups = recalculateFIFO(totalQtyInThisDelivery, adjustedGroups, barcode)
+
+                                // 5. Verificar erro
+                                val totalAvailableAdjusted = adjustedGroups.sumOf { it.availableStock }
+                                val hasStockError = totalQtyInThisDelivery > totalAvailableAdjusted && existingDelivery.statusId != 1
+
+                                val productToSend = DeliveryProductToSend(
+                                    barcode = barcode,
+                                    productName = productDetails.name ?: "Produto",
+                                    quantityToDeliver = totalQtyInThisDelivery,
+                                    availableGroups = adjustedGroups, // Guardamos os ajustados!
+                                    selectedGroups = calculatedGroups,
+                                    hasError = hasStockError
+                                )
+
+                                if (productsToDeliver.none { it.barcode == barcode }) {
+                                    productsToDeliver = productsToDeliver + productToSend
+                                }
+
+                            } catch (e: Exception) {
+                                println("Erro ao carregar produto $barcode: ${e.message}")
+                            }
+                        }
+                    }
+                }
+            } else {
+                SnackbarManager.show("Erro ao carregar detalhes da entrega.", SnackbarType.ERROR)
+            }
+            isLoadingProduct = false
+        }
+    }
+
+    // --- FEEDBACK ---
     LaunchedEffect(deliveryUiState.success) {
         if (deliveryUiState.success) {
-            SnackbarManager.show(deliveryUiState.successMessage ?: "Entrega registada com sucesso!", SnackbarType.SUCCESS)
-            // Reset Total
-            productsToDeliver = emptyList()
-            selectedBeneficiary = null
-            beneficiaryQuery = ""
-            deliveryNote = ""
-            isScheduled = false
-            scheduledDate = null
             deliveriesViewModel.clearUiState()
+            navigator.pop()
         }
     }
 
@@ -155,15 +255,13 @@ fun DeliveryScreen(
         deliveryUiState.lastErrorMessage?.let { SnackbarManager.show(it, SnackbarType.ERROR) }
     }
 
-    // 2. Pesquisa Beneficiário (Otimizada)
+    // --- LOGICA DE INPUTS (Beneficiário, Produto) ---
     LaunchedEffect(beneficiaryQuery) {
-        // Se o texto mudou e não corresponde ao selecionado, limpa a seleção
         if (selectedBeneficiary != null && beneficiaryQuery != selectedBeneficiary?.name) {
             selectedBeneficiary = null
         }
-
         if (beneficiaryQuery.length >= 2 && selectedBeneficiary == null) {
-            delay(300) // Debounce
+            delay(300)
             beneficiariesViewModel.loadBeneficiaries(search = beneficiaryQuery)
             isBeneficiaryDropdownExpanded = true
         } else {
@@ -171,49 +269,34 @@ fun DeliveryScreen(
         }
     }
 
-    // 3. Pesquisa Produto (Autocomplete)
     LaunchedEffect(productQuery) {
         if (productQuery.isEmpty()) return@LaunchedEffect
         delay(400)
-
-        // Detetar scan manual (apenas dígitos e longo)
         val isPotentialBarcode = productQuery.all { it.isDigit() } && productQuery.length >= 8
-        if (isPotentialBarcode) {
-            barcode = productQuery
-        } else {
-            productViewModel.loadProducts(search = productQuery)
-        }
+        if (isPotentialBarcode) barcode = productQuery
+        else productViewModel.loadProducts(search = productQuery)
     }
 
-    // 4. Adicionar Produto à Lista (Lógica Principal)
+    // --- ADICIONAR NOVO PRODUTO ---
     LaunchedEffect(barcode) {
         if (barcode.isNotEmpty()) {
             val existingIndex = productsToDeliver.indexOfFirst { it.barcode == barcode }
-
             if (existingIndex >= 0) {
-                // Produto já existe na lista: Incrementar +1
                 val currentProduct = productsToDeliver[existingIndex]
                 val newTotal = currentProduct.quantityToDeliver + 1
-
                 if (newTotal <= currentProduct.totalStock) {
+                    // Usa os grupos que já estão guardados no objeto (que podem ser os ajustados)
                     val newGroups = recalculateFIFO(newTotal, currentProduct.availableGroups, barcode)
                     val updatedList = productsToDeliver.toMutableList()
-                    updatedList[existingIndex] = currentProduct.copy(
-                        quantityToDeliver = newTotal,
-                        selectedGroups = newGroups,
-                        hasError = false
-                    )
+                    updatedList[existingIndex] = currentProduct.copy(quantityToDeliver = newTotal, selectedGroups = newGroups, hasError = false)
                     productsToDeliver = updatedList
-
-                    // Limpar input para permitir nova adição
                     barcode = ""
                     productQuery = ""
                 } else {
-                    SnackbarManager.show("Stock insuficiente para adicionar mais.", SnackbarType.WARNING)
+                    SnackbarManager.show("Stock insuficiente.", SnackbarType.WARNING)
                     barcode = ""
                 }
             } else {
-                // Produto novo: Carregar da API
                 isLoadingProduct = true
                 productViewModel.getProduct(barcode, offRepository)
             }
@@ -222,28 +305,24 @@ fun DeliveryScreen(
         }
     }
 
-    // 5. Processar Produto Carregado da API
+    // --- PROCESSAR DETALHE PRODUTO (API) ---
     LaunchedEffect(productDetail) {
         if (productDetail != null && barcode.isNotEmpty()) {
             val groups = productDetail.productGroups ?: emptyList()
-
             if (groups.isEmpty()) {
-                SnackbarManager.show("Produto sem stock disponível.", SnackbarType.ERROR)
+                SnackbarManager.show("Produto sem stock.", SnackbarType.ERROR)
                 barcode = ""
             } else {
                 val initialQty = 1
                 val calculatedGroups = recalculateFIFO(initialQty, groups, barcode)
-
                 val newProduct = DeliveryProductToSend(
                     barcode = barcode,
-                    productName = productDetail.name ?: "Produto sem nome",
+                    productName = productDetail.name ?: "Produto",
                     quantityToDeliver = initialQty,
-                    availableGroups = groups,
+                    availableGroups = groups, // Novos produtos usam stock direto da API
                     selectedGroups = calculatedGroups,
                     hasError = initialQty > groups.sumOf { it.availableStock }
                 )
-
-                // Dupla verificação para evitar duplicados por recomposição rápida
                 if (!productsToDeliver.any { it.barcode == barcode }) {
                     productsToDeliver = productsToDeliver + newProduct
                     barcode = ""
@@ -252,24 +331,22 @@ fun DeliveryScreen(
             }
             isLoadingProduct = false
         } else if (isLoadingProduct && barcode.isNotEmpty() && productViewModel.errorMessage != null) {
-            // Tratamento de erro se a API falhar
             isLoadingProduct = false
             SnackbarManager.show("Produto não encontrado.", SnackbarType.ERROR)
             barcode = ""
         }
     }
 
-    // --- LAYOUT ---
+    // --- UI LAYOUT ---
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Header(title = "Agendamento de Entrega")
+        Header(title = if (existingDelivery != null) "Editar Entrega" else "Agendamento de Entrega")
 
         Box(modifier = Modifier.fillMaxSize()) {
             val anyLoading = isLoadingProduct || deliveryUiState.isLoading
 
             if (isLargeScreen()) {
-                // --- DESKTOP ---
+                // DESKTOP LAYOUT
                 Row(modifier = Modifier.fillMaxSize().padding(20.dp), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    // Coluna Esquerda: Inputs
                     Column(
                         modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -278,11 +355,7 @@ fun DeliveryScreen(
                             query = beneficiaryQuery,
                             onQueryChange = { beneficiaryQuery = it },
                             selectedBeneficiary = selectedBeneficiary,
-                            onSelect = {
-                                selectedBeneficiary = it
-                                beneficiaryQuery = it.name
-                                isBeneficiaryDropdownExpanded = false
-                            },
+                            onSelect = { selectedBeneficiary = it; beneficiaryQuery = it.name; isBeneficiaryDropdownExpanded = false },
                             expanded = isBeneficiaryDropdownExpanded,
                             onExpandedChange = { isBeneficiaryDropdownExpanded = it },
                             results = beneficiarySearchResults?.data ?: emptyList(),
@@ -290,21 +363,12 @@ fun DeliveryScreen(
                             focusRequester = beneficiaryFocusRequester,
                             hasError = deliveryUiState.errors.containsKey("beneficiary")
                         )
-
                         ProductAddCard(
                             query = productQuery,
-                            onQueryChange = {
-                                productQuery = it
-                                if (it.isEmpty()) barcode = ""
-                            },
+                            onQueryChange = { productQuery = it; if (it.isEmpty()) barcode = "" },
                             suggestions = productSearchResults,
-                            onSuggestionSelected = {
-                                barcode = it.barcode
-                                productQuery = ""
-                                focusManager.clearFocus()
-                            }
+                            onSuggestionSelected = { barcode = it.barcode; productQuery = ""; focusManager.clearFocus() }
                         )
-
                         DeliveryOptionsCard(
                             isScheduled = isScheduled,
                             scheduledDate = scheduledDate,
@@ -315,51 +379,65 @@ fun DeliveryScreen(
                             dateError = deliveryUiState.errors["date"]
                         )
                     }
-
-                    // Coluna Direita: Lista e Ação
                     Column(modifier = Modifier.weight(1.5f).fillMaxHeight()) {
                         DeliveryProductsListSection(
                             products = productsToDeliver,
                             onProductRemove = { index -> productsToDeliver = productsToDeliver.toMutableList().apply { removeAt(index) } },
                             onUpdateQuantity = { index, newTotal ->
-                                // Atualizar quantidade e recalcular FIFO
-                                val product = productsToDeliver[index]
-                                val isValid = newTotal <= product.totalStock
-                                val newGroups = recalculateFIFO(newTotal, product.availableGroups, product.barcode)
-
-                                val updatedList = productsToDeliver.toMutableList()
-                                updatedList[index] = product.copy(
-                                    quantityToDeliver = newTotal,
-                                    selectedGroups = newGroups,
-                                    hasError = !isValid
-                                )
-                                productsToDeliver = updatedList
+                                val p = productsToDeliver[index]
+                                val isValid = newTotal <= p.totalStock
+                                val newGroups = recalculateFIFO(newTotal, p.availableGroups, p.barcode)
+                                productsToDeliver = productsToDeliver.toMutableList().apply {
+                                    set(index, p.copy(quantityToDeliver = newTotal, selectedGroups = newGroups, hasError = !isValid))
+                                }
                             },
                             onProductExpanded = { index ->
-                                val updated = productsToDeliver.toMutableList()
-                                updated[index] = updated[index].copy(isExpanded = !updated[index].isExpanded)
-                                productsToDeliver = updated
+                                val p = productsToDeliver[index]
+                                productsToDeliver = productsToDeliver.toMutableList().apply { set(index, p.copy(isExpanded = !p.isExpanded)) }
                             },
                             modifier = Modifier.weight(1f)
                         )
                         Spacer(Modifier.height(12.dp))
                         SubmitButton(
                             enabled = !anyLoading,
+                            text = if (existingDelivery != null) "Guardar Alterações" else "Agendar Entrega",
                             onClick = {
-                                deliveriesViewModel.scheduleDelivery(
-                                    beneficiaryId = selectedBeneficiary?.beneficiaryId,
-                                    scheduledDate = scheduledDate,
-                                    isScheduled = isScheduled,
-                                    products = productsToDeliver,
-                                    note = deliveryNote
-                                )
+                                if (existingDelivery != null) {
+                                    deliveriesViewModel.updateDelivery(
+                                        deliveryId = existingDelivery.deliveryId,
+                                        beneficiaryId = selectedBeneficiary?.beneficiaryId,
+                                        scheduledDate = scheduledDate,
+                                        isScheduled = isScheduled,
+                                        products = productsToDeliver,
+                                        note = deliveryNote,
+                                        currentStatusId = existingDelivery.statusId
+                                    )
+                                } else {
+                                    deliveriesViewModel.scheduleDelivery(
+                                        beneficiaryId = selectedBeneficiary?.beneficiaryId,
+                                        scheduledDate = scheduledDate,
+                                        isScheduled = isScheduled,
+                                        products = productsToDeliver,
+                                        note = deliveryNote
+                                    )
+                                }
                             },
                             isLoading = anyLoading
                         )
+                        if (existingDelivery != null) {
+                            Spacer(Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = { deliveriesViewModel.deleteDelivery(existingDelivery.deliveryId) },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                            ) {
+                                Text("Eliminar Entrega")
+                            }
+                        }
                     }
                 }
             } else {
-                // --- MOBILE ---
+                // MOBILE LAYOUT
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -370,11 +448,7 @@ fun DeliveryScreen(
                             query = beneficiaryQuery,
                             onQueryChange = { beneficiaryQuery = it },
                             selectedBeneficiary = selectedBeneficiary,
-                            onSelect = {
-                                selectedBeneficiary = it
-                                beneficiaryQuery = it.name
-                                isBeneficiaryDropdownExpanded = false
-                            },
+                            onSelect = { selectedBeneficiary = it; beneficiaryQuery = it.name; isBeneficiaryDropdownExpanded = false },
                             expanded = isBeneficiaryDropdownExpanded,
                             onExpandedChange = { isBeneficiaryDropdownExpanded = it },
                             results = beneficiarySearchResults?.data ?: emptyList(),
@@ -383,44 +457,33 @@ fun DeliveryScreen(
                             hasError = deliveryUiState.errors.containsKey("beneficiary")
                         )
                     }
-
                     item {
                         ProductAddCard(
                             query = productQuery,
-                            onQueryChange = {
-                                productQuery = it
-                                if (it.isEmpty()) barcode = ""
-                            },
+                            onQueryChange = { productQuery = it; if (it.isEmpty()) barcode = "" },
                             suggestions = productSearchResults,
-                            onSuggestionSelected = {
-                                barcode = it.barcode
-                                productQuery = "" // Limpar para permitir scan seguinte
-                                focusManager.clearFocus()
-                            }
+                            onSuggestionSelected = { barcode = it.barcode; productQuery = ""; focusManager.clearFocus() }
                         )
                     }
-
                     itemsIndexed(productsToDeliver) { index, product ->
                         DeliveryProductCard(
                             product = product,
                             index = index,
                             onRemove = { productsToDeliver = productsToDeliver.toMutableList().apply { removeAt(index) } },
                             onExpand = {
-                                val updated = productsToDeliver.toMutableList()
-                                updated[index] = updated[index].copy(isExpanded = !updated[index].isExpanded)
-                                productsToDeliver = updated
+                                val p = productsToDeliver[index]
+                                productsToDeliver = productsToDeliver.toMutableList().apply { set(index, p.copy(isExpanded = !p.isExpanded)) }
                             },
                             onUpdateQuantity = { newTotal ->
                                 val p = productsToDeliver[index]
                                 val isValid = newTotal <= p.totalStock
                                 val newGroups = recalculateFIFO(newTotal, p.availableGroups, p.barcode)
-                                val updated = productsToDeliver.toMutableList()
-                                updated[index] = p.copy(quantityToDeliver = newTotal, selectedGroups = newGroups, hasError = !isValid)
-                                productsToDeliver = updated
+                                productsToDeliver = productsToDeliver.toMutableList().apply {
+                                    set(index, p.copy(quantityToDeliver = newTotal, selectedGroups = newGroups, hasError = !isValid))
+                                }
                             }
                         )
                     }
-
                     item {
                         DeliveryOptionsCard(
                             isScheduled = isScheduled,
@@ -432,21 +495,44 @@ fun DeliveryScreen(
                             dateError = deliveryUiState.errors["date"]
                         )
                     }
-
                     item {
                         SubmitButton(
                             enabled = !anyLoading,
+                            text = if (existingDelivery != null) "Guardar Alterações" else "Agendar Entrega",
                             onClick = {
-                                deliveriesViewModel.scheduleDelivery(
-                                    beneficiaryId = selectedBeneficiary?.beneficiaryId,
-                                    scheduledDate = scheduledDate,
-                                    isScheduled = isScheduled,
-                                    products = productsToDeliver,
-                                    note = deliveryNote
-                                )
+                                if (existingDelivery != null) {
+                                    deliveriesViewModel.updateDelivery(
+                                        deliveryId = existingDelivery.deliveryId,
+                                        beneficiaryId = selectedBeneficiary?.beneficiaryId,
+                                        scheduledDate = scheduledDate,
+                                        isScheduled = isScheduled,
+                                        products = productsToDeliver,
+                                        note = deliveryNote,
+                                        currentStatusId = existingDelivery.statusId
+                                    )
+                                } else {
+                                    deliveriesViewModel.scheduleDelivery(
+                                        beneficiaryId = selectedBeneficiary?.beneficiaryId,
+                                        scheduledDate = scheduledDate,
+                                        isScheduled = isScheduled,
+                                        products = productsToDeliver,
+                                        note = deliveryNote
+                                    )
+                                }
                             },
                             isLoading = anyLoading
                         )
+                    }
+                    if (existingDelivery != null) {
+                        item {
+                            OutlinedButton(
+                                onClick = { deliveriesViewModel.deleteDelivery(existingDelivery.deliveryId) },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                            ) {
+                                Text("Eliminar Entrega")
+                            }
+                        }
                     }
                 }
             }
@@ -459,7 +545,7 @@ fun DeliveryScreen(
 }
 
 // ----------------------------------------------------
-// COMPONENTES (ATUALIZADOS)
+// COMPONENTES AUXILIARES (Reutilizados)
 // ----------------------------------------------------
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -487,7 +573,7 @@ fun BeneficiarySelectorCard(
 
             ExposedDropdownMenuBox(
                 expanded = expanded,
-                onExpandedChange = { onExpandedChange(it); if(it) focusRequester.requestFocus() }
+                onExpandedChange = { onExpandedChange(it); if (it) focusRequester.requestFocus() }
             ) {
                 OutlinedTextField(
                     value = query,
@@ -550,8 +636,12 @@ fun ProductAddCard(
             BarcodeInputField(
                 value = query,
                 onValueChange = onQueryChange,
+                label = "Pesquisar Produto",
+                placeholder = "Nome ou Código...",
+                error = null,
                 suggestions = suggestions,
-                onSuggestionSelected = onSuggestionSelected
+                onSuggestionSelected = onSuggestionSelected,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
@@ -616,7 +706,6 @@ fun DeliveryOptionsCard(
 
             Spacer(Modifier.height(12.dp))
 
-            // --- ATUALIZADO PARA USAR ValidatedTextField ---
             ValidatedTextField(
                 value = deliveryNote,
                 onValueChange = onNoteChange,
@@ -629,7 +718,12 @@ fun DeliveryOptionsCard(
 }
 
 @Composable
-fun SubmitButton(enabled: Boolean, onClick: () -> Unit, isLoading: Boolean = false) {
+fun SubmitButton(
+    enabled: Boolean,
+    text: String,
+    onClick: () -> Unit,
+    isLoading: Boolean = false
+) {
     Button(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -637,7 +731,7 @@ fun SubmitButton(enabled: Boolean, onClick: () -> Unit, isLoading: Boolean = fal
         enabled = enabled
     ) {
         if (isLoading) CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
-        else Text("Agendar Entrega", fontSize = 16.sp)
+        else Text(text, fontSize = 16.sp)
     }
 }
 
@@ -654,10 +748,7 @@ fun DeliveryProductsListSection(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 CardTitle(title = "Produtos (${products.size})")
             }
             LazyColumn(
@@ -722,7 +813,6 @@ fun DeliveryProductCard(
                     Text("Quantidade a Exportar", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(4.dp))
 
-                    // --- ATUALIZADO PARA USAR ValidatedTextField ---
                     ValidatedTextField(
                         value = if (product.quantityToDeliver == 0) "" else product.quantityToDeliver.toString(),
                         onValueChange = { onUpdateQuantity(it.toIntOrNull() ?: 0) },

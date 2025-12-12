@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material.icons.outlined.FilterList
@@ -17,14 +16,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import sasipca.repositories.BeneficiaryRepository
 import sasipca.ui.components.beneficiaries.CreateBeneficiaryPopup
 import sasipca.ui.components.Header
 import sasipca.ui.components.LoadingWidget
+import sasipca.ui.components.SearchInputField // <--- Novo Componente
 import sasipca.ui.components.beneficiaries.BeneficiaryListItemCard
 import sasipca.utils.getFormattedDatePt
 import sasipca.viewmodels.BeneficiariesViewModel
@@ -47,14 +45,12 @@ fun BeneficiariesScreen(
     var searchTerm by remember { mutableStateOf("") }
     var showCreatePopup by remember { mutableStateOf(false) }
 
-    // Debounce de pesquisa
+    // Debounce de pesquisa (Lógica atualizada e robusta)
     LaunchedEffect(searchTerm) {
-        if (searchTerm.isEmpty()) {
-            viewModel.loadBeneficiaries()
-        } else {
+        if (searchTerm.isNotEmpty()) {
             delay(500)
-            viewModel.loadBeneficiaries(search = searchTerm, page = 1)
         }
+        viewModel.loadBeneficiaries(search = searchTerm, page = 1)
     }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -70,29 +66,27 @@ fun BeneficiariesScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedTextField(
-                    value = searchTerm,
-                    onValueChange = { searchTerm = it },
-                    modifier = Modifier.weight(1f).height(60.dp), // Altura fixa ajustada
-                    placeholder = { Text("Pesquisar beneficiário...") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    textStyle = TextStyle(fontSize = 14.sp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                    )
+                // Componente Reutilizável com botão "Limpar"
+                SearchInputField(
+                    query = searchTerm,
+                    onQueryChange = { searchTerm = it },
+                    placeholder = "Nome ou e-mail",
+                    modifier = Modifier.weight(1f)
                 )
 
+                // Botão de Filtros
                 IconButton(
                     onClick = { showFilters = !showFilters },
                     modifier = Modifier
-                        .size(56.dp) // Alinhado com a altura do input
+                        .size(56.dp) // Alinhado com a altura do input (60dp visualmente aproximado com padding interno)
                         .clip(RoundedCornerShape(12.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
-                    Icon(Icons.Outlined.FilterList, contentDescription = "Filtrar", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(
+                        Icons.Outlined.FilterList,
+                        contentDescription = "Filtrar",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 

@@ -24,6 +24,7 @@ import sasipca.models.Product
 import sasipca.storage.ListsStore
 
 
+
 @Composable
 fun ProductsTableHeader(
     text: String,
@@ -34,23 +35,21 @@ fun ProductsTableHeader(
     onClick: () -> Unit
 ) {
     Row(
-        modifier = modifier
-            .clickable(onClick = onClick),
+        modifier = modifier.clickable(onClick = onClick),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = text,
-            fontSize = 14.sp,
+            fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         if (currentSortColumn == sortColumn) {
             Icon(
-                imageVector = if (sortDirection == SortDirection.ASCENDING)
-                    Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                imageVector = if (sortDirection == SortDirection.ASCENDING) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
                 contentDescription = null,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(14.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
         }

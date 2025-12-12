@@ -21,7 +21,7 @@ object SettingsManager {
     // Keys
     private const val KEY_SERVER_IP = "server_ip"
     private const val KEY_DARK_THEME = "dark_theme"
-    private const val DEFAULT_SERVER_IP = "192.168.1.17"
+    private const val DEFAULT_SERVER_IP = "rapi.tail1fcae6.ts.net"
 
     // Server IP
     fun getServerIp(): String {
@@ -34,11 +34,6 @@ object SettingsManager {
         if (::settings.isInitialized) settings.putString(KEY_SERVER_IP, ip)
     }
 
-    // Theme (Método antigo mantido por compatibilidade, mas o Flow é preferido)
-    fun isDarkTheme(): Boolean {
-        if (!::settings.isInitialized) return false
-        return settings.getBoolean(KEY_DARK_THEME, false)
-    }
 
     fun setDarkTheme(isDark: Boolean) {
         if (::settings.isInitialized) {

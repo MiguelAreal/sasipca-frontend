@@ -32,19 +32,17 @@ object ApiClient {
 
     lateinit var notificationRepository: NotificationRepository
         private set
-
     lateinit var adjustmentRepository : AdjustmentRepository
+        private set
+
+    lateinit var adminRepository: AdminRepository
         private set
 
     fun init(authManager: MicrosoftAuthManager) {
 
         // Criar HttpClient
         client = createHttpClient()
-
-        // Passar o manager para o AuthRepository
         authRepository = AuthRepository(client, authManager)
-
-        // Criar os restantes repositórios (iguais)
         deliveryRepository = DeliveryRepository(client)
         receiptRepository = ReceiptRepository(client)
         productRepository = ProductRepository(client)
@@ -55,6 +53,7 @@ object ApiClient {
         historyRepository = HistoryRepository(client)
         notificationRepository = NotificationRepository(client)
         adjustmentRepository = AdjustmentRepository(client)
+        adminRepository = AdminRepository(client)
     }
 
     suspend fun refreshToken(): Result<AuthResponse> {

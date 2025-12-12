@@ -79,6 +79,7 @@ kotlin {
             implementation("com.microsoft.azure:msal4j:1.23.1")
             implementation("com.microsoft.signalr:signalr:10.0.0")
             implementation("com.squareup.okhttp3:okhttp:4.12.0")
+            implementation("io.reactivex.rxjava3:rxjava:3.1.12")
         }
 
     }

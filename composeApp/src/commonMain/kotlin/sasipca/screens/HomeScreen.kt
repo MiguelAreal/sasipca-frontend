@@ -19,6 +19,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import sasipca.screens.navigation.CampaignsScreen
 import sasipca.screens.navigation.DeliveryScreen
 import sasipca.screens.navigation.HistoryScreen
+import sasipca.screens.navigation.AdminsScreen
 import sasipca.screens.navigation.ReceptionScreen
 import sasipca.screens.navigation.ReportsScreen
 import sasipca.screens.navigation.StockAdjustmentScreen
@@ -179,7 +180,6 @@ fun MonthlyStatsSection() {
 
 @Composable
 fun SecondaryActionsSection() {
-    // Obtém o navegador principal
     val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
 
     Column(
@@ -188,20 +188,22 @@ fun SecondaryActionsSection() {
         CompactMenuItem(
             icon = Icons.Outlined.Campaign,
             title = "Campanhas",
-            // Alterado para Voyager
             onClick = { navigator.push(CampaignsScreen()) }
         )
         CompactMenuItem(
             icon = Icons.Outlined.FilePresent,
             title = "Relatórios",
-            // Alterado para Voyager
             onClick = { navigator.push(ReportsScreen()) }
         )
         CompactMenuItem(
             icon = Icons.Outlined.History,
             title = "Histórico de Movimentos",
-            // Alterado para Voyager
             onClick = { navigator.push(HistoryScreen()) }
+        )
+        CompactMenuItem(
+            icon = Icons.Outlined.SupervisorAccount,
+            title = "Administradores",
+            onClick = { navigator.push(AdminsScreen()) }
         )
     }
 }

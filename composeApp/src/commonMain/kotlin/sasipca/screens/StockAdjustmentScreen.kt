@@ -14,6 +14,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.delay
 import sasipca.models.ProductGroup
 import sasipca.models.SnackbarType
@@ -21,7 +23,7 @@ import sasipca.network.ApiClient
 import sasipca.repositories.AdjustmentRepository
 import sasipca.repositories.OFFRepository
 import sasipca.repositories.ProductRepository
-import sasipca.ui.components.BarcodeInputField // <--- O NOVO COMPONENTE
+import sasipca.ui.components.BarcodeInputField
 import sasipca.ui.components.Header
 import sasipca.ui.components.LoadingWidget
 import sasipca.ui.theme.CardTitle
@@ -36,6 +38,7 @@ fun StockAdjustmentScreen(
     productRepository: ProductRepository
 ) {
     val focusManager = LocalFocusManager.current
+    val navigator = LocalNavigator.currentOrThrow
 
     // Inicializar ViewModels
     val viewModel = remember { StockAdjustmentViewModel(adjustmentRepository) }
@@ -67,15 +70,8 @@ fun StockAdjustmentScreen(
     // --- 1. Feedback UI (Sucesso/Erro do Ajuste) ---
     LaunchedEffect(uiState) {
         if (uiState.success) {
-            SnackbarManager.show(uiState.successMessage ?: "Stock ajustado com sucesso!", SnackbarType.SUCCESS)
-            // Reset Total
-            barcode = ""
-            productQuery = ""
-            selectedGroup = null
-            quantity = ""
-            note = ""
-            productViewModel.resetProduct()
             viewModel.clearState()
+            navigator.pop()
         }
         if (uiState.errorMessage != null) {
             SnackbarManager.show(uiState.errorMessage!!, SnackbarType.ERROR)

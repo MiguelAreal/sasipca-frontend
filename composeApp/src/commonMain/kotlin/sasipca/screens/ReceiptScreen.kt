@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import sasipca.network.ApiClient
@@ -32,7 +34,7 @@ import sasipca.repositories.ProductRepository
 import sasipca.repositories.ReceiptRepository
 import sasipca.storage.ListsStore
 import sasipca.storage.ScreenSizeManager.isLargeScreen
-import sasipca.ui.components.BarcodeInputField // Componente Centralizado
+import sasipca.ui.components.BarcodeInputField
 import sasipca.ui.components.products.GroupsSection
 import sasipca.ui.components.Header
 import sasipca.ui.components.LoadingWidget
@@ -52,6 +54,8 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
     val uiState by receiptsViewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
+
+    val navigator = LocalNavigator.currentOrThrow
 
     // Inicializa o ViewModel com o repositório recebido
     val productViewModel = remember { ProductViewModel(productRepository) }
@@ -125,19 +129,8 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
     // 4. Feedback de Sucesso
     LaunchedEffect(uiState.success) {
         if (uiState.success) {
-            SnackbarManager.show("Receção registada com sucesso!", SnackbarType.SUCCESS)
-            // Limpar formulário após sucesso
-            barcode = ""
-            productQuery = ""
-            editableName = ""
-            editableUnitSize = ""
-            selectedCategory = null
-            selectedUnit = null
-            selectedCampaign = null
-            note = ""
-            groups = listOf(GroupToEnter("", ""))
-            productViewModel.resetProduct()
             receiptsViewModel.clearUiState()
+            navigator.pop()
         }
         if (uiState.lastErrorMessage != null) {
             SnackbarManager.show(uiState.lastErrorMessage!!, SnackbarType.ERROR)
@@ -370,8 +363,6 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                     }
 
                     item {
-                        // --- CORREÇÃO AQUI ---
-                        // Adicionamos uma Column wrapper para satisfazer o ColumnScope do AnimatedVisibility
                         Column(modifier = Modifier.fillMaxWidth()) {
                             AnimatedVisibility(
                                 visible = groupsExpanded,

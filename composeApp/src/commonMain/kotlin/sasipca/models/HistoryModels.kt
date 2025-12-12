@@ -49,24 +49,6 @@ data class DeliveryHistory(
     val beneficiaryName: String
 )
 
-// --- DETALHE DE ENTREGA ---
-@Serializable
-data class DeliveryDetail(
-    val deliveryId: Int,
-    val scheduledDate: String,
-    val statusId: Int,
-    val note: String?,
-    val userName: String?,
-    val beneficiaryName: String?,
-    val items: List<DeliveryItemDetail>
-)
-
-@Serializable
-data class DeliveryItemDetail(
-    val name: String,
-    val expiryDate: String,
-    val quantity: Int
-)
 
 
 // --- ENUMS AUXILIARES PARA UI ---

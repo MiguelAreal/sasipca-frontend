@@ -35,7 +35,17 @@ class DeliveryRepository(private val client: HttpClient) {
         )
     }
 
-
+    /**
+     * Obtém os detalhes completos de uma entrega (incluindo items com barcode)
+     */
+    suspend fun getDeliveryDetails(deliveryId: Int): DeliveryDetail {
+        return client.requestWithAuth(
+            method = HttpMethod.Get,
+            url = URLBuilder(ApiConfig.baseUrl()).apply {
+                appendPathSegments("deliveries", deliveryId.toString())
+            }.buildString()
+        )
+    }
 
     /**
      * Agenda uma nova entrega para uma data específica.
@@ -56,9 +66,8 @@ class DeliveryRepository(private val client: HttpClient) {
 
     /**
      * Atualiza uma entrega existente (ex: data, status, itens)
-     * Apenas se estiver 'Agendada'
      */
-    suspend fun putDelivery(deliveryId: Int, body: DeliveryPut): Delivery {
+    suspend fun putDelivery(deliveryId: Int, body: DeliveryPut): Resposta {
         return client.requestWithAuth(
             method = HttpMethod.Put,
             url = URLBuilder(ApiConfig.baseUrl()).apply {

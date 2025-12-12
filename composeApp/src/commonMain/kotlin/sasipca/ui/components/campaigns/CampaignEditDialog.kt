@@ -218,14 +218,13 @@ fun CampaignEditDialog(
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         CardTitle("Detalhes")
                         ValidatedTextField(
-                            value = formState.location,
-                            onValueChange = { viewModel.onLocationChange(it) },
+                            value = formState.description,
+                            onValueChange = { viewModel.onDescriptionChange(it) },
                             label = "Descrição",
-                            error = formState.errors["descricao"],
-                            modifier = Modifier.fillMaxWidth().height(240.dp),
+                            error = formState.errors["description"],
+                            modifier = Modifier.fillMaxWidth().height(140.dp),
                             singleLine = false
                         )
-
                     }
                 }
 

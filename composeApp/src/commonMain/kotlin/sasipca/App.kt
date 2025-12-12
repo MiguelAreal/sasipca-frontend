@@ -7,7 +7,7 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.transitions.SlideTransition
 import coil3.SingletonImageLoader
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.collectLatest
 import sasipca.models.SnackbarMessage
 import sasipca.models.SnackbarType
 import sasipca.network.ApiClient
@@ -29,63 +29,61 @@ fun App() {
     val scope = rememberCoroutineScope()
     val snackbarState = remember { mutableStateOf<SnackbarMessage?>(null) }
     var initialized by remember { mutableStateOf(false) }
-
     val isDarkTheme by SettingsManager.isDarkThemeFlow.collectAsState()
 
-    // Determina o ecrã inicial
-    var startScreen by remember { mutableStateOf<cafe.adriel.voyager.core.screen.Screen?>(null) }
+    // O ecrã inicial é decidido dinamicamente
+    var currentScreen by remember { mutableStateOf<cafe.adriel.voyager.core.screen.Screen?>(null) }
 
-    InitializeApp(
-        onInitDone = { screen ->
-            startScreen = screen
-            initialized = true
-        },
-        snackbarState = snackbarState,
-        scope = scope
-    )
-
-    if (!initialized || startScreen == null) {
-        LoadingWidget()
-        return
-    }
-
-    // O tema atualiza-se automaticamente porque 'isDarkTheme' mudou
-    SasIpcaTheme(darkTheme = isDarkTheme) {
-        Navigator(screen = startScreen!!) { navigator ->
-            SlideTransition(navigator) { screen ->
-                screen.Content()
-            }
-
-            CustomSnackbarHost(
-                snackbarMessageState = snackbarState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(8.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun InitializeApp(
-    onInitDone: (cafe.adriel.voyager.core.screen.Screen) -> Unit,
-    snackbarState: MutableState<SnackbarMessage?>,
-    scope: CoroutineScope
-) {
+    // Inicialização da App
     LaunchedEffect(Unit) {
         SnackbarManager.snackbarState = snackbarState
         SnackbarManager.scope = scope
 
-        try {
-            ApiClient.listsRepository.loadLists()
-        } catch (e: Exception) {
-            SnackbarManager.show("Falha ao carregar listas.", SnackbarType.ERROR)
+        // Tenta carregar listas se estiver logado
+        if (SessionManager.isLoggedInNow()) {
+            try {
+                ApiClient.listsRepository.loadLists()
+                NotificationManager.refreshCount()
+                currentScreen = MainScreen()
+            } catch (e: Exception) {
+                // Se falhar gravemente (sem net/servidor em baixo), força logout
+                println("Erro critico na inicialização: ${e.message}")
+                SessionManager.triggerLogout() // Isto emite o evento de logout
+                SnackbarManager.show("Erro de conexão. Por favor, faça login novamente.", SnackbarType.ERROR)
+            }
+        } else {
+            currentScreen = LoginScreen()
         }
 
-        val refreshToken = SessionManager.getRefreshToken()
-        val initialScreen = if (refreshToken != null) MainScreen() else LoginScreen()
+        initialized = true
 
-        NotificationManager.refreshCount()
-        onInitDone(initialScreen)
+        // ESCUTAR O EVENTO DE LOGOUT FORÇADO
+        // Se o token expirar durante o uso ou triggerLogout for chamado
+        SessionManager.logoutEvent.collectLatest {
+            currentScreen = LoginScreen()
+        }
+    }
+
+    if (!initialized || currentScreen == null) {
+        LoadingWidget()
+        return
+    }
+
+    SasIpcaTheme(darkTheme = isDarkTheme) {
+        // key(currentScreen) força o Navigator a recriar-se se formos "chutados" para o Login
+        key(currentScreen) {
+            Navigator(screen = currentScreen!!) { navigator ->
+                SlideTransition(navigator) { screen ->
+                    screen.Content()
+                }
+
+                CustomSnackbarHost(
+                    snackbarMessageState = snackbarState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp)
+                )
+            }
+        }
     }
 }

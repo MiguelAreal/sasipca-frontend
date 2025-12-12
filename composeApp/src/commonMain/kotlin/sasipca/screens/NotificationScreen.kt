@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -134,28 +135,34 @@ fun SwipeToArchiveItem(
     SwipeToDismissBox(
         state = dismissState,
         backgroundContent = {
+            val isSwipingToEnd = dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart
+
             val color by animateColorAsState(
                 if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart)
                     MaterialTheme.colorScheme.errorContainer
-                else MaterialTheme.colorScheme.background
+                else MaterialTheme.colorScheme.surface
             )
             val scale by animateFloatAsState(
                 if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) 1.2f else 0.8f
             )
 
+            val backgroundColor = if (isSwipingToEnd) color else Color.Transparent
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(color)
+                    .background(backgroundColor)
                     .padding(horizontal = 20.dp),
                 contentAlignment = Alignment.CenterEnd
             ) {
-                Icon(
-                    imageVector = Icons.Default.DeleteSweep,
-                    contentDescription = "Eliminar",
-                    modifier = Modifier.scale(scale),
-                    tint = MaterialTheme.colorScheme.onErrorContainer
-                )
+                if (isSwipingToEnd) {
+                    Icon(
+                        imageVector = Icons.Default.DeleteSweep,
+                        contentDescription = "Eliminar",
+                        modifier = Modifier.scale(scale),
+                        tint = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
             }
         },
         content = { content() }

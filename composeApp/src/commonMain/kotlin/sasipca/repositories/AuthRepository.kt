@@ -69,7 +69,7 @@ class AuthRepository(
 
         // 2. Tentar enviar para o Backend
         try {
-            val response = client.post("${ApiConfig.baseUrl()}/auth/login/microsoft") {
+            val response = client.post("${ApiConfig.baseUrl()}/auth/login") {
                 contentType(ContentType.Application.Json)
                 setBody(mapOf("idToken" to idToken))
             }
@@ -119,7 +119,6 @@ class AuthRepository(
             msAuthManager.signOut()
         } catch (e: Exception) {
             e.printStackTrace()
-            // Ignoramos erro no logout porque já estamos num fluxo de erro
         }
     }
 
