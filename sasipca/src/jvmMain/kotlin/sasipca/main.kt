@@ -12,13 +12,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import sasipca.auth.MicrosoftAuthManagerDesktop
-import sasipca.composeapp.generated.resources.Res
-import sasipca.composeapp.generated.resources.icon512x512
 import sasipca.network.ApiClient
 import sasipca.storage.SessionManager
 import sasipca.storage.SettingsManager
 import sasipca.utils.ObserveScreenSize
 import sasipca.utils.SignalRManager
+import sasipca_app.sasipca.generated.resources.Res
+import sasipca_app.sasipca.generated.resources.icon512x512
 import java.util.prefs.Preferences
 
 fun main() = application {

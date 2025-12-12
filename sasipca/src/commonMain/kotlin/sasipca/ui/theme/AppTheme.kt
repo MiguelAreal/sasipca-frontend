@@ -12,9 +12,9 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.Font
-import sasipca.composeapp.generated.resources.Res
-import sasipca.composeapp.generated.resources.plusjakartasans
-import sasipca.composeapp.generated.resources.plusjakartasans_italic
+import sasipca_app.sasipca.generated.resources.Res
+import sasipca_app.sasipca.generated.resources.plusjakartasans
+import sasipca_app.sasipca.generated.resources.plusjakartasans_italic
 
 // -------------------------------
 // PALETA DE CORES IPCA

@@ -1,4 +1,4 @@
-rootProject.name = "sasipca"
+rootProject.name = "sasipca-app"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
@@ -28,4 +28,4 @@ dependencyResolutionManagement {
     }
 }
 
-include(":composeApp")
+include(":sasipca")

@@ -22,18 +22,18 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
-import sasipca.composeapp.generated.resources.Res
-import sasipca.composeapp.generated.resources.login_bg
-import sasipca.composeapp.generated.resources.logo_white
 import sasipca.repositories.AuthRepository
-import sasipca.screens.navigation.SettingsScreen // Voyager Screen
+import sasipca.screens.navigation.SettingsScreen
 import sasipca.utils.SnackbarManager
 import sasipca.models.SnackbarType
+import sasipca_app.sasipca.generated.resources.Res
+import sasipca_app.sasipca.generated.resources.login_bg
+import sasipca_app.sasipca.generated.resources.logo_white
 
 @Composable
 fun LoginScreen(
     authRepository: AuthRepository,
-    onLoginSuccess: () -> Unit // <--- ADICIONADO AQUI
+    onLoginSuccess: () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
@@ -104,7 +104,6 @@ fun LoginScreen(
                             val result = authRepository.loginMicrosoft()
                             result.fold(
                                 onSuccess = {
-                                    // CHAMA O CALLBACK EM VEZ DO NAVIGATIONSERVICE
                                     onLoginSuccess()
                                 },
                                 onFailure = {
