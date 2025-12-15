@@ -1,46 +1,58 @@
 package sasipca.screens
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import sasipca.screens.navigation.CampaignsScreen
-import sasipca.screens.navigation.DeliveryScreen
-import sasipca.screens.navigation.HistoryScreen
-import sasipca.screens.navigation.AdminsScreen
-import sasipca.screens.navigation.ReceptionScreen
-import sasipca.screens.navigation.ReportsScreen
-import sasipca.screens.navigation.StockAdjustmentScreen
+import sasipca.models.MonthlySummary
+import sasipca.repositories.StatsRepository
+import sasipca.screens.navigation.*
 import sasipca.storage.SessionManager
 import sasipca.ui.components.CompactMenuItem
 import sasipca.ui.components.CompactStatCard
 import sasipca.ui.components.Header
 import sasipca.ui.components.QuickActionButton
-import sasipca.utils.getCurrentMonthPt
+import sasipca.utils.convertMonthPt
 import sasipca.utils.getFormattedDatePt
 import sasipca.utils.getGreetingPt
+import sasipca.viewmodels.StatsViewModel
+import java.time.YearMonth
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    statsRepository: StatsRepository
+) {
     val userName = SessionManager.getUserName() ?: "Utilizador"
+
+    // Inicializa o ViewModel (que gere tanto a Home como as Stats Avançadas)
+    val viewModel = remember { StatsViewModel(statsRepository) }
+
+    // Carrega dados do mês atual ao iniciar o ecrã
+    LaunchedEffect(Unit) {
+        viewModel.loadHomeStats()
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
+        // Cabeçalho com Saudação e Data de Hoje
         Header("${getGreetingPt()}, $userName", getFormattedDatePt())
 
         Column(
@@ -50,6 +62,7 @@ fun HomeScreen() {
         ) {
             Spacer(modifier = Modifier.height(20.dp))
 
+            // 1. AÇÕES RÁPIDAS
             Text(
                 text = "Ações Rápidas",
                 fontSize = 18.sp,
@@ -61,10 +74,19 @@ fun HomeScreen() {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            MonthlyStatsSection()
+            // 2. CARROSSEL DE ESTATÍSTICAS MENSAIS
+            // (Substitui a antiga secção estática)
+            MonthlyCarouselSection(
+                currentMonth = viewModel.currentHomeMonth,
+                stats = viewModel.monthlyStats,
+                isLoading = viewModel.isHomeLoading,
+                onPrevClick = { viewModel.prevMonth() },
+                onNextClick = { viewModel.nextMonth() }
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // 3. MAIS OPÇÕES
             Text(
                 text = "Mais Opções",
                 fontSize = 16.sp,
@@ -79,9 +101,13 @@ fun HomeScreen() {
     }
 }
 
+// -----------------------------------------------------------
+// COMPONENTES DA UI
+// -----------------------------------------------------------
+
 @Composable
 fun QuickActionsSection() {
-    // Obtém o navegador principal (para sair da Tab e ir para um ecrã de detalhe)
+    // Obtém o navegador principal para sair da Tab e ir para ecrãs de detalhe
     val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
 
     Row(
@@ -92,7 +118,6 @@ fun QuickActionsSection() {
             icon = Icons.Filled.ArrowCircleDown,
             title = "Receção",
             modifier = Modifier.weight(1f),
-            // Alterado para Voyager
             onClick = { navigator.push(ReceptionScreen()) }
         )
 
@@ -100,7 +125,6 @@ fun QuickActionsSection() {
             icon = Icons.Filled.ArrowCircleUp,
             title = "Entrega",
             modifier = Modifier.weight(1f),
-            // Alterado para Voyager (instanciando a data class com defaults)
             onClick = { navigator.push(DeliveryScreen()) }
         )
 
@@ -108,7 +132,6 @@ fun QuickActionsSection() {
             icon = Icons.Filled.SwapHoriz,
             title = "Ajuste",
             modifier = Modifier.weight(1f),
-            // Alterado para Voyager
             onClick = { navigator.push(StockAdjustmentScreen()) }
         )
     }
@@ -116,63 +139,120 @@ fun QuickActionsSection() {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun MonthlyStatsSection() {
+fun MonthlyCarouselSection(
+    currentMonth: YearMonth,
+    stats: MonthlySummary?,
+    isLoading: Boolean,
+    onPrevClick: () -> Unit,
+    onNextClick: () -> Unit
+) {
+    val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+
+            // --- HEADER: NAVEGAÇÃO DE MÊS (< Mês >) ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Estatísticas de ${getCurrentMonthPt()}",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                IconButton(
-                    onClick = { /* TODO: Ver detalhes */ },
-                    modifier = Modifier.size(28.dp)
-                ) {
+                IconButton(onClick = onPrevClick, modifier = Modifier.size(32.dp)) {
                     Icon(
-                        imageVector = Icons.Outlined.BarChart,
-                        contentDescription = "Ver detalhes",
-                        modifier = Modifier.size(18.dp)
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Mês anterior",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = convertMonthPt(currentMonth.monthValue),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = currentMonth.year.toString(),
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                IconButton(onClick = onNextClick, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Próximo mês",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            FlowRow(
+            // --- CONTEÚDO DOS DADOS (COM ANIMAÇÃO) ---
+            AnimatedContent(
+                targetState = stats,
+                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                label = "StatsFadeAnimation"
+            ) { targetStats ->
+                if (isLoading) {
+                    Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                    }
+                } else if (targetStats != null) {
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        maxItemsInEachRow = 3
+                    ) {
+                        // 1. Entregas Pendentes (Agendadas)
+                        CompactStatCard(
+                            icon = Icons.Outlined.Schedule,
+                            label = "Pendentes",
+                            value = targetStats.pendingDeliveries.toString()
+                        )
+
+                        // 2. Doações Feitas (Entradas de Stock)
+                        CompactStatCard(
+                            icon = Icons.Outlined.VolunteerActivism, // Ícone de "Dar"
+                            label = "Receções", // Ou "Doações" conforme preferência
+                            value = targetStats.donationsReceived.toString()
+                        )
+
+                        // 3. Entregas Realizadas (Saídas Completas)
+                        CompactStatCard(
+                            icon = Icons.Outlined.CheckCircle,
+                            label = "Entregas",
+                            value = targetStats.realizedDeliveries.toString()
+                        )
+                    }
+                } else {
+                    Box(modifier = Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            "Não foi possível carregar dados.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            // --- BOTÃO PARA VER MAIS DETALHES ---
+            OutlinedButton(
+                onClick = { navigator.push(StatsScreen()) },
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                maxItemsInEachRow = 3
+                shape = RoundedCornerShape(12.dp)
             ) {
-                CompactStatCard(
-                    icon = Icons.Outlined.Schedule,
-                    label = "Pendentes",
-                    value = "08"
-                )
-                CompactStatCard(
-                    icon = Icons.Outlined.Favorite,
-                    label = "Doações",
-                    value = "15"
-                )
-                CompactStatCard(
-                    icon = Icons.Outlined.CheckCircle,
-                    label = "Realizadas",
-                    value = "03"
-                )
+                Text("Ver Estatísticas Detalhadas")
             }
         }
     }

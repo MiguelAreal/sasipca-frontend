@@ -1,26 +1,25 @@
 package sasipca.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import sasipca.models.Delivery
-import sasipca.models.DeliveryPost
-import sasipca.models.DeliveryPut
 import sasipca.repositories.DeliveryRepository
 import sasipca.viewmodels.DeliveriesViewModel
 import sasipca.storage.ScreenSizeManager.isLargeScreen
@@ -40,17 +39,12 @@ fun CalendarScreen(
 ) {
     val deliveriesViewModel = remember { DeliveriesViewModel(deliveryRepository) }
     val month by deliveriesViewModel.month.collectAsState()
-    val selectedDate by deliveriesViewModel.selectedDate.collectAsState()
     val deliveries by deliveriesViewModel.deliveries.collectAsState()
     val futureDeliveries by deliveriesViewModel.futureDeliveries.collectAsState()
     val isLoading by deliveriesViewModel.isLoading.collectAsState()
 
-    // Estado para VISUALIZAÇÃO/EDIÇÃO RÁPIDA de existentes
-    var editorState by remember { mutableStateOf<Delivery?>(null) }
-
     // Estado para o POPUP DE SELEÇÃO DO DIA
     var pickerState by remember { mutableStateOf<Pair<LocalDate, List<Delivery>>?>(null) }
-
     var showFutureDeliveries by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -62,21 +56,15 @@ fun CalendarScreen(
     }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        if (isLoading) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-        }
 
         if (isSmallScreen()) {
             CompactLayout(
                 month = month,
-                selectedDate = selectedDate,
                 deliveries = deliveries,
                 futureDeliveries = futureDeliveries,
-                viewModel = deliveriesViewModel,
                 pickerState = pickerState,
                 onPickerStateChange = { pickerState = it },
-                editorState = editorState,
-                onEditorStateChange = { editorState = it },
+                onNavigateToDelivery = onNavigateToDelivery,
                 showFutureDeliveries = showFutureDeliveries,
                 onMonthChange = { deliveriesViewModel.selectMonth(it) },
                 onShowFutureDeliveriesChange = { showFutureDeliveries = it }
@@ -84,16 +72,17 @@ fun CalendarScreen(
         } else {
             WideLayout(
                 month = month,
-                selectedDate = selectedDate,
                 deliveries = deliveries,
                 futureDeliveries = futureDeliveries,
-                viewModel = deliveriesViewModel,
                 pickerState = pickerState,
                 onPickerStateChange = { pickerState = it },
-                editorState = editorState,
-                onEditorStateChange = { editorState = it },
+                onNavigateToDelivery = onNavigateToDelivery,
                 onMonthChange = { deliveriesViewModel.selectMonth(it) }
             )
+        }
+
+        if (isLoading) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter))
         }
 
         // --- DIALOG DE ESCOLHA DO DIA ---
@@ -103,34 +92,26 @@ fun CalendarScreen(
                 deliveries = deliveriesForDate,
                 onDismiss = { pickerState = null },
                 onSelectExisting = { selected ->
-                    // Clicou numa entrega existente -> NAVEGA PARA EDIÇÃO
                     pickerState = null
-                    // Passa a entrega existente para o ecrã de edição
-                    onNavigateToDelivery(null, true, selected)
+                    onNavigateToDelivery(null, true, selected) // Edição
                 },
                 onNewDelivery = {
-                    // Clicou "Nova Entrega" -> Navega para criação
                     pickerState = null
-                    onNavigateToDelivery(date, true, null)
+                    onNavigateToDelivery(date, true, null) // Criação
                 }
             )
         }
-
-
     }
 }
 
 @Composable
 fun CompactLayout(
     month: YearMonth,
-    selectedDate: LocalDate,
     deliveries: List<Delivery>,
     futureDeliveries: List<Delivery>,
-    viewModel: DeliveriesViewModel,
     pickerState: Pair<LocalDate, List<Delivery>>?,
     onPickerStateChange: (Pair<LocalDate, List<Delivery>>?) -> Unit,
-    editorState: Delivery?,
-    onEditorStateChange: (Delivery?) -> Unit,
+    onNavigateToDelivery: (LocalDate?, Boolean, Delivery?) -> Unit,
     showFutureDeliveries: Boolean,
     onMonthChange: (YearMonth) -> Unit,
     onShowFutureDeliveriesChange: (Boolean) -> Unit
@@ -147,6 +128,7 @@ fun CompactLayout(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // Tabs
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.Center
@@ -168,21 +150,23 @@ fun CompactLayout(
 
         if (showFutureDeliveries) {
             FutureDeliveriesList(
-                onEventClick = { onEditorStateChange(it) },
+                onEventClick = { delivery -> onNavigateToDelivery(null, true, delivery) },
                 futureDeliveries,
                 modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
             )
         } else {
             Calendar(
                 month = month,
-                startDate = selectedDate,
                 deliveries = deliveries,
                 onMonthChange = onMonthChange,
                 onDayClick = { date, deliveriesForDate ->
-                    viewModel.selectDate(date)
+                    // Abre picker do dia
                     onPickerStateChange(date to deliveriesForDate)
                 },
-                onEventClick = { onEditorStateChange(it) },
+                onEventClick = { delivery ->
+                    // Clique direto no evento (se possível no mobile)
+                    onNavigateToDelivery(null, true, delivery)
+                },
                 modifier = Modifier.weight(1f),
                 controller = { calendarController = it }
             )
@@ -193,14 +177,11 @@ fun CompactLayout(
 @Composable
 fun WideLayout(
     month: YearMonth,
-    selectedDate: LocalDate,
     deliveries: List<Delivery>,
     futureDeliveries: List<Delivery>,
-    viewModel: DeliveriesViewModel,
     pickerState: Pair<LocalDate, List<Delivery>>?,
     onPickerStateChange: (Pair<LocalDate, List<Delivery>>?) -> Unit,
-    editorState: Delivery?,
-    onEditorStateChange: (Delivery?) -> Unit,
+    onNavigateToDelivery: (LocalDate?, Boolean, Delivery?) -> Unit,
     onMonthChange: (YearMonth) -> Unit
 ) {
     var calendarController by remember { mutableStateOf<WeekCalendarController?>(null) }
@@ -218,177 +199,173 @@ fun WideLayout(
         Row(modifier = Modifier.fillMaxWidth()) {
             Calendar(
                 month = month,
-                startDate = selectedDate,
                 deliveries = deliveries,
                 onMonthChange = onMonthChange,
                 onDayClick = { date, deliveriesForDate ->
-                    viewModel.selectDate(date)
                     onPickerStateChange(date to deliveriesForDate)
                 },
-                onEventClick = { onEditorStateChange(it) },
+                onEventClick = { delivery ->
+                    onNavigateToDelivery(null, true, delivery)
+                },
                 modifier = Modifier.weight(1f),
                 controller = { calendarController = it }
             )
 
-            Spacer(modifier = Modifier.width(12.dp))
-
-            FutureDeliveriesList(
-                onEventClick = { onEditorStateChange(it) },
-                futureDeliveries,
-                modifier = Modifier.width(280.dp).fillMaxHeight()
-            )
+            // Sidebar com lista futura
+            Surface(
+                modifier = Modifier.width(300.dp).fillMaxHeight(),
+                tonalElevation = 1.dp,
+                shadowElevation = 2.dp
+            ) {
+                FutureDeliveriesList(
+                    onEventClick = { delivery -> onNavigateToDelivery(null, true, delivery) },
+                    futureDeliveries,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
     }
 }
-
-
 @Composable
 fun FutureDeliveriesList(
     onEventClick: (Delivery) -> Unit,
-    deliveries: List<Delivery>, // Esta lista deve ser futureDeliveries do ViewModel
+    deliveries: List<Delivery>,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier) {
-        // Título apenas para ecrãs grandes (lógica existente)
-        if (isLargeScreen()){
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface) // Garante fundo correto
+    ) {
+        if (isLargeScreen()) {
             Text(
-                text = "Entregas Futuras",
+                text = "Próximas Entregas",
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(16.dp)
             )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         }
 
         if (deliveries.isEmpty()) {
-            // Mensagem de lista vazia (lógica existente)
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     "Sem entregas agendadas",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)
+                modifier = Modifier.fillMaxSize()
             ) {
                 items(deliveries) { delivery ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp, horizontal = 8.dp)
-                            .clickable { onEventClick(delivery) },
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                        elevation = CardDefaults.cardElevation(1.dp),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            // Nome do Beneficiário
+                    ListItem(
+                        modifier = Modifier.clickable { onEventClick(delivery) },
+                        headlineContent = {
                             Text(
-                                text = delivery.beneficiaryName ?: "Entrega Agendada",
+                                text = delivery.beneficiaryName ?: "Sem Nome",
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurface
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
-                            Spacer(Modifier.height(4.dp))
-                            // Data Agendada
+                        },
+                        supportingContent = {
                             Text(
-                                text = "Data: ${delivery.scheduledDate}",
-                                fontSize = 12.sp,
+                                text = delivery.scheduledDate, // Formata a data se quiseres (ex: dd/MM)
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            // Nota (opcional)
-                            if (delivery.note.isNullOrBlank().not()) {
-                                Text(
-                                    text = "Nota: ${delivery.note}",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
+                        },
+                        leadingContent = {
+                            // Pequeno indicador de estado (opcional)
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+                            )
+                        },
+                        trailingContent = {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            )
+                        },
+                        colors = ListItemDefaults.colors(
+                            containerColor = Color.Transparent // Transparente para usar fundo da coluna
+                        )
+                    )
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
                 }
             }
         }
     }
 }
 
-// ----------------------------------------------------------
-// Picker Dialog (entregas por data)
-// ----------------------------------------------------------
+// Picker Dialog mantém-se igual (apenas atualiza o texto se quiseres)
 @Composable
 fun EventPickerDialog(
     date: LocalDate,
     deliveries: List<Delivery>,
     onDismiss: () -> Unit,
-    onSelectExisting: (Delivery) -> Unit, // Para editar/ver
-    onNewDelivery: () -> Unit           // Para criar
+    onSelectExisting: (Delivery) -> Unit,
+    onNewDelivery: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.widthIn(max = 400.dp).fillMaxWidth(0.9f)
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.widthIn(max = 400.dp).fillMaxWidth(0.95f),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(20.dp)) {
                 Text(
-                    text = "Entregas em ${getFormattedDatePt()}", // Podes usar a data passada se quiseres
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 18.sp
+                    text = "Entregas a ${date.dayOfMonth}/${date.monthValue}",
+                    style = MaterialTheme.typography.titleLarge
                 )
-
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(16.dp))
 
                 if (deliveries.isEmpty()) {
-                    Text("Sem entregas agendadas.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Sem entregas para este dia.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
                     LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.heightIn(max = 300.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.heightIn(max = 250.dp)
                     ) {
                         items(deliveries) { dto ->
                             Surface(
-                                tonalElevation = 1.dp,
+                                tonalElevation = 2.dp,
                                 shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onSelectExisting(dto) }
-                                    .padding(4.dp)
+                                onClick = { onSelectExisting(dto) },
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Column(modifier = Modifier.padding(8.dp)) {
-                                    Text(
-                                        dto.beneficiaryName ?: "Entrega",
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Text(
-                                        "Estado: ${dto.statusId}",
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(dto.beneficiaryName ?: "Entrega", fontWeight = FontWeight.Medium)
                                 }
                             }
                         }
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(24.dp))
 
                 Row(
                     horizontalArrangement = Arrangement.End,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    TextButton(onClick = onDismiss) { Text("Cancelar") }
+                    TextButton(onClick = onDismiss) { Text("Fechar") }
                     Spacer(Modifier.width(8.dp))
-                    Button(onClick = onNewDelivery) {
-                        Text("Nova Entrega")
-                    }
+                    Button(onClick = onNewDelivery) { Text("Nova Entrega") }
                 }
             }
         }

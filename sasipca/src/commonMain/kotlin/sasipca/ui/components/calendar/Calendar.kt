@@ -9,10 +9,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import sasipca.models.Delivery
+import sasipca.utils.monthScroll
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
-
 
 class WeekCalendarController(
     val scrollToNextMonth: () -> Unit,
@@ -20,11 +20,10 @@ class WeekCalendarController(
     val scrollToToday: () -> Unit
 )
 
-
 @Suppress("UnusedBoxWithConstraintsScope")
 @Composable
 fun Calendar(
-    month: YearMonth,
+    month: YearMonth, // Mês que está a ser visualizado (foco)
     startDate: LocalDate = LocalDate.now(),
     deliveries: List<Delivery> = emptyList(),
     onMonthChange: (YearMonth) -> Unit,
@@ -37,8 +36,8 @@ fun Calendar(
     val coroutineScope = rememberCoroutineScope()
     val today = LocalDate.now()
 
-    // 52 semanas fixas (~12 meses)
-    val weeks = remember(startDate) { generateWeeksAround(startDate, 52) }
+    // Gera semanas suficientes para trás e para a frente
+    val weeks = remember(startDate) { generateWeeksAround(startDate, 200) }
 
     val todayWeekIndex = remember(weeks) {
         weeks.indexOfFirst { weekStart ->
@@ -47,11 +46,9 @@ fun Calendar(
         }.coerceAtLeast(0)
     }
 
-    // Scroll inicial para semana atual
-    LaunchedEffect(todayWeekIndex) {
-        if (todayWeekIndex in weeks.indices) {
-            listState.scrollToItem(todayWeekIndex)
-        }
+    // Scroll inicial para hoje
+    LaunchedEffect(Unit) {
+        listState.scrollToItem(todayWeekIndex)
     }
 
     // Controlador externo
@@ -60,16 +57,12 @@ fun Calendar(
             WeekCalendarController(
                 scrollToNextMonth = {
                     coroutineScope.launch {
-                        listState.animateScrollToItem(
-                            (listState.firstVisibleItemIndex + 4).coerceAtMost(weeks.lastIndex)
-                        )
+                        listState.animateScrollToItem((listState.firstVisibleItemIndex + 4).coerceAtMost(weeks.lastIndex))
                     }
                 },
                 scrollToPreviousMonth = {
                     coroutineScope.launch {
-                        listState.animateScrollToItem(
-                            (listState.firstVisibleItemIndex - 4).coerceAtLeast(0)
-                        )
+                        listState.animateScrollToItem((listState.firstVisibleItemIndex - 4).coerceAtLeast(0))
                     }
                 },
                 scrollToToday = {
@@ -82,13 +75,20 @@ fun Calendar(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        WeekHeader(modifier = Modifier.padding(horizontal = 8.dp))
+        WeekHeader(modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp))
 
-        // Limita altura da LazyColumn e calcula altura de cada semana
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val weekHeight = maxHeight / 6 // altura fixa por semana, 6 linhas visíveis
+            // Define altura da semana (aprox 5 semanas visíveis para parecer um mês)
+            val visibleWeeks = 5.5f
+            val weekHeight = maxHeight / visibleWeeks
 
-            LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                state = listState,
+                // Adiciona o suporte a scroll de rato (Desktop) e drag snap (Android)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .monthScroll(listState, coroutineScope)
+            ) {
                 itemsIndexed(weeks, key = { _, weekStart -> weekStart.toEpochDay() }) { _, weekStart ->
                     WeekRow(
                         startOfWeek = weekStart,
@@ -99,34 +99,29 @@ fun Calendar(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(weekHeight)
-                            .padding(vertical = 2.dp)
+                        // Remove padding vertical para as linhas se tocarem (estilo grelha)
                     )
                 }
             }
         }
     }
 
-    // Atualiza mês ao scrollar
-    val firstVisibleWeek by remember {
-        derivedStateOf { weeks.getOrNull(listState.firstVisibleItemIndex) }
-    }
-    LaunchedEffect(firstVisibleWeek) {
-        firstVisibleWeek?.let {
-            val midWeek = it.plusDays(3)
-            val newMonth = YearMonth.from(midWeek)
-            if (newMonth != month) onMonthChange(newMonth)
+    // Deteta mudança de mês baseada no scroll
+    val firstVisibleWeekIndex by remember { derivedStateOf { listState.firstVisibleItemIndex } }
+
+    LaunchedEffect(firstVisibleWeekIndex) {
+        // Pega na semana do meio visível para determinar o mês "focado"
+        val midIndex = (firstVisibleWeekIndex + 2).coerceIn(weeks.indices)
+        val midWeekDate = weeks[midIndex].plusDays(3)
+        val newMonth = YearMonth.from(midWeekDate)
+
+        if (newMonth != month) {
+            onMonthChange(newMonth)
         }
     }
 }
-
-
 
 fun generateWeeksAround(center: LocalDate, count: Int): List<LocalDate> {
     val start = center.with(DayOfWeek.MONDAY).minusWeeks(count / 2L)
     return List(count) { start.plusWeeks(it.toLong()) }
 }
-
-
-
-
-

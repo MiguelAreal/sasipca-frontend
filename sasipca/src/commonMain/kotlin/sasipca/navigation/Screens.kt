@@ -1,4 +1,4 @@
-package sasipca.screens.navigation
+    package sasipca.screens.navigation
 
 
 import androidx.compose.material.icons.Icons
@@ -59,7 +59,9 @@ object HomeTab : Tab {
 
     @Composable
     override fun Content() {
-        sasipca.screens.HomeScreen()
+        sasipca.screens.HomeScreen(
+            statsRepository = remember { ApiClient.statsRepository }
+        )
     }
 }
 
@@ -260,6 +262,15 @@ class AdminsScreen : Screen {
     override fun Content() {
         sasipca.screens.AdminsScreen(
             adminRepository = remember { ApiClient.adminRepository }
+        )
+    }
+}
+
+class StatsScreen : Screen {
+    @Composable
+    override fun Content() {
+        sasipca.screens.StatsScreen(
+            statsRepository = remember { ApiClient.statsRepository }
         )
     }
 }

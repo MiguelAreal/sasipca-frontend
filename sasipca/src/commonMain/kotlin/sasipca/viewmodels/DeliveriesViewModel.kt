@@ -62,8 +62,12 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
     fun loadMonthDeliveries(month: YearMonth = _month.value) {
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
+            // Carrega mês anterior, atual e seguinte (3 meses de buffer)
+            val start = month.minusMonths(1).atDay(1).toString()
+            val end = month.plusMonths(1).atEndOfMonth().toString()
+
             runCatching {
-                deliveryRepository.getDeliveries(DeliveryGet(dateFrom = month.atDay(1).toString(), dateTo = month.atEndOfMonth().toString()))
+                deliveryRepository.getDeliveries(DeliveryGet(dateFrom = start, dateTo = end))
             }.onSuccess { _deliveries.value = it }
                 .onFailure { println("Erro: $it") }
             _isLoading.value = false

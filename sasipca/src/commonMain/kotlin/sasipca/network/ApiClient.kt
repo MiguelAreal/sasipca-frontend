@@ -29,13 +29,14 @@ object ApiClient {
         private set
     lateinit var listsRepository: ListsRepository
         private set
-
     lateinit var notificationRepository: NotificationRepository
         private set
     lateinit var adjustmentRepository : AdjustmentRepository
         private set
-
     lateinit var adminRepository: AdminRepository
+        private set
+
+    lateinit var statsRepository: StatsRepository
         private set
 
     fun init(authManager: MicrosoftAuthManager) {
@@ -54,6 +55,7 @@ object ApiClient {
         notificationRepository = NotificationRepository(client)
         adjustmentRepository = AdjustmentRepository(client)
         adminRepository = AdminRepository(client)
+        statsRepository = StatsRepository(client)
     }
 
     suspend fun refreshToken(): Result<AuthResponse> {
