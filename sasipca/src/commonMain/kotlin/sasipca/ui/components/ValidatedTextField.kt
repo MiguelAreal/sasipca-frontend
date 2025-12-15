@@ -22,7 +22,8 @@ fun ValidatedTextField(
     maxLength: Int? = null,
     singleLine: Boolean = true,
     keyboardType: KeyboardType = KeyboardType.Text,
-    visualTransformation: VisualTransformation = VisualTransformation.None, // Adicionado
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -40,6 +41,7 @@ fun ValidatedTextField(
             keyboardOptions = KeyboardOptions.Default.copy(keyboardType = keyboardType),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),
+            enabled = enabled,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),

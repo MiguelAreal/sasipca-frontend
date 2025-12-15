@@ -1,4 +1,4 @@
-package sasipca.screens.navigation
+package sasipca.screens
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,49 +10,59 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabNavigator
+import sasipca.screens.navigation.*
+import sasipca.storage.SessionManager
 
+// Esta é a função que desenha o ecrã principal com as tabs
 @Composable
 fun MainScreenContent() {
-    // 1. Definir as tabs
-    val tabs = remember {
-        listOf(HomeTab, ProductsTab, CalendarTab, BeneficiariesTab)
+    // 1. Obter o Role do utilizador
+    val userRole = remember { SessionManager.getUserRole() }
+
+    // 2. Definir as tabs com base no Role
+    val tabs = remember(userRole) {
+        if (userRole == "Beneficiary") {
+            // Tabs para Beneficiário
+            listOf(ViewOnlyProductsTab, MyProfileTab)
+        } else {
+            // Tabs para Admin / Staff
+            listOf(HomeTab, ProductsTab, CalendarTab, BeneficiariesTab)
+        }
     }
 
-    // 2. Estado do Pager
+    // 3. Estado do Pager (Swipe)
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     var isProgrammaticScroll by remember { mutableStateOf(false) }
 
-    TabNavigator(HomeTab) {
+    TabNavigator(tabs.first()) {
         val tabNavigator = LocalTabNavigator.current
 
-        // 3. Sincronização: Pager -> Tab (Swipe do utilizador)
+        // Sincronização: Swipe -> Tab
         LaunchedEffect(pagerState.currentPage) {
             if (!isProgrammaticScroll) {
-                tabNavigator.current = tabs[pagerState.currentPage]
+                if (pagerState.currentPage < tabs.size) {
+                    tabNavigator.current = tabs[pagerState.currentPage]
+                }
             }
         }
 
-        // 4. Sincronização: Tab -> Pager (Clique na BottomBar ou Navegação interna)
+        // Sincronização: Tab -> Swipe
         LaunchedEffect(tabNavigator.current) {
             val targetIndex = tabs.indexOf(tabNavigator.current)
-
-            // Se o pager não estiver na página certa, animamos até lá
             if (targetIndex >= 0 && pagerState.currentPage != targetIndex) {
-                isProgrammaticScroll = true // Bloqueia o listener de cima
+                isProgrammaticScroll = true
                 pagerState.animateScrollToPage(targetIndex)
-                isProgrammaticScroll = false // Liberta o listener quando acabar
+                isProgrammaticScroll = false
             }
         }
 
         Scaffold(
             bottomBar = {
                 NavigationBar {
-                    tabs.forEachIndexed { index, tab ->
+                    tabs.forEach { tab ->
                         NavigationBarItem(
                             selected = tabNavigator.current == tab,
-                            onClick = {
-                                tabNavigator.current = tab
-                            },
+                            onClick = { tabNavigator.current = tab },
                             icon = {
                                 Icon(
                                     painter = tab.options.icon!!,
@@ -75,7 +85,9 @@ fun MainScreenContent() {
                     modifier = Modifier.fillMaxSize(),
                     beyondViewportPageCount = 1
                 ) { page ->
-                    tabs[page].Content()
+                    if (page < tabs.size) {
+                        tabs[page].Content()
+                    }
                 }
             }
         }

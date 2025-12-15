@@ -29,14 +29,16 @@ import sasipca.ui.theme.UnderlineError
 interface NamedItem {
     val name: String
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun <T:NamedItem> ValidatedDropdown(
+fun <T : NamedItem> ValidatedDropdown(
     label: String,
     items: List<T>,
     selectedItem: T?,
     onSelect: (T?) -> Unit,
     error: String? = null,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -44,7 +46,11 @@ fun <T:NamedItem> ValidatedDropdown(
     Column(modifier = modifier) {
         ExposedDropdownMenuBox(
             expanded = expanded,
-            onExpandedChange = { expanded = it }
+            onExpandedChange = {
+                if (enabled) {
+                    expanded = it
+                }
+            }
         ) {
             OutlinedTextField(
                 modifier = Modifier.menuAnchor().fillMaxWidth(),
@@ -57,11 +63,9 @@ fun <T:NamedItem> ValidatedDropdown(
                 maxLines = 1,
                 trailingIcon = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Ícone do dropdown
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded)
-
-                        // Ícone de limpar
-                        if (selectedItem != null) {
+                        // Ícone do dropdown (seta)
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                        if (selectedItem != null && enabled) {
                             IconButton(onClick = { onSelect(null) }) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
@@ -72,27 +76,30 @@ fun <T:NamedItem> ValidatedDropdown(
                     }
                 },
                 isError = error != null,
+                enabled = enabled,
                 shape = RoundedCornerShape(8.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                     cursorColor = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                 )
-
             )
 
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                items.forEach { item ->
-                    DropdownMenuItem(
-                        text = { Text(item.name) },
-                        onClick = {
-                            onSelect(item)
-                            expanded = false
-                        }
-                    )
+            // Só renderiza o menu se estiver ativado (segurança extra)
+            if (enabled) {
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    items.forEach { item ->
+                        DropdownMenuItem(
+                            text = { Text(item.name) },
+                            onClick = {
+                                onSelect(item)
+                                expanded = false
+                            }
+                        )
+                    }
                 }
             }
         }

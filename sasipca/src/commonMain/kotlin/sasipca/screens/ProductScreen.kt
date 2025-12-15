@@ -10,13 +10,15 @@ import kotlinx.coroutines.launch
 import sasipca.models.MovementHistory
 import sasipca.network.ApiClient
 import sasipca.models.ProductDetail
-import sasipca.repositories.HistoryRepository // Importar repo
+import sasipca.repositories.HistoryRepository
 import sasipca.repositories.OFFRepository
 import sasipca.repositories.ProductRepository
 import sasipca.storage.ScreenSizeManager.isLargeScreen
+import sasipca.storage.SessionManager
 import sasipca.ui.components.Header
 import sasipca.ui.components.products.ProductEditForm
-import sasipca.ui.components.products.ProductHistoryTable // Importar componente
+import sasipca.ui.components.products.ProductGroupsTable // IMPORTAR NOVO
+import sasipca.ui.components.products.ProductHistoryTable
 import sasipca.viewmodels.ProductViewModel
 
 @Suppress("UnusedBoxWithConstraintsScope")
@@ -25,12 +27,14 @@ import sasipca.viewmodels.ProductViewModel
 fun ProductScreen(
     barcode: String,
     productRepository: ProductRepository,
-    historyRepository: HistoryRepository = remember { HistoryRepository(ApiClient.client) } // Injeção default ou passada
+    historyRepository: HistoryRepository = remember { HistoryRepository(ApiClient.client) }
 ) {
+    // 1. Determinar Perfil (ReadOnly = Beneficiário)
+    val userRole = remember { SessionManager.getUserRole() }
+    val isReadOnly = userRole == "Beneficiary"
 
     val productViewModel = remember { ProductViewModel(productRepository) }
     val uiState by productViewModel.uiState.collectAsState()
-
     val offRepository = remember { OFFRepository(ApiClient.client) }
     val scope = rememberCoroutineScope()
 
@@ -40,19 +44,24 @@ fun ProductScreen(
     // --- ESTADOS DO HISTÓRICO ---
     var history by remember { mutableStateOf<List<MovementHistory>>(emptyList()) }
     var isHistoryLoading by remember { mutableStateOf(false) }
-    // ----------------------------
 
+    // --- TABS DINÂMICAS ---
     var selectedTab by remember { mutableStateOf(0) }
 
-    // Carrega dados iniciais (Produto + Histórico)
+    // Se for Beneficiário: 0=Produto, 1=Stock(Lotes)
+    // Se for Admin: 0=Produto, 1=Histórico, 2=Stock(Lotes)
+
+    // Carrega dados iniciais
     LaunchedEffect(barcode) {
-        // 1. Carregar Produto
+        // 1. Carregar Produto (Detalhes + Grupos)
         productViewModel.getProduct(barcode, offRepository)
 
-        // 2. Carregar Histórico
-        isHistoryLoading = true
-        history = historyRepository.getProductHistory(barcode)
-        isHistoryLoading = false
+        // 2. Carregar Histórico APENAS SE FOR ADMIN
+        if (!isReadOnly) {
+            isHistoryLoading = true
+            history = historyRepository.getProductHistory(barcode)
+            isHistoryLoading = false
+        }
     }
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -63,14 +72,12 @@ fun ProductScreen(
 
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             if (isLargeScreen()) {
-                // --- LAYOUT DESKTOP (LADO A LADO) ---
+                // --- LAYOUT DESKTOP ---
                 Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(20.dp),
+                    modifier = Modifier.fillMaxSize().padding(20.dp),
                     horizontalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    // Coluna da esquerda - Edição
+                    // Esquerda: Edição
                     Box(modifier = Modifier.weight(1f)) {
                         productDetail?.let {
                             ProductEditForm(
@@ -78,40 +85,56 @@ fun ProductScreen(
                                 isLoading = isLoading,
                                 errors = uiState.errors,
                                 onSave = { body ->
-                                    scope.launch {
-                                        productViewModel.putProduct(barcode = barcode, body = body)
-                                    }
-                                }
+                                    scope.launch { productViewModel.putProduct(barcode, body) }
+                                },
+                                isReadOnly = isReadOnly // <--- Passar flag
                             )
                         }
                     }
 
-                    // Coluna da direita - Histórico
+                    // Direita: Histórico ou Stock (depende do perfil)
                     Box(modifier = Modifier.weight(1f)) {
-                        ProductHistoryTable(
-                            history = history,
-                            isLoading = isHistoryLoading
-                        )
+                        if (isReadOnly) {
+                            // Beneficiário vê Grupos de Validade à direita
+                            productDetail?.let { ProductGroupsTable(it.productGroups) }
+                        } else {
+                            // Admin vê Histórico por defeito (pode ter tabs internas se quiseres)
+                            ProductHistoryTable(history = history, isLoading = isHistoryLoading)
+                        }
                     }
                 }
             } else {
-                // --- LAYOUT MOBILE (SEPARADORES) ---
+                // --- LAYOUT MOBILE (TABS) ---
                 Column(modifier = Modifier.fillMaxSize()) {
 
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.Center,
                     ) {
+                        // Tab 0: Produto (Sempre)
                         FilterChip(
                             selected = selectedTab == 0,
                             onClick = { selectedTab = 0 },
                             label = { Text("Produto") },
                             modifier = Modifier.padding(end = 8.dp)
                         )
+
+                        if (!isReadOnly) {
+                            // Admin: Tab 1 = Histórico
+                            FilterChip(
+                                selected = selectedTab == 1,
+                                onClick = { selectedTab = 1 },
+                                label = { Text("Histórico") },
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                        }
+
+                        // Tab 2 (Admin) ou Tab 1 (Benef): Stock/Validades
+                        val stockTabIndex = if (isReadOnly) 1 else 2
                         FilterChip(
-                            selected = selectedTab == 1,
-                            onClick = { selectedTab = 1 },
-                            label = { Text("Histórico") } // Mudado de "Stock" para "Histórico" ou podes ter os 3
+                            selected = selectedTab == stockTabIndex,
+                            onClick = { selectedTab = stockTabIndex },
+                            label = { Text("Validades") }
                         )
                     }
 
@@ -123,17 +146,25 @@ fun ProductScreen(
                                     isLoading = isLoading,
                                     errors = uiState.errors,
                                     onSave = { body ->
-                                        scope.launch {
-                                            productViewModel.putProduct(barcode = barcode, body = body)
-                                        }
-                                    }
+                                        scope.launch { productViewModel.putProduct(barcode, body) }
+                                    },
+                                    isReadOnly = isReadOnly // <--- Passar flag
                                 )
                             }
                             1 -> {
-                                ProductHistoryTable(
-                                    history = history,
-                                    isLoading = isHistoryLoading
-                                )
+                                if (isReadOnly) {
+                                    // Beneficiário: Tab 1 é Stock
+                                    productDetail?.let { ProductGroupsTable(it.productGroups) }
+                                } else {
+                                    // Admin: Tab 1 é Histórico
+                                    ProductHistoryTable(history = history, isLoading = isHistoryLoading)
+                                }
+                            }
+                            2 -> {
+                                // Admin: Tab 2 é Stock
+                                if (!isReadOnly) {
+                                    productDetail?.let { ProductGroupsTable(it.productGroups) }
+                                }
                             }
                         }
                     }

@@ -1,25 +1,22 @@
-    package sasipca.screens.navigation
-
+package sasipca.screens.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Inventory
-import androidx.compose.material.icons.filled.People
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.filled.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
-import sasipca.network.ApiClient
 import sasipca.models.Delivery
+import sasipca.network.ApiClient
+import sasipca.screens.MainScreenContent
+import sasipca.storage.SessionManager
 import java.time.LocalDate
 
 // ==================================================================
-// --- ECRÃS DE AUTENTICAÇÃO E CONTAINER ---
+// --- ECRÃS DE LOGIN E MAIN ---
 // ==================================================================
 
 class LoginScreen : Screen {
@@ -38,14 +35,12 @@ class LoginScreen : Screen {
 class MainScreen : Screen {
     @Composable
     override fun Content() {
-        // Chama a função visual que está no outro ficheiro
         MainScreenContent()
     }
 }
 
-
 // ==================================================================
-// --- BOTTOM TABS (Principal) ---
+// --- TABS GERAIS (ADMIN/STAFF) ---
 // ==================================================================
 
 object HomeTab : Tab {
@@ -59,9 +54,7 @@ object HomeTab : Tab {
 
     @Composable
     override fun Content() {
-        sasipca.screens.HomeScreen(
-            statsRepository = remember { ApiClient.statsRepository }
-        )
+        sasipca.screens.HomeScreen(statsRepository = remember { ApiClient.statsRepository })
     }
 }
 
@@ -76,12 +69,11 @@ object ProductsTab : Tab {
 
     @Composable
     override fun Content() {
-        // Usa o navigator principal para sair da tab ao clicar num item
         val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
-
         sasipca.screens.ProductsScreen(
             productRepository = remember { ApiClient.productRepository },
-            onOpenProduct = { barcode -> navigator.push(ProductDetailScreen(barcode)) }
+            onOpenProduct = { barcode -> navigator.push(ProductDetailScreen(barcode)) },
+            isReadOnly = false // Admin pode editar
         )
     }
 }
@@ -98,7 +90,6 @@ object CalendarTab : Tab {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
-
         sasipca.screens.CalendarScreen(
             deliveryRepository = remember { ApiClient.deliveryRepository },
             onNavigateToDelivery = { date, isScheduled, delivery ->
@@ -120,7 +111,6 @@ object BeneficiariesTab : Tab {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
-
         sasipca.screens.BeneficiariesScreen(
             beneficiaryRepository = remember { ApiClient.beneficiaryRepository },
             onOpenBeneficiary = { id -> navigator.push(BeneficiaryDetailScreen(id)) }
@@ -129,38 +119,85 @@ object BeneficiariesTab : Tab {
 }
 
 // ==================================================================
-// --- ECRÃS DE DETALHE E FUNCIONAIS ---
+// --- TABS PARA BENEFICIÁRIO (NOVAS) ---
 // ==================================================================
 
-// Detalhe de Beneficiário
+object ViewOnlyProductsTab : Tab {
+    override val options: TabOptions
+        @Composable
+        get() {
+            val title = "Produtos"
+            val icon = rememberVectorPainter(Icons.Default.Inventory)
+            return remember { TabOptions(index = 0u, title = title, icon = icon) }
+        }
+
+    @Composable
+    override fun Content() {
+        val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
+
+        // Reutiliza ProductsScreen mas em modo leitura
+        sasipca.screens.ProductsScreen(
+            productRepository = remember { ApiClient.productRepository },
+            onOpenProduct = { barcode -> navigator.push(ProductDetailScreen(barcode)) },
+            isReadOnly = true
+        )
+    }
+}
+
+object MyProfileTab : Tab {
+    override val options: TabOptions
+        @Composable
+        get() {
+            val title = "Meu Perfil"
+            val icon = rememberVectorPainter(Icons.Default.Person)
+            return remember { TabOptions(index = 1u, title = title, icon = icon) }
+        }
+
+    @Composable
+    override fun Content() {
+        // Obtém ID do user logado
+        val myUserId = remember { SessionManager.getUserId() } ?: -1
+
+        // Reutiliza BeneficiaryScreen mas em modo leitura/perfil
+        sasipca.screens.BeneficiaryScreen(
+            beneficiaryId = myUserId,
+            repository = remember { ApiClient.beneficiaryRepository },
+            deliveryRepository = remember { ApiClient.deliveryRepository },
+            isReadOnly = true // Adapta a UI para "Meu Perfil"
+        )
+    }
+}
+
+// ==================================================================
+// --- ECRÃS DE DETALHE E OUTROS ---
+// ==================================================================
+
 data class BeneficiaryDetailScreen(val beneficiaryId: Int) : Screen {
     @Composable
     override fun Content() {
         sasipca.screens.BeneficiaryScreen(
             beneficiaryId = beneficiaryId,
             repository = remember { ApiClient.beneficiaryRepository },
-            deliveryRepository = remember { ApiClient.deliveryRepository }
+            deliveryRepository = remember { ApiClient.deliveryRepository },
+            isReadOnly = false // Admin a ver detalhe
         )
     }
 }
 
-// Detalhe de Produto
 data class ProductDetailScreen(val barcode: String) : Screen {
     @Composable
     override fun Content() {
         sasipca.screens.ProductScreen(
             barcode = barcode,
-            productRepository = remember { ApiClient.productRepository },
-            // historyRepository usa o default
+            productRepository = remember { ApiClient.productRepository }
         )
     }
 }
 
-// Criar ou Editar Entrega
 data class DeliveryScreen(
     val initialDate: LocalDate? = null,
     val isScheduled: Boolean = false,
-    val existingDelivery: sasipca.models.Delivery? = null // NOVO PARÂMETRO
+    val existingDelivery: Delivery? = null
 ) : Screen {
     @Composable
     override fun Content() {
@@ -170,11 +207,11 @@ data class DeliveryScreen(
             beneficiaryRepository = remember { ApiClient.beneficiaryRepository },
             initialScheduledDate = initialDate,
             initialIsScheduled = isScheduled,
-            existingDelivery = existingDelivery // Passa para o ecrã
+            existingDelivery = existingDelivery
         )
     }
 }
-// Receção de Stock
+
 class ReceptionScreen : Screen {
     @Composable
     override fun Content() {
@@ -185,7 +222,6 @@ class ReceptionScreen : Screen {
     }
 }
 
-// Ajuste de Stock
 class StockAdjustmentScreen : Screen {
     @Composable
     override fun Content() {
@@ -196,7 +232,6 @@ class StockAdjustmentScreen : Screen {
     }
 }
 
-// Histórico Global
 class HistoryScreen : Screen {
     @Composable
     override fun Content() {
@@ -206,7 +241,6 @@ class HistoryScreen : Screen {
     }
 }
 
-// Campanhas
 class CampaignsScreen : Screen {
     @Composable
     override fun Content() {
@@ -217,20 +251,16 @@ class CampaignsScreen : Screen {
     }
 }
 
-// Relatórios
 class ReportsScreen : Screen {
     @Composable
     override fun Content() {
         sasipca.screens.ReportsScreen(
-            // 1. ReportRepo para listar e gerar
             reportsRepository = remember { ApiClient.reportRepository },
-            // 2. BeneficiaryRepo para o autocomplete no Dialog
             beneficiaryRepository = remember { ApiClient.beneficiaryRepository }
         )
     }
 }
 
-// Notificações
 class NotificationsScreen : Screen {
     @Composable
     override fun Content() {
@@ -240,7 +270,6 @@ class NotificationsScreen : Screen {
     }
 }
 
-// Definições
 class SettingsScreen : Screen {
     @Composable
     override fun Content() {
@@ -248,7 +277,6 @@ class SettingsScreen : Screen {
     }
 }
 
-// Perfil
 class ProfileScreen : Screen {
     @Composable
     override fun Content() {
@@ -256,7 +284,6 @@ class ProfileScreen : Screen {
     }
 }
 
-// Gestão de Administradores
 class AdminsScreen : Screen {
     @Composable
     override fun Content() {

@@ -44,7 +44,8 @@ class AuthRepository(
                     token = successResponse.accessToken,
                     refreshToken = successResponse.refreshToken,
                     userID = successResponse.userID,
-                    userName = successResponse.userName
+                    userName = successResponse.userName,
+                    role = successResponse.role
                 )
                 Result.success(successResponse)
             }
@@ -82,7 +83,8 @@ class AuthRepository(
                         token = successResponse.accessToken,
                         refreshToken = successResponse.refreshToken,
                         userID = successResponse.userID,
-                        userName = successResponse.userName
+                        userName = successResponse.userName,
+                        role = successResponse.role
                     )
                     return Result.success(successResponse)
                 }

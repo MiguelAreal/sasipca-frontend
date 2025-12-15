@@ -25,7 +25,8 @@ import sasipca.viewmodels.DeliveriesViewModel
 fun BeneficiaryScreen(
     beneficiaryId: Int,
     repository: BeneficiaryRepository,
-    deliveryRepository: DeliveryRepository
+    deliveryRepository: DeliveryRepository,
+    isReadOnly: Boolean = false // <--- PARAM
 ) {
     val navigator = LocalNavigator.currentOrThrow
     val beneficiaryViewModel = remember { BeneficiaryDetailViewModel(repository) }
@@ -48,8 +49,7 @@ fun BeneficiaryScreen(
     LaunchedEffect(uiState.success) {
         if (uiState.success) {
             beneficiaryViewModel.clearUiState()
-
-            navigator.pop()
+            if (!isReadOnly) navigator.pop()
         }
 
         if (uiState.lastErrorMessage != null) {
@@ -59,7 +59,7 @@ fun BeneficiaryScreen(
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Header(
-            title = "Beneficiário",
+            title = if (isReadOnly) "O Meu Perfil" else "Beneficiário",
             subTitle = beneficiary?.name ?: ""
         )
 
@@ -71,21 +71,22 @@ fun BeneficiaryScreen(
                         .padding(20.dp),
                     horizontalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    // Coluna da esquerda - Edição
+                    // Coluna da esquerda
                     Box(modifier = Modifier.weight(1f)) {
                         BeneficiaryEditForm(
                             beneficiary = beneficiary,
                             isLoading = isLoading,
                             errors = uiState.errors,
                             onSave = { body ->
-                                scope.launch {
-                                    beneficiaryViewModel.updateBeneficiary(beneficiaryId, body)
+                                if (!isReadOnly) {
+                                    scope.launch { beneficiaryViewModel.updateBeneficiary(beneficiaryId, body) }
                                 }
-                            }
+                            },
+                            isReadOnly = isReadOnly // <--- Passar flag
                         )
                     }
 
-                    // Coluna da direita - Histórico
+                    // Coluna da direita
                     Box(modifier = Modifier.weight(1f)) {
                         DeliveriesTable(
                             deliveries = deliveries,
@@ -94,13 +95,12 @@ fun BeneficiaryScreen(
                     }
                 }
             } else {
-                // Layout com separadores para ecrãs pequenos
+                // Mobile
                 Column(modifier = Modifier.fillMaxSize()) {
 
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.Center,
-
                     ) {
                         FilterChip(
                             selected = selectedTab == 0,
@@ -115,19 +115,18 @@ fun BeneficiaryScreen(
                         )
                     }
 
-                    Box(modifier = Modifier.fillMaxSize().
-                    padding(horizontal = 20.dp)
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
                         when (selectedTab) {
                             0 -> BeneficiaryEditForm(
                                 beneficiary = beneficiary,
                                 isLoading = isLoading,
                                 errors = uiState.errors,
                                 onSave = { body ->
-                                    scope.launch {
-                                        beneficiaryViewModel.updateBeneficiary(beneficiaryId, body)
+                                    if (!isReadOnly) {
+                                        scope.launch { beneficiaryViewModel.updateBeneficiary(beneficiaryId, body) }
                                     }
-                                }
+                                },
+                                isReadOnly = isReadOnly
                             )
                             1 -> DeliveriesTable(
                                 deliveries = deliveries,
@@ -140,6 +139,3 @@ fun BeneficiaryScreen(
         }
     }
 }
-
-
-

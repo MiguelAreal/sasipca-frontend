@@ -15,6 +15,7 @@ object SessionManager {
     private const val KEY_REFRESH_TOKEN = "refresh_token"
     private const val KEY_USER_ID = "user_id"
     private const val KEY_USER_NAME = "user_name"
+    private const val KEY_USER_ROLE = "user_role" // NOVO
 
     // --- ESTADO REATIVO DE SESSÃO ---
     private val _isLoggedIn = MutableStateFlow(false)
@@ -41,7 +42,8 @@ object SessionManager {
         token: String,
         refreshToken: String,
         userID: Int,
-        userName: String
+        userName: String,
+        role: String // NOVO: Guarda o tipo de utilizador
     ) {
         if (!::settings.isInitialized) return
 
@@ -49,6 +51,7 @@ object SessionManager {
         settings.putString(KEY_REFRESH_TOKEN, refreshToken)
         settings.putInt(KEY_USER_ID, userID)
         settings.putString(KEY_USER_NAME, userName)
+        settings.putString(KEY_USER_ROLE, role)
 
         _isLoggedIn.value = true
     }
@@ -72,6 +75,12 @@ object SessionManager {
     fun getUserId(): Int? {
         if (!::settings.isInitialized) return null
         return settings.getIntOrNull(KEY_USER_ID)
+    }
+
+    // NOVO: Getter para o role
+    fun getUserRole(): String? {
+        if (!::settings.isInitialized) return null
+        return settings.getStringOrNull(KEY_USER_ROLE)
     }
 
     fun setAccessToken(newToken: String) {
@@ -104,8 +113,8 @@ object SessionManager {
         settings.remove(KEY_REFRESH_TOKEN)
         settings.remove(KEY_USER_ID)
         settings.remove(KEY_USER_NAME)
+        settings.remove(KEY_USER_ROLE) // Limpa o role
 
         _isLoggedIn.value = false
-
     }
 }
