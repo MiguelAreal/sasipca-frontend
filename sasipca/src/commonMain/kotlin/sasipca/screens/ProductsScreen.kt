@@ -69,7 +69,7 @@ fun ProductsScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues) // Padding do Scaffold
+                .padding(bottom = paddingValues.calculateBottomPadding())
         ) {
 
             Header("Inventário", getFormattedDatePt())
