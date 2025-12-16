@@ -8,6 +8,13 @@ import kotlinx.coroutines.flow.asStateFlow
 object SettingsManager {
     private lateinit var settings: Settings
 
+    // Keys
+    private const val KEY_SERVER_IP = "server_ip"
+    private const val KEY_DARK_THEME = "dark_theme"
+    private const val KEY_FCM_TOKEN = "fcm_token" // <--- NOVO
+
+    private const val DEFAULT_SERVER_IP = "rapi.tail1fcae6.ts.net"
+
     // --- ESTADO REATIVO DO TEMA ---
     private val _isDarkThemeFlow = MutableStateFlow(false)
     val isDarkThemeFlow: StateFlow<Boolean> = _isDarkThemeFlow.asStateFlow()
@@ -18,14 +25,8 @@ object SettingsManager {
         _isDarkThemeFlow.value = settings.getBoolean(KEY_DARK_THEME, false)
     }
 
-    // Keys
-    private const val KEY_SERVER_IP = "server_ip"
-    private const val KEY_DARK_THEME = "dark_theme"
-    private const val DEFAULT_SERVER_IP = "rapi.tail1fcae6.ts.net"
-
     // Server IP
     fun getServerIp(): String {
-        // Verifica se settings foi inicializado para evitar crash em previews ou testes
         if (!::settings.isInitialized) return DEFAULT_SERVER_IP
         return settings.getStringOrNull(KEY_SERVER_IP) ?: DEFAULT_SERVER_IP
     }
@@ -34,20 +35,33 @@ object SettingsManager {
         if (::settings.isInitialized) settings.putString(KEY_SERVER_IP, ip)
     }
 
-
+    // Theme
     fun setDarkTheme(isDark: Boolean) {
         if (::settings.isInitialized) {
             settings.putBoolean(KEY_DARK_THEME, isDark)
-            // IMPORTANTE: Atualiza o fluxo para notificar quem estiver a ouvir (App.kt)
             _isDarkThemeFlow.value = isDark
         }
     }
+
+    // --- GESTÃO TOKEN FCM (NOVO) ---
+    fun saveFcmToken(token: String) {
+        if (::settings.isInitialized) {
+            settings.putString(KEY_FCM_TOKEN, token)
+        }
+    }
+
+    fun getFcmToken(): String? {
+        if (!::settings.isInitialized) return null
+        return settings.getStringOrNull(KEY_FCM_TOKEN)
+    }
+    // -------------------------------
 
     // Reset to defaults
     fun resetToDefaults() {
         if (::settings.isInitialized) {
             settings.putString(KEY_SERVER_IP, DEFAULT_SERVER_IP)
-            setDarkTheme(false) // Isto já atualiza o fluxo
+            setDarkTheme(false)
+            // Nota: NÃO apagamos o FCM Token aqui, pois ele é vital para o dispositivo
         }
     }
 }

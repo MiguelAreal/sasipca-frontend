@@ -2,6 +2,7 @@ package sasipca.repositories
 
 import sasipca.network.ApiConfig
 import sasipca.storage.SessionManager
+import sasipca.storage.SettingsManager
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -47,6 +48,8 @@ class AuthRepository(
                     userName = successResponse.userName,
                     role = successResponse.role
                 )
+                // Opcional: Podes querer renovar o token FCM no refresh também,
+                // mas geralmente só no login é suficiente.
                 Result.success(successResponse)
             }
             else -> {
@@ -64,7 +67,6 @@ class AuthRepository(
 
     suspend fun loginMicrosoft(): Result<AuthResponse> {
         // 1. Obter IdToken da Microsoft
-        // Se isto falhar ou for cancelado, retorna logo (nada a limpar)
         val idToken = msAuthManager.signIn()
             ?: return Result.failure(Exception("Login Microsoft cancelado ou falhou."))
 
@@ -79,6 +81,8 @@ class AuthRepository(
                 HttpStatusCode.OK -> {
                     // SUCESSO TOTAL
                     val successResponse: AuthResponse = response.body()
+
+                    // 1. Guarda a sessão (Tokens de acesso)
                     SessionManager.saveSession(
                         token = successResponse.accessToken,
                         refreshToken = successResponse.refreshToken,
@@ -86,16 +90,17 @@ class AuthRepository(
                         userName = successResponse.userName,
                         role = successResponse.role
                     )
+
+                    // 2. [NOVO] Envia o Token FCM pendente para o backend
+                    // Fazemos isto AQUI porque agora temos a certeza que temos um token de acesso válido
+                    sendFcmTokenSafely()
+
                     return Result.success(successResponse)
                 }
 
-                // ERROS DO BACKEND (401, 400, 500, etc.)
+                // ERROS DO BACKEND
                 else -> {
-                    // O backend rejeitou (ex: email pessoal, servidor em baixo, erro 500)
-                    // MAS a Microsoft já deu o "OK" localmente.
-                    // TEMOS DE LIMPAR A SESSÃO MICROSOFT IMEDIATAMENTE.
                     silentSignOut()
-
                     val msg = try {
                         response.body<Resposta>().message
                     } catch (e: Exception) {
@@ -105,17 +110,36 @@ class AuthRepository(
                 }
             }
         } catch (e: Exception) {
-            // ERROS DE REDE OU CRASH (Sem internet, Timeout)
-            // Também aqui temos de limpar a sessão Microsoft, senão o utilizador
-            // fica preso no estado "logado" sem conseguir tentar de novo.
             silentSignOut()
             return Result.failure(e)
         }
     }
 
     /**
-     * Helper para limpar sessão sem bloquear ou lançar excepções para a UI
+     * Tenta enviar o token FCM guardado no SettingsManager para a API.
+     * Envolto em try-catch para não falhar o Login se a notificação falhar.
      */
+    private suspend fun sendFcmTokenSafely() {
+        val fcmToken = SettingsManager.getFcmToken() ?: return
+
+        try {
+            // Usamos o SessionManager para pegar o token que acabámos de guardar
+            val accessToken = SessionManager.getAccessToken() ?: return
+
+            client.post("${ApiConfig.baseUrl()}/notifications/device") {
+                header(HttpHeaders.Authorization, "Bearer $accessToken")
+                contentType(ContentType.Application.Json)
+                // Usa o DTO que definiste no NotificationRepository ou cria um mapa simples
+                setBody(DeviceTokenDto(fcmToken))
+            }
+            println("AuthRepo: Token FCM enviado com sucesso após login.")
+        } catch (e: Exception) {
+            // Apenas logamos o erro, não queremos estragar a experiência de login do user
+            println("AuthRepo: Aviso - Falha ao registar dispositivo FCM: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
     private suspend fun silentSignOut() {
         try {
             msAuthManager.signOut()
@@ -124,13 +148,9 @@ class AuthRepository(
         }
     }
 
-    /**
-     * Faz logout completo (Backend + Microsoft + Sessão Local)
-     */
     suspend fun logout(): Result<Resposta> {
         var backendResult: Result<Resposta>
 
-        // Avisar o Backend
         try {
             val resposta: Resposta = client.requestWithAuth(
                 method = HttpMethod.Post,
@@ -140,22 +160,17 @@ class AuthRepository(
             )
             backendResult = Result.success(resposta)
         } catch (e: Exception) {
-            // Se falhar (ex: sem net), não faz mal. O importante é limpar localmente.
             backendResult = Result.failure(e)
         }
 
-        // Limpar dados da Microsoft (MSAL)
-        // Isto impede o bug de "login loop" ou "account already signed in"
         try {
             msAuthManager.signOut()
         } catch (e: Exception) {
             e.printStackTrace()
         }
 
-        // Limpar Sessão Interna da App
         SessionManager.clear()
 
         return backendResult
     }
-
 }

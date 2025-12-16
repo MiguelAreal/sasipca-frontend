@@ -149,7 +149,7 @@ compose.desktop {
             }
 
             packageName = "sasipca"
-            packageVersion = "1.0.1"
+            packageVersion = "1.0.3"
         }
     }
 }
