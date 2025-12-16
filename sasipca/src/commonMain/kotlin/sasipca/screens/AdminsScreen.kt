@@ -10,7 +10,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.*
@@ -19,63 +18,52 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
-import sasipca.repositories.AdminRepository
 import sasipca.models.AdminUser
+import sasipca.models.SnackbarType
+import sasipca.repositories.AdminRepository
 import sasipca.ui.components.Header
+import sasipca.ui.components.LinearLoadingWidget
 import sasipca.ui.components.LoadingWidget
+import sasipca.ui.components.SearchInputField
 import sasipca.ui.components.ValidatedTextField
 import sasipca.utils.SnackbarManager
-import sasipca.models.SnackbarType
-import sasipca.ui.components.SearchInputField
 import sasipca.viewmodels.AdminViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminsScreen(
     adminRepository: AdminRepository
 ) {
     val viewModel = remember { AdminViewModel(adminRepository) }
 
-    // Estados do ViewModel
-    val uiState by viewModel.uiState.collectAsState() // Observa o estado de feedback
+    // Estados do ViewModel (StateFlows convertidos para State)
+    val uiState by viewModel.uiState.collectAsState()
 
-    // Estados Locais
+    // Estados Locais de UI
     var showAddDialog by remember { mutableStateOf(false) }
     var newEmail by remember { mutableStateOf("") }
     var newContact by remember { mutableStateOf("") }
     var searchTerm by remember { mutableStateOf("") }
 
-    // Carregar dados inicial
+    // 1. Carregamento Inicial
     LaunchedEffect(Unit) {
         viewModel.loadAdmins()
     }
 
-    // Debounce de pesquisa (Tal como no BeneficiariesScreen)
+    // 2. Lógica de Pesquisa com Debounce
     LaunchedEffect(searchTerm) {
-        // Se o utilizador estiver a escrever, esperamos 500ms (Debounce).
+        // Se não estiver vazio, espera para não fazer pedidos a cada letra
         if (searchTerm.isNotEmpty()) {
             delay(500)
         }
+        // Carrega (seja pesquisa ou reset para todos se vazio)
         viewModel.loadAdmins(query = searchTerm, page = 1)
     }
 
-    // Feedback de Sucesso/Erro
-    LaunchedEffect(searchTerm) {
-        if (searchTerm.isEmpty()) {
-            viewModel.loadAdmins()
-        } else {
-            delay(500)
-            viewModel.loadAdmins(query = searchTerm, page = 1)
-        }
-    }
-
-    // Feedback de Sucesso/Erro
+    // 3. Gestão de Feedback (Sucesso na criação)
     LaunchedEffect(uiState.success) {
         if (uiState.success) {
             SnackbarManager.show("Administrador criado com sucesso!", SnackbarType.SUCCESS)
@@ -83,27 +71,39 @@ fun AdminsScreen(
             newEmail = ""
             newContact = ""
             viewModel.clearUiState()
+            // Recarregar a lista para mostrar o novo admin
+            viewModel.loadAdmins(query = searchTerm)
         }
     }
+
+    // 4. Gestão de Erros (Criação ou Listagem)
     LaunchedEffect(uiState.lastErrorMessage) {
         uiState.lastErrorMessage?.let { msg ->
             SnackbarManager.show(msg, SnackbarType.ERROR)
             viewModel.clearUiState()
         }
     }
+
+    // Erros específicos de carregamento da lista (se existirem separados no VM)
     LaunchedEffect(viewModel.errorMessageList) {
         viewModel.errorMessageList?.let {
             SnackbarManager.show(it, SnackbarType.ERROR)
         }
     }
 
+    // Estrutura Principal
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
 
         Column(modifier = Modifier.fillMaxSize()) {
 
             Header("Administradores")
 
-            // --- BARRA DE PESQUISA (Estilo BeneficiariesScreen) ---
+            // Loading Linear abaixo do Header (apenas se a lista estiver a carregar)
+            if (viewModel.isLoadingList) {
+                LinearLoadingWidget()
+            }
+
+            // --- BARRA DE PESQUISA ---
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -122,16 +122,21 @@ fun AdminsScreen(
             Box(modifier = Modifier.weight(1f)) {
 
                 if (viewModel.isLoadingList && viewModel.admins.isEmpty()) {
-                    // Loading inicial sem dados
+                    // Loading inicial (ecrã limpo)
                     LoadingWidget()
                 } else if (viewModel.admins.isEmpty() && !viewModel.isLoadingList) {
                     // Estado Vazio
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Nenhum administrador encontrado.", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
+                        Text(
+                            "Nenhum administrador encontrado.",
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                        )
                     }
                 } else {
-                    // Lista com Dados
+                    // Lista com Dados + Paginação
                     Column(modifier = Modifier.fillMaxSize()) {
+
+                        // Lista
                         LazyColumn(
                             modifier = Modifier.weight(1f),
                             contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 80.dp),
@@ -143,16 +148,17 @@ fun AdminsScreen(
                         }
 
                         // --- RODAPÉ DE PAGINAÇÃO ---
+                        // Só mostra se houver mais que uma página
                         if (viewModel.totalPages > 1) {
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
                                 color = MaterialTheme.colorScheme.surface,
-                                shadowElevation = 8.dp
+                                shadowElevation = 16.dp // Sombra mais forte para destacar do fundo
                             ) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 8.dp, horizontal = 20.dp),
+                                        .padding(vertical = 12.dp, horizontal = 20.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -180,11 +186,6 @@ fun AdminsScreen(
                         }
                     }
                 }
-
-                // Loading Overlay (barra de progresso no topo se estiver a paginar/filtrar mas já tem dados)
-                if (viewModel.isLoadingList && viewModel.admins.isNotEmpty()) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter))
-                }
             }
         }
 
@@ -196,6 +197,8 @@ fun AdminsScreen(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(24.dp)
+                // Adiciona padding extra se a paginação estiver visível para não tapar
+                .padding(bottom = if (viewModel.totalPages > 1) 48.dp else 0.dp)
         ) {
             Icon(Icons.Default.Add, contentDescription = "Adicionar Admin", tint = MaterialTheme.colorScheme.onPrimary)
         }
@@ -216,7 +219,7 @@ fun AdminsScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    // Usa o componente validado que pediste
+                    // Campo de Email
                     ValidatedTextField(
                         value = newEmail,
                         onValueChange = { newEmail = it },
@@ -226,6 +229,7 @@ fun AdminsScreen(
                         keyboardType = KeyboardType.Email
                     )
 
+                    // Campo de Contacto
                     ValidatedTextField(
                         value = newContact,
                         onValueChange = { newContact = it },
@@ -241,10 +245,10 @@ fun AdminsScreen(
                     onClick = {
                         viewModel.createAdmin(newEmail, newContact)
                     },
-                    enabled = !uiState.isLoading
+                    enabled = !uiState.isLoading && newEmail.isNotBlank()
                 ) {
                     if (uiState.isLoading) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                     } else {
                         Text("Criar")
                     }
@@ -262,12 +266,11 @@ fun AdminsScreen(
     }
 }
 
-// --- CARD DE ADMIN (Mantém-se igual, apenas com ajustes visuais se necessário) ---
 @Composable
 fun AdminCard(admin: AdminUser) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp), // Ajustado para 1dp para ser mais leve
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp)
     ) {

@@ -61,5 +61,7 @@ object ListsStore {
     fun getActiveCampaignName(id: Int): String =
         ActiveCampaigns.firstOrNull { it.id == id }?.name ?: "Desconhecido"
 
+    val isInitialized: Boolean
+        get() = movementTypes.isNotEmpty() && unitTypes.isNotEmpty()
 
 }

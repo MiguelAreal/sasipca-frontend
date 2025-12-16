@@ -22,8 +22,10 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+import sasipca.network.ApiClient // Importar ApiClient
 import sasipca.repositories.AuthRepository
 import sasipca.screens.navigation.SettingsScreen
+import sasipca.storage.NotificationManager
 import sasipca.utils.SnackbarManager
 import sasipca.models.SnackbarType
 import sasipca_app.sasipca.generated.resources.Res
@@ -37,74 +39,62 @@ fun LoginScreen(
 ) {
     val coroutineScope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
-
-    // Obter navigator para o botão de Settings
     val navigator = LocalNavigator.currentOrThrow
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF24804F))
-    ) {
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF24804F))) {
 
         @OptIn(ExperimentalResourceApi::class)
         Image(
             painter = painterResource(Res.drawable.login_bg),
             contentDescription = "Background",
             contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer { alpha = 0.15f }
+            modifier = Modifier.fillMaxSize().graphicsLayer { alpha = 0.15f }
         )
 
-        // ... (Logo e textos iguais ao teu código) ...
-
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp)
-                .padding(vertical = 24.dp),
+            modifier = Modifier.fillMaxSize().padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.weight(1f))
 
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 @OptIn(ExperimentalResourceApi::class)
                 Image(
                     painter = painterResource(Res.drawable.logo_white),
                     contentDescription = "IPCA Logo",
-                    modifier = Modifier
-                        .height(150.dp)
-                        .padding(bottom = 16.dp),
+                    modifier = Modifier.height(150.dp).padding(bottom = 16.dp),
                     contentScale = ContentScale.Fit
                 )
-
-                Text(
-                    text = "Controlo de stock com facilidade.",
-                    color = Color.White,
-                    fontSize = 14.sp,
-                    textAlign = TextAlign.Center
-                )
+                Text("Controlo de stock com facilidade.", color = Color.White, fontSize = 14.sp)
             }
 
             Spacer(modifier = Modifier.weight(1f))
 
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(bottom = 20.dp)
-            ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(bottom = 20.dp)) {
                 Button(
                     onClick = {
                         coroutineScope.launch {
                             if (isLoading) return@launch
                             isLoading = true
-                            val result = authRepository.loginMicrosoft()
-                            result.fold(
+
+                            // 1. Tenta Login
+                            val loginResult = authRepository.loginMicrosoft()
+
+                            loginResult.fold(
                                 onSuccess = {
-                                    onLoginSuccess()
+                                    // 2. Login OK -> Tenta carregar listas
+                                    try {
+                                        ApiClient.listsRepository.loadLists()
+                                        NotificationManager.refreshCount()
+                                        // 3. Tudo OK -> Navega
+                                        onLoginSuccess()
+                                    } catch (e: Exception) {
+                                        // Falha ao carregar listas (mesmo com login ok)
+                                        isLoading = false
+                                        SnackbarManager.show("Login efetuado, mas falha ao carregar dados: ${e.message}", SnackbarType.ERROR)
+                                        // Opcional: fazer logout se os dados forem críticos
+                                        // authRepository.logout()
+                                    }
                                 },
                                 onFailure = {
                                     isLoading = false
@@ -113,58 +103,27 @@ fun LoginScreen(
                             )
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        contentColor = Color(0xFF24804F),
-                    ),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF24804F)),
                     shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier
-                        .widthIn(280.dp, 400.dp)
-                        .height(50.dp),
+                    modifier = Modifier.widthIn(280.dp, 400.dp).height(50.dp),
                     enabled = !isLoading
                 ) {
                     if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = Color(0xFF24804F),
-                            strokeWidth = 2.dp
-                        )
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color(0xFF24804F), strokeWidth = 2.dp)
                     } else {
-                        Text(
-                            text = "Entrar com conta IPCA",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Normal
-                        )
+                        Text("Entrar com conta IPCA", fontSize = 16.sp, fontWeight = FontWeight.Normal)
                     }
                 }
-
                 Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "Utilize as suas credenciais institucionais",
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center
-                )
+                Text("Utilize as suas credenciais institucionais", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
             }
         }
 
-        // Botão Settings Atualizado para Voyager
         IconButton(
             onClick = { navigator.push(SettingsScreen()) },
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(16.dp)
-                .statusBarsPadding()
-                .size(36.dp)
-                .background(Color.White.copy(alpha = 0.2f), shape = RoundedCornerShape(50))
+            modifier = Modifier.align(Alignment.TopStart).padding(16.dp).statusBarsPadding().size(36.dp).background(Color.White.copy(alpha = 0.2f), shape = RoundedCornerShape(50))
         ) {
-            Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = "Definições",
-                tint = Color.White,
-                modifier = Modifier.size(24.dp)
-            )
+            Icon(Icons.Default.Settings, "Definições", tint = Color.White, modifier = Modifier.size(24.dp))
         }
     }
 }

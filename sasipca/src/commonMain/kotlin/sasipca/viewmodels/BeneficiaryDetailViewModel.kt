@@ -52,7 +52,6 @@ class BeneficiaryDetailViewModel(
         }
     }
 
-    // --- NOVA FUNÇÃO DE CRIAÇÃO COM VALIDAÇÃO ---
     fun submitCreateBeneficiary(
         name: String,
         email: String,
@@ -141,7 +140,6 @@ class BeneficiaryDetailViewModel(
                 beneficiaryRepository.postProfile(dto)
             }.onSuccess { response ->
                 _uiState.value = BeneficiaryUIState(success = true)
-                SnackbarManager.show(response.message ?: "Beneficiário criado com sucesso!", SnackbarType.SUCCESS)
             }.onFailure { t ->
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -151,7 +149,6 @@ class BeneficiaryDetailViewModel(
         }
     }
 
-    // --- ATUALIZAÇÃO ---
     fun updateBeneficiary(beneficiaryId: Int, body: BeneficiaryPost) {
         viewModelScope.launch(Dispatchers.Default) {
             _uiState.value = _uiState.value.copy(isLoading = true, errors = emptyMap(), lastErrorMessage = null, success = false)
@@ -188,8 +185,6 @@ class BeneficiaryDetailViewModel(
                 beneficiaryRepository.putProfile(beneficiaryId, body)
             }.onSuccess { response ->
                 _uiState.value = BeneficiaryUIState(success = true)
-                SnackbarManager.show(response.message ?: "Atualizado com sucesso.", SnackbarType.SUCCESS)
-                // O ecrã (View) deve observar 'uiState.success' e fazer navigator.pop()
             }.onFailure { t ->
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,

@@ -107,7 +107,8 @@ fun BeneficiaryEditForm(
                             error = errors["email"],
                             maxLength = 50,
                             keyboardType = KeyboardType.Email,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !isReadOnly
                         )
                         ValidatedTextField(
                             value = editContact,

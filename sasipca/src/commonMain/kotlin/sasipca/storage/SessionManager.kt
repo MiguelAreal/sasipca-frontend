@@ -43,7 +43,7 @@ object SessionManager {
         refreshToken: String,
         userID: Int,
         userName: String,
-        role: String // NOVO: Guarda o tipo de utilizador
+        role: String
     ) {
         if (!::settings.isInitialized) return
 
@@ -77,10 +77,14 @@ object SessionManager {
         return settings.getIntOrNull(KEY_USER_ID)
     }
 
-    // NOVO: Getter para o role
     fun getUserRole(): String? {
         if (!::settings.isInitialized) return null
         return settings.getStringOrNull(KEY_USER_ROLE)
+    }
+
+    fun isAdmin(): Boolean {
+        if (!::settings.isInitialized) return false
+        return settings.getStringOrNull(KEY_USER_ROLE).equals("Admin", ignoreCase = true)
     }
 
     fun setAccessToken(newToken: String) {

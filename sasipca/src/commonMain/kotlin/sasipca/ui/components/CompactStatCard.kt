@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -18,15 +19,36 @@ fun RowScope.CompactStatCard(
     icon: ImageVector,
     label: String,
     value: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // --- NOVOS PARÂMETROS ADICIONADOS ---
+    containerColor: Color = MaterialTheme.colorScheme.surface,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
+    // Lógica para a cor do Ícone:
+    // Se o cartão for da cor padrão (Surface), usamos o estilo Primary (Azul).
+    // Se for personalizado (ex: Erro/Vermelho), o ícone adapta-se à cor do texto (contentColor).
+    val isDefaultSurface = containerColor == MaterialTheme.colorScheme.surface
+
+    val iconBoxColor = if (isDefaultSurface) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        // Se for vermelho, o fundo do ícone fica ligeiramente transparente
+        contentColor.copy(alpha = 0.2f)
+    }
+
+    val iconTintColor = if (isDefaultSurface) {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        contentColor
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 72.dp)
             .weight(1f, fill = true),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = containerColor // Usa a cor passada
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(12.dp)
@@ -41,13 +63,13 @@ fun RowScope.CompactStatCard(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .background(iconBoxColor), // Cor dinâmica
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = label,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    tint = iconTintColor, // Cor dinâmica
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -59,13 +81,13 @@ fun RowScope.CompactStatCard(
                     text = value,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = contentColor // Usa a cor passada
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = label,
                     fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = contentColor.copy(alpha = 0.7f) // Usa a cor passada com transparência
                 )
             }
         }

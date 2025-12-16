@@ -22,44 +22,85 @@ enum class TimeRange(val label: String, val days: Int) {
 
 class StatsViewModel(private val repository: StatsRepository) : ViewModel() {
 
-    // --- ESTADOS GERAIS ---
+    // --- CONSTANTES DE TIPO DE MOVIMENTO (Igual ao Backend) ---
+    private val MOVEMENT_TYPE_IN = 1
+    private val MOVEMENT_TYPE_OUT = 2
+
+    // --- ESTADOS DE UI (GLOBAL) ---
     var isLoading by mutableStateOf(false)
         private set
+
+    // --- ESTADOS PARA A HOME PAGE ---
     var isHomeLoading by mutableStateOf(false)
         private set
 
-    // --- DADOS ANALÍTICOS ---
-    var summary by mutableStateOf<DashboardSummary?>(null)
-        private set
-    var movementsFlow by mutableStateOf<List<ChartDataPoint>>(emptyList())
-        private set
-    var topProducts by mutableStateOf<List<ChartDataPoint>>(emptyList())
-        private set
-    var categoriesData by mutableStateOf<List<ChartDataPoint>>(emptyList())
-        private set
-
-    // --- DADOS HOME ---
     var monthlyStats by mutableStateOf<MonthlySummary?>(null)
         private set
+
     var currentHomeMonth by mutableStateOf(YearMonth.now())
         private set
 
-    // --- FILTROS ---
+    // --- ESTADOS PARA ESTATÍSTICAS AVANÇADAS ---
+    var summary by mutableStateOf<DashboardSummary?>(null)
+        private set
+
+    var movementsFlow by mutableStateOf<List<ChartDataPoint>>(emptyList())
+        private set
+
+    var topProducts by mutableStateOf<List<ChartDataPoint>>(emptyList())
+        private set
+
+    // A UI continua a ter variáveis separadas, mas são preenchidas pelo mesmo endpoint
+    var categoriesDataOut by mutableStateOf<List<ChartDataPoint>>(emptyList())
+        private set
+    var categoriesDataIn by mutableStateOf<List<ChartDataPoint>>(emptyList())
+        private set
+
+    // --- FILTROS DE DATA ---
     var selectedRange by mutableStateOf(TimeRange.MONTH)
         private set
 
-    // Estado para controlar a visibilidade do Dialog de Datas
     var showDatePicker by mutableStateOf(false)
         private set
 
-    // Datas atuais usadas na query
     var startDate by mutableStateOf(LocalDate.now().minusDays(30))
         private set
     var endDate by mutableStateOf(LocalDate.now())
         private set
 
     // =========================================================
-    // LÓGICA DE ESTATÍSTICAS AVANÇADAS
+    // 1. CARREGAR DADOS DA HOME (MENSAL)
+    // =========================================================
+
+    fun loadHomeStats() {
+        isHomeLoading = true
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                monthlyStats = repository.getMonthlySummary(
+                    month = currentHomeMonth.monthValue,
+                    year = currentHomeMonth.year
+                )
+            } catch (e: Exception) {
+                println("Erro home stats: ${e.message}")
+                monthlyStats = null
+            } finally {
+                isHomeLoading = false
+            }
+        }
+    }
+
+    fun nextMonth() {
+        currentHomeMonth = currentHomeMonth.plusMonths(1)
+        loadHomeStats()
+    }
+
+    fun prevMonth() {
+        currentHomeMonth = currentHomeMonth.minusMonths(1)
+        loadHomeStats()
+    }
+
+    // =========================================================
+    // 2. CARREGAR ESTATÍSTICAS AVANÇADAS (SCREEN DETALHADO)
     // =========================================================
 
     fun loadAllAdvancedStats() {
@@ -69,19 +110,29 @@ class StatsViewModel(private val repository: StatsRepository) : ViewModel() {
                 val startStr = startDate.toString()
                 val endStr = endDate.toString()
 
-                // Carregamento paralelo (na prática, sequencial em coroutine scope)
-                summary = repository.getSummary()
+                // 1. KPI Global
+                summary = repository.getSummary(startStr, endStr)
+
+                // 2. Gráficos de Linha e Top
                 movementsFlow = repository.getMovementsFlow(startStr, endStr)
                 topProducts = repository.getTopProducts(startStr, endStr)
-                categoriesData = repository.getCategoriesDistribution(startStr, endStr)
+
+                // 3. Distribuição de Categorias (Chamadas ao endpoint consolidado)
+                categoriesDataIn = repository.getCategoriesDistribution(MOVEMENT_TYPE_IN, startStr, endStr)
+                categoriesDataOut = repository.getCategoriesDistribution(MOVEMENT_TYPE_OUT, startStr, endStr)
 
             } catch (e: Exception) {
-                println("Erro Stats: ${e.message}")
+                println("Erro advanced stats: ${e.message}")
+                e.printStackTrace()
             } finally {
                 isLoading = false
             }
         }
     }
+
+    // =========================================================
+    // 3. LÓGICA DE FILTROS
+    // =========================================================
 
     fun setTimeRange(range: TimeRange) {
         selectedRange = range
@@ -98,17 +149,12 @@ class StatsViewModel(private val repository: StatsRepository) : ViewModel() {
     }
 
     fun onCustomDatesSelected(start: LocalDate?, end: LocalDate?) {
-        showDatePicker = false // Fecha o dialog
-
+        showDatePicker = false
         if (start != null && end != null) {
             updateDateRange(start, end)
         } else {
-            // Se o utilizador cancelou ou não escolheu datas válidas,
-            // revertemos o selecionador visual para algo seguro (ex: Mês) se estava em Custom
             if (selectedRange == TimeRange.CUSTOM) {
-                // Opcional: Voltar ao anterior ou manter custom mas sem recarregar
                 selectedRange = TimeRange.MONTH
-                // Recarrega o default para garantir consistência
                 val end = LocalDate.now()
                 updateDateRange(end.minusDays(30), end)
             }
@@ -119,31 +165,5 @@ class StatsViewModel(private val repository: StatsRepository) : ViewModel() {
         startDate = start
         endDate = end
         loadAllAdvancedStats()
-    }
-
-    // =========================================================
-    // LÓGICA DA HOME PAGE
-    // =========================================================
-    fun loadHomeStats() {
-        viewModelScope.launch(Dispatchers.IO){
-            isHomeLoading = true
-            try {
-                monthlyStats = repository.getMonthlySummary(currentHomeMonth.monthValue, currentHomeMonth.year)
-            } catch (_: Exception) {
-                monthlyStats = null
-            } finally {
-                isHomeLoading = false
-            }
-        }
-    }
-
-    fun nextMonth() {
-        currentHomeMonth = currentHomeMonth.plusMonths(1)
-        loadHomeStats()
-    }
-
-    fun prevMonth() {
-        currentHomeMonth = currentHomeMonth.minusMonths(1)
-        loadHomeStats()
     }
 }

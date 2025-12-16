@@ -15,19 +15,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import sasipca.models.Delivery
 import sasipca.repositories.DeliveryRepository
 import sasipca.viewmodels.DeliveriesViewModel
+import sasipca.storage.ListsStore
 import sasipca.storage.ScreenSizeManager.isLargeScreen
 import sasipca.storage.ScreenSizeManager.isSmallScreen
 import sasipca.ui.components.calendar.CalendarHeader
 import sasipca.ui.components.calendar.Calendar
 import sasipca.ui.components.calendar.WeekCalendarController
-import sasipca.utils.getFormattedDatePt
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -43,9 +41,15 @@ fun CalendarScreen(
     val futureDeliveries by deliveriesViewModel.futureDeliveries.collectAsState()
     val isLoading by deliveriesViewModel.isLoading.collectAsState()
 
-    // Estado para o POPUP DE SELEÇÃO DO DIA
     var pickerState by remember { mutableStateOf<Pair<LocalDate, List<Delivery>>?>(null) }
     var showFutureDeliveries by remember { mutableStateOf(false) }
+
+    // --- LÓGICA SIMPLIFICADA: Obter ID de "Agendada" ---
+    val scheduledStatusId = remember {
+        ListsStore.DeliveriesStatus.find {
+            it.status.equals("Agendada", ignoreCase = true)
+        }?.id
+    }
 
     LaunchedEffect(Unit) {
         deliveriesViewModel.loadFutureDeliveries()
@@ -57,6 +61,13 @@ fun CalendarScreen(
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
 
+        // Apenas permite navegar se o estado for igual a "Agendada"
+        val safeNavigate: (Delivery) -> Unit = { delivery ->
+            if (scheduledStatusId != null && delivery.statusId == scheduledStatusId) {
+                onNavigateToDelivery(null, true, delivery)
+            }
+        }
+
         if (isSmallScreen()) {
             CompactLayout(
                 month = month,
@@ -64,10 +75,12 @@ fun CalendarScreen(
                 futureDeliveries = futureDeliveries,
                 pickerState = pickerState,
                 onPickerStateChange = { pickerState = it },
-                onNavigateToDelivery = onNavigateToDelivery,
+                onEventClick = safeNavigate,
+                onNewDelivery = { date -> onNavigateToDelivery(date, true, null) },
                 showFutureDeliveries = showFutureDeliveries,
                 onMonthChange = { deliveriesViewModel.selectMonth(it) },
-                onShowFutureDeliveriesChange = { showFutureDeliveries = it }
+                onShowFutureDeliveriesChange = { showFutureDeliveries = it },
+                scheduledStatusId = scheduledStatusId // Passamos o ID "Agendada"
             )
         } else {
             WideLayout(
@@ -76,8 +89,10 @@ fun CalendarScreen(
                 futureDeliveries = futureDeliveries,
                 pickerState = pickerState,
                 onPickerStateChange = { pickerState = it },
-                onNavigateToDelivery = onNavigateToDelivery,
-                onMonthChange = { deliveriesViewModel.selectMonth(it) }
+                onEventClick = safeNavigate,
+                onNewDelivery = { date -> onNavigateToDelivery(date, true, null) },
+                onMonthChange = { deliveriesViewModel.selectMonth(it) },
+                scheduledStatusId = scheduledStatusId // Passamos o ID "Agendada"
             )
         }
 
@@ -85,19 +100,20 @@ fun CalendarScreen(
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter))
         }
 
-        // --- DIALOG DE ESCOLHA DO DIA ---
+        // --- DIALOG ---
         pickerState?.let { (date, deliveriesForDate) ->
             EventPickerDialog(
                 date = date,
                 deliveries = deliveriesForDate,
+                scheduledStatusId = scheduledStatusId,
                 onDismiss = { pickerState = null },
                 onSelectExisting = { selected ->
                     pickerState = null
-                    onNavigateToDelivery(null, true, selected) // Edição
+                    safeNavigate(selected)
                 },
                 onNewDelivery = {
                     pickerState = null
-                    onNavigateToDelivery(date, true, null) // Criação
+                    onNavigateToDelivery(date, true, null)
                 }
             )
         }
@@ -111,10 +127,12 @@ fun CompactLayout(
     futureDeliveries: List<Delivery>,
     pickerState: Pair<LocalDate, List<Delivery>>?,
     onPickerStateChange: (Pair<LocalDate, List<Delivery>>?) -> Unit,
-    onNavigateToDelivery: (LocalDate?, Boolean, Delivery?) -> Unit,
+    onEventClick: (Delivery) -> Unit,
+    onNewDelivery: (LocalDate) -> Unit,
     showFutureDeliveries: Boolean,
     onMonthChange: (YearMonth) -> Unit,
-    onShowFutureDeliveriesChange: (Boolean) -> Unit
+    onShowFutureDeliveriesChange: (Boolean) -> Unit,
+    scheduledStatusId: Int?
 ) {
     var calendarController by remember { mutableStateOf<WeekCalendarController?>(null) }
 
@@ -128,7 +146,6 @@ fun CompactLayout(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Tabs
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.Center
@@ -150,8 +167,9 @@ fun CompactLayout(
 
         if (showFutureDeliveries) {
             FutureDeliveriesList(
-                onEventClick = { delivery -> onNavigateToDelivery(null, true, delivery) },
-                futureDeliveries,
+                onEventClick = onEventClick,
+                deliveries = futureDeliveries,
+                scheduledStatusId = scheduledStatusId,
                 modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
             )
         } else {
@@ -160,13 +178,9 @@ fun CompactLayout(
                 deliveries = deliveries,
                 onMonthChange = onMonthChange,
                 onDayClick = { date, deliveriesForDate ->
-                    // Abre picker do dia
                     onPickerStateChange(date to deliveriesForDate)
                 },
-                onEventClick = { delivery ->
-                    // Clique direto no evento (se possível no mobile)
-                    onNavigateToDelivery(null, true, delivery)
-                },
+                onEventClick = onEventClick,
                 modifier = Modifier.weight(1f),
                 controller = { calendarController = it }
             )
@@ -181,8 +195,10 @@ fun WideLayout(
     futureDeliveries: List<Delivery>,
     pickerState: Pair<LocalDate, List<Delivery>>?,
     onPickerStateChange: (Pair<LocalDate, List<Delivery>>?) -> Unit,
-    onNavigateToDelivery: (LocalDate?, Boolean, Delivery?) -> Unit,
-    onMonthChange: (YearMonth) -> Unit
+    onEventClick: (Delivery) -> Unit,
+    onNewDelivery: (LocalDate) -> Unit,
+    onMonthChange: (YearMonth) -> Unit,
+    scheduledStatusId: Int?
 ) {
     var calendarController by remember { mutableStateOf<WeekCalendarController?>(null) }
 
@@ -204,38 +220,40 @@ fun WideLayout(
                 onDayClick = { date, deliveriesForDate ->
                     onPickerStateChange(date to deliveriesForDate)
                 },
-                onEventClick = { delivery ->
-                    onNavigateToDelivery(null, true, delivery)
-                },
+                onEventClick = onEventClick,
                 modifier = Modifier.weight(1f),
                 controller = { calendarController = it }
             )
 
-            // Sidebar com lista futura
             Surface(
                 modifier = Modifier.width(300.dp).fillMaxHeight(),
                 tonalElevation = 1.dp,
                 shadowElevation = 2.dp
             ) {
                 FutureDeliveriesList(
-                    onEventClick = { delivery -> onNavigateToDelivery(null, true, delivery) },
-                    futureDeliveries,
+                    onEventClick = onEventClick,
+                    deliveries = futureDeliveries,
+                    scheduledStatusId = scheduledStatusId,
                     modifier = Modifier.fillMaxSize()
                 )
             }
         }
     }
 }
+
+// --- LISTA FUTURA COM VERIFICAÇÃO DE "AGENDADA" ---
+
 @Composable
 fun FutureDeliveriesList(
     onEventClick: (Delivery) -> Unit,
     deliveries: List<Delivery>,
+    scheduledStatusId: Int?,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface) // Garante fundo correto
+            .background(MaterialTheme.colorScheme.surface)
     ) {
         if (isLargeScreen()) {
             Text(
@@ -249,55 +267,53 @@ fun FutureDeliveriesList(
         }
 
         if (deliveries.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    "Sem entregas agendadas",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Sem entregas agendadas", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize()
-            ) {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(deliveries) { delivery ->
+                    // Só é editável se statusId for igual a "Agendada"
+                    val isEditable = scheduledStatusId != null && delivery.statusId == scheduledStatusId
+
                     ListItem(
-                        modifier = Modifier.clickable { onEventClick(delivery) },
+                        modifier = Modifier
+                            .clickable(enabled = isEditable) { onEventClick(delivery) },
                         headlineContent = {
                             Text(
                                 text = delivery.beneficiaryName ?: "Sem Nome",
                                 fontWeight = FontWeight.SemiBold,
                                 maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                color = if(isEditable) Color.Unspecified else Color.Gray
                             )
                         },
                         supportingContent = {
                             Text(
-                                text = delivery.scheduledDate, // Formata a data se quiseres (ex: dd/MM)
+                                text = delivery.scheduledDate,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
                         leadingContent = {
-                            // Pequeno indicador de estado (opcional)
                             Box(
                                 modifier = Modifier
                                     .size(10.dp)
-                                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+                                    .background(
+                                        if(isEditable) MaterialTheme.colorScheme.primary else Color.Gray,
+                                        CircleShape
+                                    )
                             )
                         },
                         trailingContent = {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                            )
+                            if (isEditable) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                )
+                            }
                         },
-                        colors = ListItemDefaults.colors(
-                            containerColor = Color.Transparent // Transparente para usar fundo da coluna
-                        )
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                     )
                     HorizontalDivider(
                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
@@ -309,11 +325,13 @@ fun FutureDeliveriesList(
     }
 }
 
-// Picker Dialog mantém-se igual (apenas atualiza o texto se quiseres)
+// --- DIALOG COM VERIFICAÇÃO DE "AGENDADA" ---
+
 @Composable
 fun EventPickerDialog(
     date: LocalDate,
     deliveries: List<Delivery>,
+    scheduledStatusId: Int?,
     onDismiss: () -> Unit,
     onSelectExisting: (Delivery) -> Unit,
     onNewDelivery: () -> Unit
@@ -339,9 +357,12 @@ fun EventPickerDialog(
                         modifier = Modifier.heightIn(max = 250.dp)
                     ) {
                         items(deliveries) { dto ->
+                            val isEditable = scheduledStatusId != null && dto.statusId == scheduledStatusId
+
                             Surface(
                                 tonalElevation = 2.dp,
                                 shape = RoundedCornerShape(8.dp),
+                                enabled = isEditable, // Desabilita se não for Agendada
                                 onClick = { onSelectExisting(dto) },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
@@ -350,7 +371,20 @@ fun EventPickerDialog(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(dto.beneficiaryName ?: "Entrega", fontWeight = FontWeight.Medium)
+                                    Text(
+                                        text = dto.beneficiaryName ?: "Entrega",
+                                        fontWeight = FontWeight.Medium,
+                                        color = if(isEditable) Color.Unspecified else Color.Gray
+                                    )
+                                    // Se não for editável, mostra o estado real (ex: Cancelada, Entregue)
+                                    if(!isEditable) {
+                                        val statusName = ListsStore.getDeliveriesStatusName(dto.statusId)
+                                        Text(
+                                            text = "($statusName)",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.Gray
+                                        )
+                                    }
                                 }
                             }
                         }

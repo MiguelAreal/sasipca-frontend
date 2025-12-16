@@ -51,7 +51,6 @@ fun StockAdjustmentScreen(
     // Ler estados do ProductViewModel (MutableState)
     val productDetail = productViewModel.selectedProductDetail
     val isProductLoading = productViewModel.isLoading
-    val productError = productViewModel.errorMessage
 
     // Campos do Formulário
     var barcode by remember { mutableStateOf("") }
@@ -79,14 +78,6 @@ fun StockAdjustmentScreen(
         }
     }
 
-    // --- 2. Feedback UI (Erro ao carregar produto) ---
-    LaunchedEffect(productError) {
-        if (productError != null) {
-            SnackbarManager.show("Erro produto: $productError", SnackbarType.ERROR)
-            barcode = ""
-        }
-    }
-
     // --- 3. Lógica Pesquisa Produto (Autocomplete) ---
     LaunchedEffect(productQuery) {
         if (productQuery.isEmpty()) return@LaunchedEffect
@@ -94,7 +85,7 @@ fun StockAdjustmentScreen(
         delay(400) // Debounce
 
         // Se for só números e comprido, assume scan manual
-        val isPotentialBarcode = productQuery.all { it.isDigit() } && productQuery.length >= 8
+        val isPotentialBarcode = productQuery.all { it.isDigit() }
         if (isPotentialBarcode) {
             barcode = productQuery
         } else {
@@ -152,19 +143,10 @@ fun StockAdjustmentScreen(
                         )
                         // -------------------------------
 
-                        if (productDetail != null) {
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                text = "Selecionado: ${productDetail.name}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
                     }
                 }
 
-                // === CARD 2: SELEÇÃO DO LOTE ===
+                // === CARD 2: SELEÇÃO DO grupo ===
                 if (productDetail != null) {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -172,13 +154,13 @@ fun StockAdjustmentScreen(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            CardTitle("Selecionar Lote")
+                            CardTitle("Selecionar Validade")
                             Spacer(Modifier.height(8.dp))
 
                             val groups = productDetail.productGroups ?: emptyList()
 
                             if (groups.isEmpty()) {
-                                Text("Este produto não tem lotes em stock.", color = MaterialTheme.colorScheme.error)
+                                Text("Este produto não tem grupos em stock.", color = MaterialTheme.colorScheme.error)
                             } else {
                                 ExposedDropdownMenuBox(
                                     expanded = isGroupDropdownExpanded,
@@ -195,7 +177,7 @@ fun StockAdjustmentScreen(
                                         value = groupText,
                                         onValueChange = {},
                                         readOnly = true,
-                                        label = { Text("Lote / Validade") },
+                                        label = { Text("Grupo / Validade") },
                                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isGroupDropdownExpanded) },
                                         modifier = Modifier.fillMaxWidth().menuAnchor(),
                                         colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()

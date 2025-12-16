@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import sasipca.models.Product
 import sasipca.storage.ListsStore
 import sasipca.storage.ScreenSizeManager.isLargeScreen
+import sasipca.storage.SessionManager
 import sasipca.ui.components.LoadingWidget
 
 enum class ProductSortColumn {
@@ -42,6 +43,10 @@ fun ProductsTable(
     onPreviousPage: () -> Unit = {},
     onProductClick: (String) -> Unit = {}
 ) {
+    // 1. Determinar se é Beneficiário (Read-only)
+    val userRole = remember { SessionManager.getUserRole() }
+    val isBeneficiary = userRole == "Beneficiary"
+
     // Estado de Ordenação Local
     var sortColumn by remember { mutableStateOf(ProductSortColumn.NAME) }
     var sortDirection by remember { mutableStateOf(SortDirection.ASCENDING) }
@@ -81,12 +86,14 @@ fun ProductsTable(
                                 sortDirection = SortDirection.ASCENDING
                             }
                         },
-                        onProductClick = onProductClick
+                        onProductClick = onProductClick,
+                        isBeneficiary = isBeneficiary // Passar flag
                     )
                 } else {
                     MobileCardListView(
                         products = sortedProducts,
-                        onProductClick = onProductClick
+                        onProductClick = onProductClick,
+                        isBeneficiary = isBeneficiary // Passar flag
                     )
                 }
             }
@@ -131,7 +138,8 @@ private fun DesktopTableView(
     sortColumn: ProductSortColumn,
     sortDirection: SortDirection,
     onSortChange: (ProductSortColumn) -> Unit,
-    onProductClick: (String) -> Unit
+    onProductClick: (String) -> Unit,
+    isBeneficiary: Boolean // Novo param
 ) {
     Card(
         modifier = Modifier.fillMaxSize(),
@@ -148,11 +156,18 @@ private fun DesktopTableView(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                ProductsTableHeader("Produto", ProductSortColumn.NAME, sortColumn, sortDirection, Modifier.weight(0.3f)) { onSortChange(ProductSortColumn.NAME) }
-                ProductsTableHeader("Categoria", ProductSortColumn.CATEGORY, sortColumn, sortDirection, Modifier.weight(0.2f)) { onSortChange(ProductSortColumn.CATEGORY) }
-                ProductsTableHeader("Total", ProductSortColumn.TOTAL_QUANTITY, sortColumn, sortDirection, Modifier.weight(0.15f)) { onSortChange(ProductSortColumn.TOTAL_QUANTITY) }
-                ProductsTableHeader("Reservado", ProductSortColumn.RESERVED_QUANTITY, sortColumn, sortDirection, Modifier.weight(0.15f)) { onSortChange(ProductSortColumn.RESERVED_QUANTITY) }
-                ProductsTableHeader("Disponível", ProductSortColumn.AVAILABLE_STOCK, sortColumn, sortDirection, Modifier.weight(0.15f)) { onSortChange(ProductSortColumn.AVAILABLE_STOCK) }
+                // Colunas Comuns
+                ProductsTableHeader("Produto", ProductSortColumn.NAME, sortColumn, sortDirection, Modifier.weight(0.4f)) { onSortChange(ProductSortColumn.NAME) }
+                ProductsTableHeader("Categoria", ProductSortColumn.CATEGORY, sortColumn, sortDirection, Modifier.weight(0.3f)) { onSortChange(ProductSortColumn.CATEGORY) }
+
+                // Colunas Exclusivas Admin
+                if (!isBeneficiary) {
+                    ProductsTableHeader("Total", ProductSortColumn.TOTAL_QUANTITY, sortColumn, sortDirection, Modifier.weight(0.15f)) { onSortChange(ProductSortColumn.TOTAL_QUANTITY) }
+                    ProductsTableHeader("Reservado", ProductSortColumn.RESERVED_QUANTITY, sortColumn, sortDirection, Modifier.weight(0.15f)) { onSortChange(ProductSortColumn.RESERVED_QUANTITY) }
+                }
+
+                // Coluna Disponível (Todos vêm)
+                ProductsTableHeader("Disponível", ProductSortColumn.AVAILABLE_STOCK, sortColumn, sortDirection, Modifier.weight(0.2f)) { onSortChange(ProductSortColumn.AVAILABLE_STOCK) }
             }
 
             Divider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -168,16 +183,19 @@ private fun DesktopTableView(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(product.name, Modifier.weight(0.3f), fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(ListsStore.getCategoryName(product.categoryId), Modifier.weight(0.2f), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("${product.totalQuantity ?: 0}", Modifier.weight(0.15f), fontSize = 14.sp)
-                        Text("${product.reservedQuantity ?: 0}", Modifier.weight(0.15f), fontSize = 14.sp)
+                        Text(product.name, Modifier.weight(0.4f), fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(ListsStore.getCategoryName(product.categoryId), Modifier.weight(0.3f), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                        if (!isBeneficiary) {
+                            Text("${product.totalQuantity ?: 0}", Modifier.weight(0.15f), fontSize = 14.sp)
+                            Text("${product.reservedQuantity ?: 0}", Modifier.weight(0.15f), fontSize = 14.sp)
+                        }
 
                         // Destaque visual para stock disponível
                         val avail = product.availableStock ?: 0
                         Text(
                             text = "$avail",
-                            Modifier.weight(0.15f),
+                            Modifier.weight(0.2f),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = if(avail > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
@@ -196,7 +214,8 @@ private fun DesktopTableView(
 @Composable
 private fun MobileCardListView(
     products: List<Product>,
-    onProductClick: (String) -> Unit
+    onProductClick: (String) -> Unit,
+    isBeneficiary: Boolean // Novo param
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -238,12 +257,15 @@ private fun MobileCardListView(
 
                     // Linha 2: Estatísticas em Grid
                     Row(modifier = Modifier.fillMaxWidth()) {
-                        MobileStatItem("Total", "${product.totalQuantity ?: 0}", Modifier.weight(1f))
-                        MobileStatItem("Reservado", "${product.reservedQuantity ?: 0}", Modifier.weight(1f))
+                        if (!isBeneficiary) {
+                            MobileStatItem("Total", "${product.totalQuantity ?: 0}", Modifier.weight(1f))
+                            MobileStatItem("Reservado", "${product.reservedQuantity ?: 0}", Modifier.weight(1f))
+                        }
+
                         MobileStatItem(
                             "Disponível",
                             "${product.availableStock ?: 0}",
-                            Modifier.weight(1f),
+                            Modifier.weight(1f), // Se for beneficiary, ocupa tudo
                             isHighlight = true,
                             isPositive = (product.availableStock ?: 0) > 0
                         )

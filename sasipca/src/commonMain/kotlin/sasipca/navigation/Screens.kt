@@ -155,15 +155,14 @@ object MyProfileTab : Tab {
 
     @Composable
     override fun Content() {
-        // Obtém ID do user logado
         val myUserId = remember { SessionManager.getUserId() } ?: -1
 
-        // Reutiliza BeneficiaryScreen mas em modo leitura/perfil
+        // Aqui sabemos que quem acede a esta tab É um Beneficiário
         sasipca.screens.BeneficiaryScreen(
             beneficiaryId = myUserId,
             repository = remember { ApiClient.beneficiaryRepository },
             deliveryRepository = remember { ApiClient.deliveryRepository },
-            isReadOnly = true // Adapta a UI para "Meu Perfil"
+            isReadOnly = true,
         )
     }
 }
@@ -179,7 +178,7 @@ data class BeneficiaryDetailScreen(val beneficiaryId: Int) : Screen {
             beneficiaryId = beneficiaryId,
             repository = remember { ApiClient.beneficiaryRepository },
             deliveryRepository = remember { ApiClient.deliveryRepository },
-            isReadOnly = false // Admin a ver detalhe
+            isReadOnly = false
         )
     }
 }
@@ -236,7 +235,9 @@ class HistoryScreen : Screen {
     @Composable
     override fun Content() {
         sasipca.screens.HistoryScreen(
-            historyRepository = remember { ApiClient.historyRepository }
+            historyRepository = remember { ApiClient.historyRepository },
+            reportsRepository = remember { ApiClient.reportRepository },
+            beneficiaryRepository = remember { ApiClient.beneficiaryRepository }
         )
     }
 }

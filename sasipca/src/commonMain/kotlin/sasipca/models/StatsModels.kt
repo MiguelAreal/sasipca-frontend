@@ -5,9 +5,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class DashboardSummary(
     val totalProductsInStock: Int,
-    val lowStockCount: Int,
     val pendingDeliveriesCount: Int,
-    val activeBeneficiariesCount: Int
+    val expiredStockQuantity: Int,
+    val newBeneficiariesCount: Int
 )
 
 @Serializable

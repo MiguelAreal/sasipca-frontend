@@ -40,6 +40,7 @@ fun ProductEditForm(
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var selectedUnit by remember { mutableStateOf<UnitType?>(null) }
 
+
     LaunchedEffect(product) {
         product.let {
             editName = it.name

@@ -84,13 +84,12 @@ class ReportsViewModel(
                 val request = ReportRequestDTO(
                     type = type.value,
                     format = format.value,
-                    fileName = finalName,
-                    // Mapeamento correto para o DTO de filtros
+                    fileName = fileName,
                     filters = ReportFiltersDTO(
                         startDate = startDate,
                         endDate = endDate,
-                        status = status,            // <--- Mapear aqui
-                        beneficiaryId = beneficiaryId // <--- Mapear aqui
+                        status = status,
+                        beneficiaryId = beneficiaryId
                     ),
                     targetMovementId = movementId?.toIntOrNull()
                 )

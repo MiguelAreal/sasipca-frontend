@@ -10,13 +10,19 @@ import sasipca.network.requestWithAuth
 
 class StatsRepository(private val client: HttpClient) {
 
-    suspend fun getSummary(): DashboardSummary {
+    // 1. Resumo Global (KPIs)
+    suspend fun getSummary(dateFrom: String? = null, dateTo: String? = null): DashboardSummary {
         return client.requestWithAuth(
             method = HttpMethod.Get,
-            url = "${ApiConfig.baseUrl()}/stats/summary"
+            url = URLBuilder(ApiConfig.baseUrl()).apply {
+                appendPathSegments("stats", "summary")
+                if (dateFrom != null) parameters.append("dateFrom", dateFrom)
+                if (dateTo != null) parameters.append("dateTo", dateTo)
+            }.buildString()
         )
     }
 
+    // 2. Fluxo de Movimentos
     suspend fun getMovementsFlow(dateFrom: String? = null, dateTo: String? = null): List<ChartDataPoint> {
         return client.requestWithAuth(
             method = HttpMethod.Get,
@@ -28,6 +34,7 @@ class StatsRepository(private val client: HttpClient) {
         )
     }
 
+    // 3. Top Produtos (Saída)
     suspend fun getTopProducts(dateFrom: String? = null, dateTo: String? = null, topN: Int = 5): List<ChartDataPoint> {
         return client.requestWithAuth(
             method = HttpMethod.Get,
@@ -40,17 +47,21 @@ class StatsRepository(private val client: HttpClient) {
         )
     }
 
-    suspend fun getCategoriesDistribution(dateFrom: String? = null, dateTo: String? = null): List<ChartDataPoint> {
+    // 4. Distribuição por Categorias (CONSOLIDADO)
+    // movementTypeId: 1 = Entrada, 2 = Saída (Iguais ao Enum do C#)
+    suspend fun getCategoriesDistribution(movementTypeId: Int, dateFrom: String? = null, dateTo: String? = null): List<ChartDataPoint> {
         return client.requestWithAuth(
             method = HttpMethod.Get,
             url = URLBuilder(ApiConfig.baseUrl()).apply {
                 appendPathSegments("stats", "categories-distribution")
+                parameters.append("movementTypeId", movementTypeId.toString()) // Novo parâmetro
                 if (dateFrom != null) parameters.append("dateFrom", dateFrom)
                 if (dateTo != null) parameters.append("dateTo", dateTo)
             }.buildString()
         )
     }
 
+    // 5. Resumo Mensal (Para a Homepage)
     suspend fun getMonthlySummary(month: Int, year: Int): MonthlySummary {
         return client.requestWithAuth(
             method = HttpMethod.Get,

@@ -133,6 +133,8 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe)
             description = "SASIPCA"
             vendor = "G8 IPCA"
+            modules("java.base", "java.desktop", "jdk.httpserver", "java.instrument", "jdk.unsupported")
+
             macOS {
                 iconFile.set(project.file("src/jvmMain/resources/icons/icon512x512.icns"))
             }
@@ -147,7 +149,7 @@ compose.desktop {
             }
 
             packageName = "sasipca"
-            packageVersion = "1.0.0"
+            packageVersion = "1.0.1"
         }
     }
 }

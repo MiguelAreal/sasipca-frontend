@@ -11,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import sasipca.models.Product
@@ -31,7 +30,6 @@ actual fun BarcodeInputField(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    // Abre o dropdown se houver texto e sugestões
     LaunchedEffect(value, suggestions) {
         expanded = value.isNotEmpty() && suggestions.isNotEmpty()
     }
@@ -61,11 +59,15 @@ actual fun BarcodeInputField(
                 )
             )
 
+            // CORREÇÃO: Usar DropdownMenu padrão
             if (suggestions.isNotEmpty()) {
-                ExposedDropdownMenu(
+                DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
-                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.surface)
+                        .exposedDropdownSize(true), // Garante a largura correta
+                    properties = PopupProperties(focusable = false) // Corrige o foco
                 ) {
                     suggestions.forEach { product ->
                         DropdownMenuItem(

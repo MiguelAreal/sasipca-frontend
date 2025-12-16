@@ -14,11 +14,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import sasipca.models.DashboardSummary
 import sasipca.models.MonthlySummary
 import sasipca.repositories.StatsRepository
 import sasipca.screens.navigation.*
@@ -38,13 +40,15 @@ fun HomeScreen(
     statsRepository: StatsRepository
 ) {
     val userName = SessionManager.getUserName() ?: "Utilizador"
+    val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
 
-    // Inicializa o ViewModel (que gere tanto a Home como as Stats Avançadas)
+    // Inicializa o ViewModel
     val viewModel = remember { StatsViewModel(statsRepository) }
 
-    // Carrega dados do mês atual ao iniciar o ecrã
+    // Carrega dados (Mensais + Sumário Global) ao iniciar
     LaunchedEffect(Unit) {
-        viewModel.loadHomeStats()
+        viewModel.loadHomeStats()         // Carrossel mensal
+        viewModel.loadAllAdvancedStats()  // KPIs globais (Expirados, Stock Total)
     }
 
     Column(
@@ -52,7 +56,6 @@ fun HomeScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        // Cabeçalho com Saudação e Data de Hoje
         Header("${getGreetingPt()}, $userName", getFormattedDatePt())
 
         Column(
@@ -62,7 +65,8 @@ fun HomeScreen(
         ) {
             Spacer(modifier = Modifier.height(20.dp))
 
-            // 1. AÇÕES RÁPIDAS
+
+            // 2. AÇÕES RÁPIDAS
             Text(
                 text = "Ações Rápidas",
                 fontSize = 18.sp,
@@ -74,19 +78,22 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 2. CARROSSEL DE ESTATÍSTICAS MENSAIS
-            // (Substitui a antiga secção estática)
+            // 3. PERFORMANCE MENSAL (CARROSSEL)
             MonthlyCarouselSection(
                 currentMonth = viewModel.currentHomeMonth,
                 stats = viewModel.monthlyStats,
                 isLoading = viewModel.isHomeLoading,
                 onPrevClick = { viewModel.prevMonth() },
-                onNextClick = { viewModel.nextMonth() }
+                onNextClick = { viewModel.nextMonth() },
+                onDetailsClick = {
+                    // Passamos o repositório para o ecrã de detalhes
+                    navigator.push(StatsScreen())
+                }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 3. MAIS OPÇÕES
+            // 4. MAIS OPÇÕES
             Text(
                 text = "Mais Opções",
                 fontSize = 16.sp,
@@ -101,13 +108,8 @@ fun HomeScreen(
     }
 }
 
-// -----------------------------------------------------------
-// COMPONENTES DA UI
-// -----------------------------------------------------------
-
 @Composable
 fun QuickActionsSection() {
-    // Obtém o navegador principal para sair da Tab e ir para ecrãs de detalhe
     val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
 
     Row(
@@ -144,10 +146,9 @@ fun MonthlyCarouselSection(
     stats: MonthlySummary?,
     isLoading: Boolean,
     onPrevClick: () -> Unit,
-    onNextClick: () -> Unit
+    onNextClick: () -> Unit,
+    onDetailsClick: () -> Unit
 ) {
-    val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
@@ -156,7 +157,7 @@ fun MonthlyCarouselSection(
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
 
-            // --- HEADER: NAVEGAÇÃO DE MÊS (< Mês >) ---
+            // --- HEADER: NAVEGAÇÃO DE MÊS ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -195,7 +196,7 @@ fun MonthlyCarouselSection(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- CONTEÚDO DOS DADOS (COM ANIMAÇÃO) ---
+            // --- CONTEÚDO DOS DADOS ---
             AnimatedContent(
                 targetState = stats,
                 transitionSpec = { fadeIn() togetherWith fadeOut() },
@@ -212,31 +213,34 @@ fun MonthlyCarouselSection(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         maxItemsInEachRow = 3
                     ) {
-                        // 1. Entregas Pendentes (Agendadas)
+                        // 1. Entregas Pendentes (Neste mês)
                         CompactStatCard(
                             icon = Icons.Outlined.Schedule,
                             label = "Pendentes",
-                            value = targetStats.pendingDeliveries.toString()
+                            value = targetStats.pendingDeliveries.toString(),
+                            modifier = Modifier.weight(1f)
                         )
 
-                        // 2. Doações Feitas (Entradas de Stock)
+                        // 2. Receções (Entradas)
                         CompactStatCard(
-                            icon = Icons.Outlined.VolunteerActivism, // Ícone de "Dar"
-                            label = "Receções", // Ou "Doações" conforme preferência
-                            value = targetStats.donationsReceived.toString()
+                            icon = Icons.Outlined.VolunteerActivism,
+                            label = "Receções",
+                            value = targetStats.donationsReceived.toString(),
+                            modifier = Modifier.weight(1f)
                         )
 
-                        // 3. Entregas Realizadas (Saídas Completas)
+                        // 3. Entregas Realizadas
                         CompactStatCard(
                             icon = Icons.Outlined.CheckCircle,
                             label = "Entregas",
-                            value = targetStats.realizedDeliveries.toString()
+                            value = targetStats.realizedDeliveries.toString(),
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 } else {
                     Box(modifier = Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) {
                         Text(
-                            "Não foi possível carregar dados.",
+                            "Sem dados disponíveis.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -248,7 +252,7 @@ fun MonthlyCarouselSection(
 
             // --- BOTÃO PARA VER MAIS DETALHES ---
             OutlinedButton(
-                onClick = { navigator.push(StatsScreen()) },
+                onClick = onDetailsClick,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             ) {

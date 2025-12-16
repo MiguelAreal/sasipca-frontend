@@ -208,8 +208,6 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Obtém todos os produtos que correspondem à pesquisa de texto do servidor
-                // (Assumindo que o endpoint retorna a lista completa ou filtrada por nome)
                 val response = productRepository.getProducts(search).data
 
                 // 1. Aplicar Filtro de Categoria (Localmente)
