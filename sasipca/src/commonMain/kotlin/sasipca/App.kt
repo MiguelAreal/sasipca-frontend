@@ -19,7 +19,7 @@ import sasipca.models.SnackbarMessage
 import sasipca.network.ApiClient
 import sasipca.screens.navigation.LoginScreen
 import sasipca.screens.navigation.MainScreen
-import sasipca.storage.ListsStore // Importar ListsStore
+import sasipca.storage.ListsStore
 import sasipca.storage.NotificationManager
 import sasipca.storage.SessionManager
 import sasipca.storage.SettingsManager
@@ -30,7 +30,7 @@ import sasipca.utils.SnackbarManager
 import sasipca.utils.getAsyncImageLoader
 
 @Composable
-fun App() {
+fun App(openCalendar: Boolean = false) {
     SingletonImageLoader.setSafe { context -> getAsyncImageLoader(context) }
 
     val scope = rememberCoroutineScope()
@@ -48,19 +48,15 @@ fun App() {
 
         try {
             if (SessionManager.isLoggedInNow()) {
-                // 1. Tenta carregar as listas da API
                 ApiClient.listsRepository.loadLists()
 
-                // 2. VALIDAÇÃO CRÍTICA:
-                // Mesmo que a API não dê erro 500, verificamos se as listas ficaram na memória.
-                // Se o ListsStore estiver vazio, lançamos exceção para impedir a entrada na app "coxa".
                 if (!ListsStore.isInitialized) {
                     throw Exception("Dados incompletos. As listas não foram carregadas corretamente.")
                 }
 
-                // 3. Se passou, carrega notificações e define o ecrã
                 NotificationManager.refreshCount()
-                currentScreen = MainScreen()
+                currentScreen = MainScreen(openCalendar = openCalendar)
+
             } else {
                 currentScreen = LoginScreen()
             }

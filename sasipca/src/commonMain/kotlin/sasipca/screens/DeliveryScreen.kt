@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,6 +64,8 @@ data class DeliveryProductToSend(
     val selectedGroups: List<DeliveryItem> = emptyList(),
     // 'availableGroups' contém o stock ajustado (Real + O que já tínhamos reservado)
     val availableGroups: List<ProductGroup> = emptyList(),
+    // ID do grupo que o utilizador selecionou manualmente para priorizar (null = FIFO Automático)
+    val priorityGroupId: Int? = null,
     val isExpanded: Boolean = false,
     val hasError: Boolean = false
 ) {
@@ -71,16 +74,43 @@ data class DeliveryProductToSend(
 
 private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
-// --- LÓGICA FIFO (First-In, First-Out) ---
-fun recalculateFIFO(
+// --- LÓGICA DE DISTRIBUIÇÃO (Prioridade Manual + FIFO) ---
+fun recalculateStockDistribution(
     quantityToExport: Int,
     availableGroups: List<ProductGroup>,
-    barcode: String
+    barcode: String,
+    priorityGroupId: Int?
 ): List<DeliveryItem> {
     var remaining = quantityToExport
     val result = mutableListOf<DeliveryItem>()
-    // Ordena por validade (mais antiga primeiro)
-    val sortedGroups = availableGroups.sortedBy { it.expiryDate }
+    val today = LocalDate.now()
+
+    // 1. Tentar preencher com o Grupo Prioritário (se existir e tiver stock, MESMO QUE ESTEJA EXPIRADO)
+    if (priorityGroupId != null) {
+        val priorityGroup = availableGroups.find { it.id == priorityGroupId }
+        if (priorityGroup != null && priorityGroup.availableStock > 0) {
+            val quantityToTake = minOf(remaining, priorityGroup.availableStock)
+            if (quantityToTake > 0) {
+                result.add(DeliveryItem(barcode = barcode, groupId = priorityGroup.id, quantity = quantityToTake))
+                remaining -= quantityToTake
+            }
+        }
+    }
+
+    // 2. Se ainda sobrar quantidade, usar FIFO (excluindo o grupo já usado e GRUPOS EXPIRADOS)
+    val sortedGroups = availableGroups
+        .filter { it.id != priorityGroupId }
+        // Filtra grupos cuja validade já passou
+        .filter {
+            val exp = it.expiryDate
+            if (exp == null) true
+            else {
+                // Converte data do Kotlinx para Java para comparar
+                val expDateJava = LocalDate.of(exp.year, exp.monthNumber, exp.dayOfMonth)
+                !expDateJava.isBefore(today)
+            }
+        }
+        .sortedBy { it.expiryDate }
 
     for (group in sortedGroups) {
         if (remaining <= 0) break
@@ -155,14 +185,11 @@ fun DeliveryScreen(
         if (existingDelivery != null) {
             isLoadingProduct = true
 
-            // 1. Carregar Detalhes Completos da API
             val fullDetails = deliveriesViewModel.getDeliveryDetails(existingDelivery.deliveryId)
 
             if (fullDetails != null) {
-                // A. Preencher Beneficiário
                 val ownerName = fullDetails.beneficiaryName ?: existingDelivery.beneficiaryName ?: ""
                 try {
-                    // Tentativa de obter o objeto completo do beneficiário
                     beneficiariesViewModel.loadBeneficiaries(search = ownerName)
                     delay(300)
                     val beneficiaryMatch = beneficiariesViewModel.beneficiaries?.data?.find {
@@ -183,7 +210,6 @@ fun DeliveryScreen(
                     beneficiaryQuery = ownerName
                 }
 
-                // B. Preencher Produtos com Lógica de Ajuste de Stock
                 val items = fullDetails.items
                 if (items.isNotEmpty()) {
                     val itemsGrouped = items.groupBy { it.barcode }
@@ -191,17 +217,10 @@ fun DeliveryScreen(
                     itemsGrouped.forEach { (barcode, groupItems) ->
                         if (!barcode.isNullOrEmpty()) {
                             try {
-                                // 1. Stock Atual (Real na BD)
                                 val productDetails = productRepository.getProduct(barcode)
-
-                                // 2. Quantidade que ESTA entrega tem atualmente
                                 val totalQtyInThisDelivery = groupItems.sumOf { it.quantity }
-
-                                // 3. Grupos vindos da API
                                 val apiGroups = productDetails.productGroups ?: emptyList()
 
-                                // [CRUCIAL] CORREÇÃO DE STOCK PRÓPRIO
-                                // Somamos o que é "nosso" ao stock disponível para permitir edição correta
                                 val adjustedGroups = apiGroups.map { apiGroup ->
                                     val qtyUsedByUs = groupItems
                                         .filter { it.groupId == apiGroup.id }
@@ -210,10 +229,8 @@ fun DeliveryScreen(
                                     apiGroup.copy(availableStock = apiGroup.availableStock + qtyUsedByUs)
                                 }
 
-                                // 4. Recalcular FIFO com os grupos ajustados
-                                val calculatedGroups = recalculateFIFO(totalQtyInThisDelivery, adjustedGroups, barcode)
+                                val calculatedGroups = recalculateStockDistribution(totalQtyInThisDelivery, adjustedGroups, barcode, null)
 
-                                // 5. Verificar erro
                                 val totalAvailableAdjusted = adjustedGroups.sumOf { it.availableStock }
                                 val hasStockError = totalQtyInThisDelivery > totalAvailableAdjusted && existingDelivery.statusId != 1
 
@@ -221,8 +238,9 @@ fun DeliveryScreen(
                                     barcode = barcode,
                                     productName = productDetails.name ?: "Produto",
                                     quantityToDeliver = totalQtyInThisDelivery,
-                                    availableGroups = adjustedGroups, // Guardamos os ajustados!
+                                    availableGroups = adjustedGroups,
                                     selectedGroups = calculatedGroups,
+                                    priorityGroupId = null,
                                     hasError = hasStockError
                                 )
 
@@ -255,7 +273,7 @@ fun DeliveryScreen(
         deliveryUiState.lastErrorMessage?.let { SnackbarManager.show(it, SnackbarType.ERROR) }
     }
 
-    // --- LOGICA DE INPUTS (Beneficiário, Produto) ---
+    // --- LOGICA DE INPUTS ---
     LaunchedEffect(beneficiaryQuery) {
         if (selectedBeneficiary != null && beneficiaryQuery != selectedBeneficiary?.name) {
             selectedBeneficiary = null
@@ -285,8 +303,7 @@ fun DeliveryScreen(
                 val currentProduct = productsToDeliver[existingIndex]
                 val newTotal = currentProduct.quantityToDeliver + 1
                 if (newTotal <= currentProduct.totalStock) {
-                    // Usa os grupos que já estão guardados no objeto (que podem ser os ajustados)
-                    val newGroups = recalculateFIFO(newTotal, currentProduct.availableGroups, barcode)
+                    val newGroups = recalculateStockDistribution(newTotal, currentProduct.availableGroups, barcode, currentProduct.priorityGroupId)
                     val updatedList = productsToDeliver.toMutableList()
                     updatedList[existingIndex] = currentProduct.copy(quantityToDeliver = newTotal, selectedGroups = newGroups, hasError = false)
                     productsToDeliver = updatedList
@@ -314,13 +331,14 @@ fun DeliveryScreen(
                 barcode = ""
             } else {
                 val initialQty = 1
-                val calculatedGroups = recalculateFIFO(initialQty, groups, barcode)
+                val calculatedGroups = recalculateStockDistribution(initialQty, groups, barcode, null)
                 val newProduct = DeliveryProductToSend(
                     barcode = barcode,
                     productName = productDetail.name ?: "Produto",
                     quantityToDeliver = initialQty,
-                    availableGroups = groups, // Novos produtos usam stock direto da API
+                    availableGroups = groups,
                     selectedGroups = calculatedGroups,
+                    priorityGroupId = null,
                     hasError = initialQty > groups.sumOf { it.availableStock }
                 )
                 if (!productsToDeliver.any { it.barcode == barcode }) {
@@ -386,9 +404,16 @@ fun DeliveryScreen(
                             onUpdateQuantity = { index, newTotal ->
                                 val p = productsToDeliver[index]
                                 val isValid = newTotal <= p.totalStock
-                                val newGroups = recalculateFIFO(newTotal, p.availableGroups, p.barcode)
+                                val newGroups = recalculateStockDistribution(newTotal, p.availableGroups, p.barcode, p.priorityGroupId)
                                 productsToDeliver = productsToDeliver.toMutableList().apply {
                                     set(index, p.copy(quantityToDeliver = newTotal, selectedGroups = newGroups, hasError = !isValid))
+                                }
+                            },
+                            onPriorityGroupChange = { index, groupId ->
+                                val p = productsToDeliver[index]
+                                val newGroups = recalculateStockDistribution(p.quantityToDeliver, p.availableGroups, p.barcode, groupId)
+                                productsToDeliver = productsToDeliver.toMutableList().apply {
+                                    set(index, p.copy(priorityGroupId = groupId, selectedGroups = newGroups))
                                 }
                             },
                             onProductExpanded = { index ->
@@ -477,9 +502,16 @@ fun DeliveryScreen(
                             onUpdateQuantity = { newTotal ->
                                 val p = productsToDeliver[index]
                                 val isValid = newTotal <= p.totalStock
-                                val newGroups = recalculateFIFO(newTotal, p.availableGroups, p.barcode)
+                                val newGroups = recalculateStockDistribution(newTotal, p.availableGroups, p.barcode, p.priorityGroupId)
                                 productsToDeliver = productsToDeliver.toMutableList().apply {
                                     set(index, p.copy(quantityToDeliver = newTotal, selectedGroups = newGroups, hasError = !isValid))
+                                }
+                            },
+                            onPriorityGroupChange = { groupId ->
+                                val p = productsToDeliver[index]
+                                val newGroups = recalculateStockDistribution(p.quantityToDeliver, p.availableGroups, p.barcode, groupId)
+                                productsToDeliver = productsToDeliver.toMutableList().apply {
+                                    set(index, p.copy(priorityGroupId = groupId, selectedGroups = newGroups))
                                 }
                             }
                         )
@@ -545,7 +577,7 @@ fun DeliveryScreen(
 }
 
 // ----------------------------------------------------
-// COMPONENTES AUXILIARES (Reutilizados)
+// COMPONENTES AUXILIARES
 // ----------------------------------------------------
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -740,6 +772,7 @@ fun DeliveryProductsListSection(
     products: List<DeliveryProductToSend>,
     onProductRemove: (Int) -> Unit,
     onUpdateQuantity: (Int, Int) -> Unit,
+    onPriorityGroupChange: (Int, Int?) -> Unit,
     onProductExpanded: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -762,7 +795,8 @@ fun DeliveryProductsListSection(
                         index = index,
                         onRemove = { onProductRemove(index) },
                         onExpand = { onProductExpanded(index) },
-                        onUpdateQuantity = { qty -> onUpdateQuantity(index, qty) }
+                        onUpdateQuantity = { qty -> onUpdateQuantity(index, qty) },
+                        onPriorityGroupChange = { groupId -> onPriorityGroupChange(index, groupId) }
                     )
                 }
             }
@@ -770,6 +804,7 @@ fun DeliveryProductsListSection(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeliveryProductCard(
     product: DeliveryProductToSend,
@@ -777,6 +812,7 @@ fun DeliveryProductCard(
     onRemove: () -> Unit,
     onExpand: () -> Unit,
     onUpdateQuantity: (Int) -> Unit,
+    onPriorityGroupChange: (Int?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -795,7 +831,7 @@ fun DeliveryProductCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = product.productName, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
                     Text(
-                        text = "Qtd.: ${product.quantityToDeliver} | Total: ${product.totalStock}",
+                        text = "Qtd.: ${product.quantityToDeliver} | Total Disp.: ${product.totalStock}",
                         style = MaterialTheme.typography.labelSmall,
                         color = if (product.hasError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -810,6 +846,68 @@ fun DeliveryProductCard(
 
             AnimatedVisibility(visible = product.isExpanded, enter = expandVertically(), exit = shrinkVertically()) {
                 Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+
+                    var dropdownExpanded by remember { mutableStateOf(false) }
+                    val selectedGroup = product.availableGroups.find { it.id == product.priorityGroupId }
+
+                    val selectionText = if (selectedGroup != null) {
+                        val date = selectedGroup.expiryDate
+                        val dateStr = if(date != null) "${date.dayOfMonth}/${date.monthNumber}/${date.year}" else "S/D"
+                        "$dateStr (${selectedGroup.availableStock} un)"
+                    } else {
+                        "Automático"
+                    }
+
+                    Text("Grupo", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Spacer(Modifier.height(4.dp))
+
+                    ExposedDropdownMenuBox(
+                        expanded = dropdownExpanded,
+                        onExpandedChange = { dropdownExpanded = it }
+                    ) {
+                        OutlinedTextField(
+                            value = selectionText,
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor(),
+                            textStyle = MaterialTheme.typography.bodyMedium
+                        )
+                        ExposedDropdownMenu(
+                            expanded = dropdownExpanded,
+                            onDismissRequest = { dropdownExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Column {
+                                        Text("Automático", style = MaterialTheme.typography.bodyMedium)
+                                        Text("Prioriza validade mais curta", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                                    }
+                                },
+                                onClick = {
+                                    onPriorityGroupChange(null)
+                                    dropdownExpanded = false
+                                }
+                            )
+                            Divider()
+                            product.availableGroups.sortedBy { it.expiryDate }.forEach { group ->
+                                val date = group.expiryDate
+                                val dateStr = if(date != null) "${date.dayOfMonth}/${date.monthNumber}/${date.year}" else "S/D"
+
+                                DropdownMenuItem(
+                                    text = { Text("$dateStr - Stock: ${group.availableStock}") },
+                                    onClick = {
+                                        onPriorityGroupChange(group.id)
+                                        dropdownExpanded = false
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
                     Text("Quantidade a Exportar", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(4.dp))
 
@@ -823,16 +921,38 @@ fun DeliveryProductCard(
                     )
 
                     Spacer(Modifier.height(12.dp))
+
                     if (product.selectedGroups.isNotEmpty()) {
-                        Text("Distribuição por Grupos", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                        Text("Distribuição:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(Modifier.height(4.dp))
                         product.selectedGroups.forEach { item ->
                             val groupInfo = product.availableGroups.find { it.id == item.groupId }
                             val date = groupInfo?.expiryDate
                             val formattedDate = if(date != null) "${date.dayOfMonth}/${date.monthNumber}/${date.year}" else "N/A"
+
+                            // Verifica se o lote está expirado
+                            val isExpired = if (date != null) {
+                                // Converte para Java LocalDate para usar isBefore com a data atual (Java)
+                                val dateJava = LocalDate.of(date.year, date.monthNumber, date.dayOfMonth)
+                                dateJava.isBefore(LocalDate.now())
+                            } else false
+
+                            val isPriority = item.groupId == product.priorityGroupId
+
+                            // Lógica de cores
+                            val textColor = if (isExpired) {
+                                MaterialTheme.colorScheme.error
+                            } else if (isPriority) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            }
+
+                            val fontWeight = if (isPriority || isExpired) FontWeight.Bold else FontWeight.Normal
+
                             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Validade: $formattedDate", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
-                                Text("${item.quantity} uni.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                Text("Validade: $formattedDate", style = MaterialTheme.typography.bodySmall, color = textColor, fontWeight = fontWeight)
+                                Text("${item.quantity} uni.", style = MaterialTheme.typography.bodySmall, color = textColor, fontWeight = fontWeight)
                             }
                         }
                     }

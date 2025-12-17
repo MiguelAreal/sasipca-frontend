@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">SasIPCA</string>
+    <string name="widget_calendar_label">Calendário de Entregas</string>
+    <string name="widget_calendar_description">Visualize as entregas agendadas do mês diretamente no ecrã inicial.</string>
 </resources>

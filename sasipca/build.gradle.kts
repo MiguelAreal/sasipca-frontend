@@ -1,6 +1,9 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.*
 
+val appVersionName = "2.1.0" // A versão visível (String)
+val appVersionCode = 2       // O número da build (Inteiro, incrementar sempre)
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidApplication)
@@ -32,6 +35,8 @@ kotlin {
             implementation("androidx.camera:camera-lifecycle:1.3.4")
             implementation("androidx.camera:camera-view:1.3.4")
             implementation("com.google.firebase:firebase-messaging:25.0.1")
+            implementation("androidx.glance:glance-appwidget:1.1.0")
+            implementation("androidx.glance:glance-material3:1.1.0")
             implementation("com.microsoft.identity.client:msal:8.1.0"){
                 exclude(group = "com.microsoft.device.display")
             }
@@ -95,8 +100,8 @@ android {
         applicationId = "app.sasipca"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
     }
 
     packaging {
@@ -149,7 +154,7 @@ compose.desktop {
             }
 
             packageName = "sasipca"
-            packageVersion = "2.0.0"
+            packageVersion = appVersionName
         }
     }
 }

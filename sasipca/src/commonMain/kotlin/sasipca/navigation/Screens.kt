@@ -32,10 +32,10 @@ class LoginScreen : Screen {
     }
 }
 
-class MainScreen : Screen {
+data class MainScreen(val openCalendar: Boolean = false) : Screen {
     @Composable
     override fun Content() {
-        MainScreenContent()
+        MainScreenContent(openCalendar = openCalendar)
     }
 }
 

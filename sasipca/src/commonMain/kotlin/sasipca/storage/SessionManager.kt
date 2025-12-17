@@ -33,6 +33,8 @@ object SessionManager {
 
         if (settings.getStringOrNull(KEY_ACCESS_TOKEN) != null) {
             _isLoggedIn.value = true
+        } else {
+            _isLoggedIn.value = false
         }
     }
 
@@ -93,6 +95,7 @@ object SessionManager {
 
     fun getUserRole(): String? {
         if (!::settings.isInitialized) return null
+        println(settings.getStringOrNull(KEY_USER_ROLE))
         return settings.getStringOrNull(KEY_USER_ROLE)
     }
 

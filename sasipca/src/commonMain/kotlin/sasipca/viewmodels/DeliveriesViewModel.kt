@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import sasipca.models.*
 import sasipca.repositories.DeliveryRepository
 import sasipca.screens.DeliveryProductToSend
+import sasipca.utils.updateWidgets
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -62,7 +63,6 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
     fun loadMonthDeliveries(month: YearMonth = _month.value) {
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
-            // Carrega mês anterior, atual e seguinte (3 meses de buffer)
             val start = month.minusMonths(1).atDay(1).toString()
             val end = month.plusMonths(1).atEndOfMonth().toString()
 
@@ -78,21 +78,14 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
             runCatching {
-                // Carrega entregas a partir de hoje
                 deliveryRepository.getDeliveries(DeliveryGet(dateFrom = LocalDate.now().toString()))
             }.onSuccess { list ->
-                // Filtra apenas as que têm estado 'Agendada' (StatusId = 1)
                 _futureDeliveries.value = list.filter { d -> d.statusId == 1 }.sortedBy { d -> d.scheduledDate }
             }.onFailure { println("Erro: $it") }
             _isLoading.value = false
         }
     }
 
-
-
-    /**
-     * Busca detalhes completos para edição
-     */
     suspend fun getDeliveryDetails(id: Int): DeliveryDetail? {
         return try {
             deliveryRepository.getDeliveryDetails(id)
@@ -102,9 +95,6 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
         }
     }
 
-    /**
-     * Valida e CRIA uma nova entrega (POST).
-     */
     fun scheduleDelivery(
         beneficiaryId: Int?,
         scheduledDate: LocalDate?,
@@ -120,13 +110,10 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
             isScheduled = isScheduled,
             products = products,
             note = note,
-            currentStatusId = 1 // Default para nova criação agendada
+            currentStatusId = 1
         )
     }
 
-    /**
-     * Valida e ATUALIZA uma entrega existente (PUT).
-     */
     fun updateDelivery(
         deliveryId: Int,
         beneficiaryId: Int?,
@@ -148,9 +135,6 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
         )
     }
 
-    /**
-     * Lógica centralizada de submissão para evitar duplicação de validações.
-     */
     private fun submitDeliveryData(
         isUpdate: Boolean,
         deliveryId: Int,
@@ -162,29 +146,24 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
         currentStatusId: Int
     ) {
         viewModelScope.launch(Dispatchers.IO) {
-            // 1. Reset estado UI
             _uiState.value = DeliveryUiState(isLoading = true)
             val errors = mutableMapOf<String, String>()
 
-            // 2. Validações
             if (beneficiaryId == null) {
                 errors["beneficiary"] = "Selecione um beneficiário."
             }
 
-            // Data final: Se for agendada usa o input, se for imediata usa HOJE.
             val finalDate = if (isScheduled) scheduledDate else LocalDate.now()
 
             if (finalDate == null) {
                 errors["date"] = "Data inválida."
             } else if (isScheduled && finalDate.isBefore(LocalDate.now())) {
-                // Permitimos editar para hoje, mas não para o passado se for agendamento futuro
                 errors["date"] = "A data de agendamento não pode ser no passado."
             }
 
             if (products.isEmpty()) {
                 errors["products"] = "Adicione pelo menos um produto."
             } else {
-                // Validar quantidades e stocks
                 val totalItemsCount = products.sumOf { it.quantityToDeliver }
                 if (totalItemsCount <= 0) {
                     errors["products"] = "Quantidades devem ser superiores a zero."
@@ -194,10 +173,22 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
                     if (product.quantityToDeliver > product.totalStock) {
                         errors["stock_${product.barcode}"] = "Stock insuficiente para ${product.productName}."
                     }
+
+                    product.selectedGroups.forEach { selectedItem ->
+                        val groupDetails = product.availableGroups.find { it.id == selectedItem.groupId }
+                        val expiryDate = groupDetails?.expiryDate
+
+                        if (expiryDate != null && finalDate != null) {
+                            val expJava = LocalDate.of(expiryDate.year, expiryDate.monthNumber, expiryDate.dayOfMonth)
+
+                            if (expJava.isBefore(finalDate)) {
+                                errors["expiry_${product.barcode}"] = "O produto ${product.productName} contém lotes expirados (${expiryDate.dayOfMonth}/${expiryDate.monthNumber}/${expiryDate.year})."
+                            }
+                        }
+                    }
                 }
             }
 
-            // Se houver erros, parar
             if (errors.isNotEmpty()) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -207,7 +198,6 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
                 return@launch
             }
 
-            // 3. Preparar Payload (Lista de Itens)
             val itemsPayload = products.flatMap { product ->
                 product.selectedGroups.map { groupItem ->
                     DeliveryItem(
@@ -220,7 +210,6 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
 
             try {
                 if (isUpdate) {
-                    // PUT
                     val putBody = DeliveryPut(
                         scheduledDate = finalDate.toString(),
                         note = if (note.isBlank()) null else note,
@@ -233,10 +222,9 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
                     _uiState.value = DeliveryUiState(
                         success = true,
                         isLoading = false,
-                        successMessage = response.message // Usa a mensagem real do backend
+                        successMessage = response.message
                     )
                 } else {
-                    // --- CREATE (POST) ---
                     val postBody = DeliveryPost(
                         beneficiaryId = beneficiaryId!!,
                         scheduledDate = finalDate.toString(),
@@ -252,15 +240,13 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
                         successMessage = response.message
                     )
                 }
+                updateWidgets()
             } catch (e: Exception) {
                 handleException(e)
             }
         }
     }
 
-    /**
-     * Eliminar Entrega
-     */
     fun deleteDelivery(deliveryId: Int) {
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.value = DeliveryUiState(isLoading = true)
@@ -271,6 +257,7 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
                     isLoading = false,
                     successMessage = response.message
                 )
+                updateWidgets()
             } catch (e: Exception) {
                 handleException(e)
             }
@@ -292,7 +279,6 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
         _uiState.value = DeliveryUiState()
     }
 
-    // --- Helpers de Navegação do Calendário ---
     fun selectMonth(m: YearMonth) {
         _month.value = m
         loadMonthDeliveries(m)

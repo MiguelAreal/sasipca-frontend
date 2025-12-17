@@ -1,6 +1,7 @@
 package sasipca
 
 import android.Manifest
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -42,7 +43,7 @@ class MainActivity : ComponentActivity() {
         // 2. Inicializar Settings e Sessão
         val settings: Settings = SharedPreferencesSettings(PreferenceManager.getDefaultSharedPreferences(this))
         SessionManager.init(settings)
-        SettingsManager.init(settings) // O SettingsManager deve ser inicializado antes de usares no Firebase
+        SettingsManager.init(settings)
 
         // 3. Inicializar Auth e API
         msAuthManager = MicrosoftAuthManagerAndroid(this)
@@ -64,10 +65,8 @@ class MainActivity : ComponentActivity() {
                 val token = task.result
                 println("FCM: Token Gerado com Sucesso: $token")
 
-                // --- ALTERAÇÃO PRINCIPAL AQUI ---
-                // Guardar SEMPRE o token localmente, esteja logado ou não.
+                // Guardar SEMPRE o token localmente
                 SettingsManager.saveFcmToken(token)
-                // --------------------------------
 
                 // Se já estiver logado, envia já.
                 if (SessionManager.isLoggedInNow()) {
@@ -88,13 +87,18 @@ class MainActivity : ComponentActivity() {
             e.printStackTrace()
         }
 
+        // 5. Verificar se viemos do Widget (Intent)
+        // Fazemos isto APÓS as inicializações para garantir que o App tem tudo pronto
+        val openCalendarFromWidget = intent?.extras?.getBoolean("OPEN_CALENDAR") == true
+
         setContent {
             // Atualizar a referência da Activity para o MSAL funcionar
             msAuthManager.currentActivity = this
 
             SasIpcaTheme {
                 ObserveScreenSize()
-                App()
+                // Passamos a flag para o App
+                App(openCalendar = openCalendarFromWidget)
             }
         }
     }
@@ -103,6 +107,29 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         if (::msAuthManager.isInitialized) {
             msAuthManager.currentActivity = null
+        }
+    }
+
+    // Chamado se a app já estiver em background e clicarmos no Widget
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+
+        // Atualiza o intent da activity com o novo (para getIntent() funcionar se necessário)
+        setIntent(intent)
+
+        val openCalendar = intent.extras?.getBoolean("OPEN_CALENDAR") == true
+
+        if (openCalendar) {
+            // Reinicia a UI com a flag ativa para forçar a navegação
+            setContent {
+                if (::msAuthManager.isInitialized) {
+                    msAuthManager.currentActivity = this
+                }
+                SasIpcaTheme {
+                    ObserveScreenSize()
+                    App(openCalendar = true)
+                }
+            }
         }
     }
 }

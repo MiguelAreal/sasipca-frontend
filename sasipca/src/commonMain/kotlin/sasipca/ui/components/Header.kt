@@ -24,6 +24,7 @@ import sasipca.screens.navigation.MainScreen
 import sasipca.screens.navigation.NotificationsScreen
 import sasipca.screens.navigation.SettingsScreen
 import sasipca.storage.NotificationManager
+import sasipca.storage.SessionManager.isLoggedIn
 
 @Suppress("UnusedBoxWithConstraintsScope")
 @Composable
@@ -38,11 +39,11 @@ fun Header(
 
     // Lógica para mostrar/esconder o botão de voltar
     val isRootScreen = currentScreen is MainScreen || currentScreen is LoginScreen
-
     val showBackButton = navigator.canPop && !isRootScreen
 
     // Esconde botão de settings se já estivermos nele
     val showSettings = currentScreen !is SettingsScreen
+    val showNotifications by isLoggedIn.collectAsState()
 
     val unreadCount by NotificationManager.unreadCount.collectAsState()
 
@@ -114,31 +115,33 @@ fun Header(
                     }
                 }
 
-                IconButton(
-                    // Igual aqui para as notificações
-                    onClick = { navigator.push(NotificationsScreen()) },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    if (unreadCount > 0) {
-                        BadgedBox(
-                            badge = {
-                                Badge {
-                                    Text(text = if (unreadCount > 99) "99+" else unreadCount.toString())
+                if(showNotifications) {
+                    IconButton(
+                        // Igual aqui para as notificações
+                        onClick = { navigator.push(NotificationsScreen()) },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        if (unreadCount > 0) {
+                            BadgedBox(
+                                badge = {
+                                    Badge {
+                                        Text(text = if (unreadCount > 99) "99+" else unreadCount.toString())
+                                    }
                                 }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Notifications,
+                                    contentDescription = "Notificações",
+                                    tint = Color.White
+                                )
                             }
-                        ) {
+                        } else {
                             Icon(
                                 imageVector = Icons.Default.Notifications,
                                 contentDescription = "Notificações",
                                 tint = Color.White
                             )
                         }
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Notificações",
-                            tint = Color.White
-                        )
                     }
                 }
             }

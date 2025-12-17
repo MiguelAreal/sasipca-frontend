@@ -13,35 +13,53 @@ import cafe.adriel.voyager.navigator.tab.TabNavigator
 import sasipca.screens.navigation.*
 import sasipca.storage.SessionManager
 
-// Esta é a função que desenha o ecrã principal com as tabs
 @Composable
-fun MainScreenContent() {
-    // 1. Obter o Role do utilizador
+fun MainScreenContent(openCalendar: Boolean = false) {
     val userRole = remember { SessionManager.getUserRole() }
 
-    // 2. Definir as tabs com base no Role
     val tabs = remember(userRole) {
         if (userRole == "Beneficiary") {
-            // Tabs para Beneficiário
             listOf(ViewOnlyProductsTab, MyProfileTab)
         } else {
-            // Tabs para Admin / Staff
             listOf(HomeTab, ProductsTab, CalendarTab, BeneficiariesTab)
         }
     }
 
-    // 3. Estado do Pager (Swipe)
-    val pagerState = rememberPagerState(pageCount = { tabs.size })
-    var isProgrammaticScroll by remember { mutableStateOf(false) }
+    // Lógica para decidir a tab inicial
+    val initialTab = remember(openCalendar, tabs) {
+        if (openCalendar && tabs.contains(CalendarTab)) {
+            CalendarTab
+        } else {
+            tabs.first()
+        }
+    }
 
-    TabNavigator(tabs.first()) {
+    // Inicializa o TabNavigator com a tab correta
+    TabNavigator(initialTab) {
         val tabNavigator = LocalTabNavigator.current
+
+        // 3. Estado do Pager (Swipe)
+        // O initialPage deve corresponder à Tab inicial para evitar "saltos" visuais
+        val initialPageIndex = remember(initialTab) { tabs.indexOf(initialTab) }
+        val pagerState = rememberPagerState(initialPage = initialPageIndex, pageCount = { tabs.size })
+
+        var isProgrammaticScroll by remember { mutableStateOf(false) }
+
+        // Se o openCalendar mudar depois da criação (ex: onNewIntent no Android), força a navegação
+        LaunchedEffect(openCalendar) {
+            if (openCalendar && tabs.contains(CalendarTab) && tabNavigator.current != CalendarTab) {
+                tabNavigator.current = CalendarTab
+            }
+        }
 
         // Sincronização: Swipe -> Tab
         LaunchedEffect(pagerState.currentPage) {
             if (!isProgrammaticScroll) {
                 if (pagerState.currentPage < tabs.size) {
-                    tabNavigator.current = tabs[pagerState.currentPage]
+                    val targetTab = tabs[pagerState.currentPage]
+                    if (tabNavigator.current != targetTab) {
+                        tabNavigator.current = targetTab
+                    }
                 }
             }
         }

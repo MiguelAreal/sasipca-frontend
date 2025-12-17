@@ -12,6 +12,7 @@ import sasipca.auth.MicrosoftAuthManager
 import sasipca.network.requestWithAuth
 import sasipca.models.*
 import sasipca.network.markAsRefreshTokenRequest
+import sasipca.utils.updateWidgets // <--- Importante
 
 class AuthRepository(
     private val client: HttpClient,
@@ -35,6 +36,7 @@ class AuthRepository(
             }
         } catch (e: Exception) {
             SessionManager.clear()
+            updateWidgets()
             return Result.failure(e)
         }
 
@@ -48,12 +50,15 @@ class AuthRepository(
                     userName = successResponse.userName,
                     role = successResponse.role
                 )
-                // Opcional: Podes querer renovar o token FCM no refresh também,
-                // mas geralmente só no login é suficiente.
+
+                updateWidgets()
+
                 Result.success(successResponse)
             }
             else -> {
                 SessionManager.clear()
+                updateWidgets()
+
                 val errorMessage = try {
                     response.body<Resposta>().message
                 } catch (e: Exception) {
@@ -91,9 +96,11 @@ class AuthRepository(
                         role = successResponse.role
                     )
 
-                    // 2. [NOVO] Envia o Token FCM pendente para o backend
-                    // Fazemos isto AQUI porque agora temos a certeza que temos um token de acesso válido
+                    // 2. Envia o Token FCM pendente para o backend
                     sendFcmTokenSafely()
+
+                    // 3. Atualiza o Widget (agora que sabemos o role e temos token)
+                    updateWidgets()
 
                     return Result.success(successResponse)
                 }
@@ -117,24 +124,20 @@ class AuthRepository(
 
     /**
      * Tenta enviar o token FCM guardado no SettingsManager para a API.
-     * Envolto em try-catch para não falhar o Login se a notificação falhar.
      */
     private suspend fun sendFcmTokenSafely() {
         val fcmToken = SettingsManager.getFcmToken() ?: return
 
         try {
-            // Usamos o SessionManager para pegar o token que acabámos de guardar
             val accessToken = SessionManager.getAccessToken() ?: return
 
             client.post("${ApiConfig.baseUrl()}/notifications/device") {
                 header(HttpHeaders.Authorization, "Bearer $accessToken")
                 contentType(ContentType.Application.Json)
-                // Usa o DTO que definiste no NotificationRepository ou cria um mapa simples
                 setBody(DeviceTokenDto(fcmToken))
             }
             println("AuthRepo: Token FCM enviado com sucesso após login.")
         } catch (e: Exception) {
-            // Apenas logamos o erro, não queremos estragar a experiência de login do user
             println("AuthRepo: Aviso - Falha ao registar dispositivo FCM: ${e.message}")
             e.printStackTrace()
         }
@@ -170,6 +173,8 @@ class AuthRepository(
         }
 
         SessionManager.clear()
+
+        updateWidgets()
 
         return backendResult
     }
