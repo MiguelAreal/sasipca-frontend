@@ -61,7 +61,6 @@ object SettingsManager {
         if (::settings.isInitialized) {
             settings.putString(KEY_SERVER_IP, DEFAULT_SERVER_IP)
             setDarkTheme(false)
-            // Nota: NÃO apagamos o FCM Token aqui, pois ele é vital para o dispositivo
         }
     }
 }
