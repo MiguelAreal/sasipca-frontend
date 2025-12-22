@@ -11,9 +11,9 @@ object SettingsManager {
     // Keys
     private const val KEY_SERVER_IP = "server_ip"
     private const val KEY_DARK_THEME = "dark_theme"
-    private const val KEY_FCM_TOKEN = "fcm_token" // <--- NOVO
+    private const val KEY_FCM_TOKEN = "fcm_token"
 
-    private const val DEFAULT_SERVER_IP = "rapi.tail1fcae6.ts.net"
+    private const val DEFAULT_SERVER_IP = "sasipca.rapi4real.duckdns.org"
 
     // --- ESTADO REATIVO DO TEMA ---
     private val _isDarkThemeFlow = MutableStateFlow(false)
