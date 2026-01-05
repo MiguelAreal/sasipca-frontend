@@ -41,7 +41,7 @@ fun ProductImagesCarousel(
                 model = images[currentIndex],
                 contentDescription = "Imagem do produto",
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Fit
             )
         }
     }

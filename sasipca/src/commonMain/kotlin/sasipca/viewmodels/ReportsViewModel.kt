@@ -68,8 +68,8 @@ class ReportsViewModel(
         startDate: String?,
         endDate: String?,
         movementId: String?,
-        status: Int? = null,       // <--- NOVO
-        beneficiaryId: Int? = null // <--- NOVO
+        status: Int? = null,
+        beneficiaryId: Int? = null
     ) {
         _uiState.value = _uiState.value.copy(isLoading = true, error = null)
         viewModelScope.launch(Dispatchers.IO) {
@@ -95,7 +95,7 @@ class ReportsViewModel(
                 )
 
                 val bytes = repository.generateReport(request)
-                fileSaver.saveFile(finalName, bytes)
+                fileSaver.saveFile(finalName, bytes,true)
 
                 val list = repository.getGeneratedReports()
 
