@@ -9,7 +9,7 @@ import app.sasipca.R
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-class MicrosoftAuthManagerAndroid(private val context: Context) : MicrosoftAuthManager {
+class MicrosoftAuthManagerAndroid(private val context: Context) : sasipca.models.auth.MicrosoftAuthManager {
 
     private var mSingleAccountApp: ISingleAccountPublicClientApplication? = null
 

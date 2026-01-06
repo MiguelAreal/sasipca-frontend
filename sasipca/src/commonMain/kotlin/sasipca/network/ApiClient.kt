@@ -1,7 +1,7 @@
 package sasipca.network
 
 import io.ktor.client.*
-import sasipca.auth.MicrosoftAuthManager // <--- Importante
+import sasipca.models.auth.MicrosoftAuthManager // <--- Importante
 import sasipca.models.AuthResponse
 import sasipca.repositories.* // (Simplificado imports)
 

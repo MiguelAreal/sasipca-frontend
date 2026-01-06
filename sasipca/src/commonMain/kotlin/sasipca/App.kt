@@ -17,6 +17,7 @@ import coil3.SingletonImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
+import io.ktor.client.request.header
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import sasipca.models.SnackbarMessage
@@ -31,17 +32,13 @@ import sasipca.ui.components.CustomSnackbarHost
 import sasipca.ui.components.LoadingWidget
 import sasipca.ui.theme.SasIpcaTheme
 import sasipca.utils.SnackbarManager
+import sasipca.utils.getAsyncImageLoader
 
 @Composable
 fun App(openCalendar: Boolean = false) {
 
     setSingletonImageLoaderFactory { context ->
-        ImageLoader.Builder(context)
-            .components {
-                add(KtorNetworkFetcherFactory())
-            }
-            .crossfade(true)
-            .build()
+        getAsyncImageLoader(context)
     }
 
     val scope = rememberCoroutineScope()

@@ -4,7 +4,7 @@ import com.microsoft.aad.msal4j.*
 import java.net.URI
 import java.util.Collections
 
-class MicrosoftAuthManagerDesktop : MicrosoftAuthManager {
+class MicrosoftAuthManagerDesktop : sasipca.models.auth.MicrosoftAuthManager {
 
     private val clientId = "1047dc49-3d68-457b-a0d4-ecc75ed581eb"
     private val authority = "https://login.microsoftonline.com/common/"

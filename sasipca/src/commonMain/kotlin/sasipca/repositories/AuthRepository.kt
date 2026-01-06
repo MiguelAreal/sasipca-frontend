@@ -8,7 +8,7 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import sasipca.auth.MicrosoftAuthManager
+import sasipca.models.auth.MicrosoftAuthManager
 import sasipca.network.requestWithAuth
 import sasipca.models.*
 import sasipca.network.markAsRefreshTokenRequest
