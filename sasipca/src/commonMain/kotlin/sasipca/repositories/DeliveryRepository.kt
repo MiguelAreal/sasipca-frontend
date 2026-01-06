@@ -36,7 +36,7 @@ class DeliveryRepository(private val client: HttpClient) {
     }
 
     /**
-     * Obtém os detalhes completos de uma entrega (incluindo items com barcode)
+     * Obtém os detalhes completos de uma entrega (incluindo ‘items’ com barcode)
      */
     suspend fun getDeliveryDetails(deliveryId: Int): DeliveryDetail {
         return client.requestWithAuth(

@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MovementHistory(
     val movementId: Int,
-    val movementDate: String, // DateTime do C# vem como String ISO
+    val movementDate: String, // DateTime do C# vem como string iso
     val movementTypeId: Int,
     val movementNote: String?,
     val userId: Int,

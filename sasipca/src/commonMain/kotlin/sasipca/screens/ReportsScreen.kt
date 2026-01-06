@@ -1,6 +1,5 @@
 package sasipca.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -96,14 +95,13 @@ fun ReportsScreen(reportsRepository : ReportsRepository, beneficiaryRepository :
     if (showDialog) {
         ReportCreationPopup(
             beneficiariesViewModel = beneficiariesViewModel,
-            onDismiss = { showDialog = false },
+            onDismiss = { },
             onGenerate = { type, format, name, start, end, movId, status, beneId ->
                 viewModel.generateNewReport(
                     type = type, format = format, fileName = name,
                     startDate = start, endDate = end, movementId = movId,
                     status = status, beneficiaryId = beneId
                 )
-                showDialog = false
             },
             presetMovementId = null
         )

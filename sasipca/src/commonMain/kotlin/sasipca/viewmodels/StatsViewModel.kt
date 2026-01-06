@@ -23,8 +23,8 @@ enum class TimeRange(val label: String, val days: Int) {
 class StatsViewModel(private val repository: StatsRepository) : ViewModel() {
 
     // --- CONSTANTES DE TIPO DE MOVIMENTO (Igual ao Backend) ---
-    private val MOVEMENT_TYPE_IN = 1
-    private val MOVEMENT_TYPE_OUT = 2
+    private val movTypeIn = 1
+    private val movTypeOut = 2
 
     // --- ESTADOS DE UI (GLOBAL) ---
     var isLoading by mutableStateOf(false)
@@ -37,7 +37,7 @@ class StatsViewModel(private val repository: StatsRepository) : ViewModel() {
     var monthlyStats by mutableStateOf<MonthlySummary?>(null)
         private set
 
-    var currentHomeMonth by mutableStateOf(YearMonth.now())
+    var currentHomeMonth: YearMonth by mutableStateOf(YearMonth.now())
         private set
 
     // --- ESTADOS PARA ESTATÍSTICAS AVANÇADAS ---
@@ -63,9 +63,9 @@ class StatsViewModel(private val repository: StatsRepository) : ViewModel() {
     var showDatePicker by mutableStateOf(false)
         private set
 
-    var startDate by mutableStateOf(LocalDate.now().minusDays(30))
+    var startDate: LocalDate? by mutableStateOf(LocalDate.now().minusDays(30))
         private set
-    var endDate by mutableStateOf(LocalDate.now())
+    var endDate: LocalDate? by mutableStateOf(LocalDate.now())
         private set
 
     // =========================================================
@@ -118,8 +118,8 @@ class StatsViewModel(private val repository: StatsRepository) : ViewModel() {
                 topProducts = repository.getTopProducts(startStr, endStr)
 
                 // 3. Distribuição de Categorias (Chamadas ao endpoint consolidado)
-                categoriesDataIn = repository.getCategoriesDistribution(MOVEMENT_TYPE_IN, startStr, endStr)
-                categoriesDataOut = repository.getCategoriesDistribution(MOVEMENT_TYPE_OUT, startStr, endStr)
+                categoriesDataIn = repository.getCategoriesDistribution(movTypeIn, startStr, endStr)
+                categoriesDataOut = repository.getCategoriesDistribution(movTypeOut, startStr, endStr)
 
             } catch (e: Exception) {
                 println("Erro advanced stats: ${e.message}")

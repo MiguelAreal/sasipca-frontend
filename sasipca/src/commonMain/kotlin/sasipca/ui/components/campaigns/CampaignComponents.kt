@@ -31,7 +31,7 @@ fun Campaign.isActive(): Boolean {
         val end = LocalDate.parse(this.endDate)
         val now = LocalDate.now()
         !now.isBefore(start) && !now.isAfter(end)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         false
     }
 }

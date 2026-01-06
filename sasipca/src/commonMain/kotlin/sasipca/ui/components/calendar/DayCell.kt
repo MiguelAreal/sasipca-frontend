@@ -80,7 +80,7 @@ fun DayCell(
                     )
                 }
             } else {
-                // DESKTOP: Chips/Barras com nome
+                // ‘DESKTOP’: Chips/Barras com nome
                 Column(
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                     modifier = Modifier.fillMaxWidth()

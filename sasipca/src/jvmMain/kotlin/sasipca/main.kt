@@ -47,13 +47,13 @@ fun main() = application {
         )
     }
 
-    // 4. Lógica Reativa: Observar Login para arrancar/parar SignalR
+    // 4. Lógica Reativa: Observar ‘Login’ para arrancar/parar SignalR
     // Convertemos o StateFlow do SessionManager para um State do Compose
     val isLoggedIn by SessionManager.isLoggedIn.collectAsState()
 
     LaunchedEffect(isLoggedIn) {
         if (isLoggedIn) {
-            // Se o utilizador entrou (ou abriu a app já logado), arranca o serviço.
+            // Se o utilizador entrou (ou abriu a ‘app’ já logado), arranca o serviço.
             // O SignalRManager.start() deve ter o loop de retry que fizemos antes.
             launch(Dispatchers.IO) {
                 signalR.start()
@@ -83,7 +83,6 @@ fun main() = application {
     if (isWindowVisible) {
         Window(
             onCloseRequest = {
-                isWindowVisible = false
                 trayState.sendNotification(
                     Notification("SASIPCA", "A aplicação continua a correr em segundo plano.", Notification.Type.Info)
                 )

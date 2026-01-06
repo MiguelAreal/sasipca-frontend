@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -20,7 +21,7 @@ fun ProductImagesCarousel(
     modifier: Modifier = Modifier
 ) {
     var showPopup by remember { mutableStateOf(false) }
-    var currentIndex by remember { mutableStateOf(0) }
+    var currentIndex by remember { mutableIntStateOf(0) }
 
     Box(
         modifier = modifier
@@ -41,7 +42,13 @@ fun ProductImagesCarousel(
                 model = images[currentIndex],
                 contentDescription = "Imagem do produto",
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Fit
+                contentScale = ContentScale.Fit,
+                onState = { state ->
+                    if (state is coil3.compose.AsyncImagePainter.State.Error) {
+                        // Isto ajudará a ver o erro no Logcat/Console
+                        println("Coil Error: ${state.result.throwable.message}")
+                    }
+                }
             )
         }
     }
@@ -49,7 +56,7 @@ fun ProductImagesCarousel(
     if (showPopup) {
         ImageCarouselPopup(
             images = images,
-            onDismiss = { showPopup = false }
+            onDismiss = { }
         )
     }
 }

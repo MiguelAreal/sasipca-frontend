@@ -29,14 +29,14 @@ class OFFRepository(private val client: HttpClient) {
 
                 productResponse.product?.let { p ->
                     val normalized = UnitConverter.normalize(
-                        p.product_quantity,
-                        p.product_quantity_unit
+                        p.productQuantity,
+                        p.productQuantityUnit
                     )
 
                     if (normalized != null) {
                         // Atualiza diretamente o modelo original
-                        p.product_quantity = normalized.value
-                        p.product_quantity_unit = normalized.unit
+                        p.productQuantity = normalized.value
+                        p.productQuantityUnit = normalized.unit
                     }
                 }
 

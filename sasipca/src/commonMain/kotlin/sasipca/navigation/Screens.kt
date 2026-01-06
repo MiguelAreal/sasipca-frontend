@@ -1,4 +1,4 @@
-package sasipca.screens.navigation
+package sasipca.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -11,7 +11,24 @@ import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import sasipca.models.Delivery
 import sasipca.network.ApiClient
+import sasipca.screens.AdminsScreen
+import sasipca.screens.BeneficiariesScreen
+import sasipca.screens.BeneficiaryScreen
+import sasipca.screens.CalendarScreen
+import sasipca.screens.CampaignsScreen
+import sasipca.screens.DeliveryScreen
+import sasipca.screens.HistoryScreen
+import sasipca.screens.HomeScreen
+import sasipca.screens.LoginScreen
 import sasipca.screens.MainScreenContent
+import sasipca.screens.NotificationsScreen
+import sasipca.screens.ProductScreen
+import sasipca.screens.ProductsScreen
+import sasipca.screens.ReceiptScreen
+import sasipca.screens.ReportsScreen
+import sasipca.screens.SettingsScreen
+import sasipca.screens.StatsScreen
+import sasipca.screens.StockAdjustmentScreen
 import sasipca.storage.SessionManager
 import java.time.LocalDate
 
@@ -25,7 +42,7 @@ class LoginScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val authRepository = remember { ApiClient.authRepository }
 
-        sasipca.screens.LoginScreen(
+        LoginScreen(
             authRepository = authRepository,
             onLoginSuccess = { navigator.replaceAll(MainScreen()) }
         )
@@ -54,7 +71,7 @@ object HomeTab : Tab {
 
     @Composable
     override fun Content() {
-        sasipca.screens.HomeScreen(statsRepository = remember { ApiClient.statsRepository })
+        HomeScreen(statsRepository = remember { ApiClient.statsRepository })
     }
 }
 
@@ -70,7 +87,7 @@ object ProductsTab : Tab {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
-        sasipca.screens.ProductsScreen(
+        ProductsScreen(
             productRepository = remember { ApiClient.productRepository },
             onOpenProduct = { barcode -> navigator.push(ProductDetailScreen(barcode)) },
             isReadOnly = false // Admin pode editar
@@ -90,7 +107,7 @@ object CalendarTab : Tab {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
-        sasipca.screens.CalendarScreen(
+        CalendarScreen(
             deliveryRepository = remember { ApiClient.deliveryRepository },
             onNavigateToDelivery = { date, isScheduled, delivery ->
                 navigator.push(DeliveryScreen(date, isScheduled, delivery))
@@ -111,7 +128,7 @@ object BeneficiariesTab : Tab {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
-        sasipca.screens.BeneficiariesScreen(
+        BeneficiariesScreen(
             beneficiaryRepository = remember { ApiClient.beneficiaryRepository },
             onOpenBeneficiary = { id -> navigator.push(BeneficiaryDetailScreen(id)) }
         )
@@ -136,7 +153,7 @@ object ViewOnlyProductsTab : Tab {
         val navigator = LocalNavigator.currentOrThrow.parent ?: LocalNavigator.currentOrThrow
 
         // Reutiliza ProductsScreen mas em modo leitura
-        sasipca.screens.ProductsScreen(
+        ProductsScreen(
             productRepository = remember { ApiClient.productRepository },
             onOpenProduct = { barcode -> navigator.push(ProductDetailScreen(barcode)) },
             isReadOnly = true
@@ -158,7 +175,7 @@ object MyProfileTab : Tab {
         val myUserId = remember { SessionManager.getUserId() } ?: -1
 
         // Aqui sabemos que quem acede a esta tab É um Beneficiário
-        sasipca.screens.BeneficiaryScreen(
+        BeneficiaryScreen(
             beneficiaryId = myUserId,
             repository = remember { ApiClient.beneficiaryRepository },
             deliveryRepository = remember { ApiClient.deliveryRepository },
@@ -174,7 +191,7 @@ object MyProfileTab : Tab {
 data class BeneficiaryDetailScreen(val beneficiaryId: Int) : Screen {
     @Composable
     override fun Content() {
-        sasipca.screens.BeneficiaryScreen(
+        BeneficiaryScreen(
             beneficiaryId = beneficiaryId,
             repository = remember { ApiClient.beneficiaryRepository },
             deliveryRepository = remember { ApiClient.deliveryRepository },
@@ -186,7 +203,7 @@ data class BeneficiaryDetailScreen(val beneficiaryId: Int) : Screen {
 data class ProductDetailScreen(val barcode: String) : Screen {
     @Composable
     override fun Content() {
-        sasipca.screens.ProductScreen(
+        ProductScreen(
             barcode = barcode,
             productRepository = remember { ApiClient.productRepository }
         )
@@ -200,7 +217,7 @@ data class DeliveryScreen(
 ) : Screen {
     @Composable
     override fun Content() {
-        sasipca.screens.DeliveryScreen(
+        DeliveryScreen(
             productRepository = remember { ApiClient.productRepository },
             deliveryRepository = remember { ApiClient.deliveryRepository },
             beneficiaryRepository = remember { ApiClient.beneficiaryRepository },
@@ -214,7 +231,7 @@ data class DeliveryScreen(
 class ReceptionScreen : Screen {
     @Composable
     override fun Content() {
-        sasipca.screens.ReceiptScreen(
+        ReceiptScreen(
             productRepository = remember { ApiClient.productRepository },
             receiptRepository = remember { ApiClient.receiptRepository }
         )
@@ -224,7 +241,7 @@ class ReceptionScreen : Screen {
 class StockAdjustmentScreen : Screen {
     @Composable
     override fun Content() {
-        sasipca.screens.StockAdjustmentScreen(
+        StockAdjustmentScreen(
             adjustmentRepository = remember { ApiClient.adjustmentRepository },
             productRepository = remember { ApiClient.productRepository }
         )
@@ -234,7 +251,7 @@ class StockAdjustmentScreen : Screen {
 class HistoryScreen : Screen {
     @Composable
     override fun Content() {
-        sasipca.screens.HistoryScreen(
+        HistoryScreen(
             historyRepository = remember { ApiClient.historyRepository },
             reportsRepository = remember { ApiClient.reportRepository },
             beneficiaryRepository = remember { ApiClient.beneficiaryRepository }
@@ -245,7 +262,7 @@ class HistoryScreen : Screen {
 class CampaignsScreen : Screen {
     @Composable
     override fun Content() {
-        sasipca.screens.CampaignsScreen(
+        CampaignsScreen(
             campaignRepository = remember { ApiClient.campaignRepository },
             listsRepository = remember { ApiClient.listsRepository }
         )
@@ -255,7 +272,7 @@ class CampaignsScreen : Screen {
 class ReportsScreen : Screen {
     @Composable
     override fun Content() {
-        sasipca.screens.ReportsScreen(
+        ReportsScreen(
             reportsRepository = remember { ApiClient.reportRepository },
             beneficiaryRepository = remember { ApiClient.beneficiaryRepository }
         )
@@ -265,7 +282,7 @@ class ReportsScreen : Screen {
 class NotificationsScreen : Screen {
     @Composable
     override fun Content() {
-        sasipca.screens.NotificationsScreen(
+        NotificationsScreen(
             notificationRepository = remember { ApiClient.notificationRepository }
         )
     }
@@ -274,21 +291,14 @@ class NotificationsScreen : Screen {
 class SettingsScreen : Screen {
     @Composable
     override fun Content() {
-        sasipca.screens.SettingsScreen()
-    }
-}
-
-class ProfileScreen : Screen {
-    @Composable
-    override fun Content() {
-        sasipca.screens.ProfileScreen()
+        SettingsScreen()
     }
 }
 
 class AdminsScreen : Screen {
     @Composable
     override fun Content() {
-        sasipca.screens.AdminsScreen(
+        AdminsScreen(
             adminRepository = remember { ApiClient.adminRepository }
         )
     }
@@ -297,7 +307,7 @@ class AdminsScreen : Screen {
 class StatsScreen : Screen {
     @Composable
     override fun Content() {
-        sasipca.screens.StatsScreen(
+        StatsScreen(
             statsRepository = remember { ApiClient.statsRepository }
         )
     }

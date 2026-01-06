@@ -1,46 +1,42 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.*
 
-val appVersionName = "2.1.0" // A versão visível (String)
-val appVersionCode = 2       // O número da build (Inteiro, incrementar sempre)
+val appVersionName = "2.1.1"
+val appVersionCode = 3
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    kotlin("plugin.serialization") version "1.9.0"
+    alias(libs.plugins.kotlinSerialization)
     id("com.google.gms.google-services")
 }
 
+//noinspection UseTomlInstead
 kotlin {
     androidTarget {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
-        }
+        compilerOptions { jvmTarget.set(JvmTarget.JVM_11) }
     }
-
     jvm()
 
     sourceSets {
-
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.android)
-            implementation("io.ktor:ktor-client-okhttp:3.3.1")
-            implementation("androidx.preference:preference-ktx:1.2.1")
-            implementation("com.google.mlkit:barcode-scanning:17.2.0")
-            implementation("androidx.camera:camera-camera2:1.3.4")
-            implementation("androidx.camera:camera-lifecycle:1.3.4")
-            implementation("androidx.camera:camera-view:1.3.4")
-            implementation("com.google.firebase:firebase-messaging:25.0.1")
-            implementation("androidx.glance:glance-appwidget:1.1.0")
-            implementation("androidx.glance:glance-material3:1.1.0")
-            implementation("com.microsoft.identity.client:msal:8.1.0"){
+            implementation(libs.ktor.client.okhttp)
+            implementation(libs.mlkit.barcode)
+            implementation(libs.androidx.camera.camera2)
+            implementation(libs.androidx.camera.lifecycle)
+            implementation(libs.androidx.camera.view)
+            implementation(libs.firebase.messaging)
+            implementation(libs.androidx.preference)
+            implementation("androidx.glance:glance-material3:1.1.1")
+            implementation("androidx.glance:glance-appwidget:1.1.1")
+            implementation("com.microsoft.identity.client:msal:5.5.0") {
                 exclude(group = "com.microsoft.device.display")
             }
-
         }
 
         commonMain.dependencies {
@@ -54,43 +50,39 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
-            implementation("io.ktor:ktor-client-core:3.3.2")
-            implementation("io.ktor:ktor-client-content-negotiation:3.3.2")
-            implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.2")
-            implementation("io.ktor:ktor-client-auth:3.3.2")
-            implementation("io.ktor:ktor-client-logging:3.3.2")
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.json)
+            implementation(libs.ktor.client.auth)
+            implementation(libs.ktor.client.logging)
+            implementation(libs.multiplatform.settings)
+            implementation(libs.kotlinx.datetime)
+
+            // Hardcoded to fix "Unresolved reference voyager"
+            implementation("cafe.adriel.voyager:voyager-navigator:1.1.0-beta03")
+            implementation("cafe.adriel.voyager:voyager-transitions:1.1.0-beta03")
+            implementation("cafe.adriel.voyager:voyager-screenmodel:1.1.0-beta03")
+            implementation("cafe.adriel.voyager:voyager-tab-navigator:1.1.0-beta03")
+
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
-            implementation("com.russhwolf:multiplatform-settings:1.3.0")
-            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1-0.6.x-compat")
-
-            val voyagerVersion = "1.0.1"
-            implementation("cafe.adriel.voyager:voyager-navigator:$voyagerVersion")
-            implementation("cafe.adriel.voyager:voyager-transitions:$voyagerVersion")
-            implementation("cafe.adriel.voyager:voyager-screenmodel:$voyagerVersion")
-            implementation("cafe.adriel.voyager:voyager-tab-navigator:$voyagerVersion")
-        }
-
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
-            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
         }
 
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.ktor.client.java)
-            implementation("io.ktor:ktor-client-cio:3.3.1")
-            implementation("com.russhwolf:multiplatform-settings-jvm:1.3.0")
-            implementation("org.slf4j:slf4j-simple:2.0.17")
+            implementation(libs.ktor.client.cio)
+            implementation(libs.multiplatform.settings.jvm)
             implementation("com.microsoft.azure:msal4j:1.23.1")
-            implementation("com.microsoft.signalr:signalr:10.0.0")
-            implementation("com.squareup.okhttp3:okhttp:4.12.0")
+            implementation("org.slf4j:slf4j-simple:2.0.17")
+            implementation("com.microsoft.signalr:signalr:10.0.1")
             implementation("io.reactivex.rxjava3:rxjava:3.1.12")
         }
-
     }
 
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
 }
-
 
 android {
     namespace = "app.sasipca"
@@ -104,31 +96,12 @@ android {
         versionName = appVersionName
     }
 
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+    applicationVariants.all {
+        outputs.all {
+            val output = this as com.android.build.gradle.internal.api.ApkVariantOutputImpl
+            output.outputFileName = "sasipca-${appVersionName}.apk"
         }
-
     }
-
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = false
-        }
-
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-}
-
-
-
-dependencies {
-    debugImplementation(compose.uiTooling)
 }
 
 compose.desktop {
@@ -136,25 +109,31 @@ compose.desktop {
         mainClass = "sasipca.MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe)
-            description = "SASIPCA"
-            vendor = "G8 IPCA"
-            modules("java.base", "java.desktop", "jdk.httpserver", "java.instrument", "jdk.unsupported")
-
-            macOS {
-                iconFile.set(project.file("src/jvmMain/resources/icons/icon512x512.icns"))
-            }
-
-            windows {
-                iconFile.set(project.file("src/jvmMain/resources/icons/icon512x512.ico"))
-                shortcut = true
-            }
-
-            linux {
-                iconFile.set(project.file("src/jvmMain/resources/icons/icon512x512.png"))
-            }
-
             packageName = "sasipca"
             packageVersion = appVersionName
+        }
+    }
+}
+
+tasks.register("renameDesktopDistributables") {
+    doLast {
+        val packageDir = layout.buildDirectory.dir("compose/binaries/main").get().asFile
+        val extensions = listOf("msi", "exe", "deb", "dmg", "pkg")
+        if (packageDir.exists()) {
+            packageDir.walkTopDown().forEach { file ->
+                if (file.extension in extensions && !file.name.contains(appVersionName)) {
+                    val newName = "sasipca-${appVersionName}.${file.extension}"
+                    file.renameTo(File(file.parent, newName))
+                }
+            }
+        }
+    }
+}
+
+afterEvaluate {
+    tasks.forEach { task ->
+        if (task.name.contains("package") && task.name.contains("Distributable") && !task.name.contains("rename")) {
+            task.finalizedBy("renameDesktopDistributables")
         }
     }
 }

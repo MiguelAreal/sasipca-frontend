@@ -43,8 +43,8 @@ actual fun BarcodeInputField(
                 value = value,
                 onValueChange = { onValueChange(it) },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(),
+                    .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryEditable, enabled = true)
+                    .fillMaxWidth(),
                 label = { Text(label) },
                 placeholder = { Text(placeholder) },
                 trailingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
@@ -74,7 +74,7 @@ actual fun BarcodeInputField(
                             text = {
                                 Column {
                                     Text(
-                                        text = product.name ?: "Sem Nome",
+                                        text = product.name,
                                         style = MaterialTheme.typography.bodyLarge
                                     )
                                     Text(

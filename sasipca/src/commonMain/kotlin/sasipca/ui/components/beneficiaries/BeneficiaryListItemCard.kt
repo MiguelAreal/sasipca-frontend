@@ -74,15 +74,13 @@ fun BeneficiaryListItemCard(
                     overflow = TextOverflow.Ellipsis
                 )
 
-                beneficiary.email?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodySmall, // Estilo tipográfico consistente
-                        color = MaterialTheme.colorScheme.onSurfaceVariant, // Cor variante (cinza subtil)
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                Text(
+                    text = beneficiary.email,
+                    style = MaterialTheme.typography.bodySmall, // Estilo tipográfico consistente
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, // Cor variante (cinza subtil)
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
 
             Icon(

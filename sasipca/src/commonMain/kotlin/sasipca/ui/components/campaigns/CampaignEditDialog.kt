@@ -36,7 +36,7 @@ fun CampaignEditDialog(
     viewModel: CampaignViewModel
 ) {
     val imagePicker = rememberImagePickerLauncher { bytes ->
-        viewModel.onImagePicked(bytes)
+        viewModel.onImagePicked(bytes?.toList())
     }
 
     // Estado para o Dialog de Confirmação de Eliminar Campanha
@@ -69,9 +69,11 @@ fun CampaignEditDialog(
                     val hasImage = (formState.newImageBytes != null || !formState.imageUrl.isNullOrEmpty())
                     val showImage = hasImage && !formState.removeImage
 
-                    val modelToRender = if (formState.newImageBytes != null) {
-                        formState.newImageBytes
-                    } else formState.imageUrl
+                    val modelToRender: Any? = if (formState.newImageBytes != null) {
+                        formState.newImageBytes.toByteArray()
+                    } else {
+                        formState.imageUrl
+                    }
 
                     if (showImage && modelToRender != null) {
                         SubcomposeAsyncImage(
@@ -235,7 +237,7 @@ fun CampaignEditDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
 
-                    // Botão Eliminar Campanha (Esquerda) - Apenas se já existir (id != 0)
+                    // Botão Eliminar Campanha (Esquerda) - Apenas se já existir (‘id’!= 0)
                     if (formState.id != 0) {
                         IconButton(
                             onClick = { showDeleteConfirm = true },
@@ -270,14 +272,13 @@ fun CampaignEditDialog(
     // --- Dialog de Confirmação de Eliminação ---
     if (showDeleteConfirm) {
         AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
+            onDismissRequest = { },
             title = { Text("Eliminar Campanha") },
             text = { Text("Tem a certeza que deseja eliminar esta campanha? Esta ação não pode ser desfeita.") },
             confirmButton = {
                 Button(
                     onClick = {
                         viewModel.deleteCampaign()
-                        showDeleteConfirm = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
@@ -285,7 +286,7 @@ fun CampaignEditDialog(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) {
+                TextButton(onClick = { }) {
                     Text("Cancelar")
                 }
             }
@@ -300,5 +301,5 @@ fun convertDateToUi(apiDate: String): String {
     return try {
         val parts = apiDate.split("-")
         if (parts.size == 3) "${parts[2]}/${parts[1]}/${parts[0]}" else apiDate
-    } catch (e: Exception) { apiDate }
+    } catch (_: Exception) { apiDate }
 }

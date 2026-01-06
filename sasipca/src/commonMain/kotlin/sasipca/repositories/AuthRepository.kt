@@ -61,7 +61,7 @@ class AuthRepository(
 
                 val errorMessage = try {
                     response.body<Resposta>().message
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "Failed to refresh token: ${response.status}"
                 }
                 Result.failure(Exception(errorMessage))
@@ -87,7 +87,7 @@ class AuthRepository(
                     // SUCESSO TOTAL
                     val successResponse: AuthResponse = response.body()
 
-                    // 1. Guarda a sessão (Tokens de acesso)
+                    // 1. Guarda a sessão (‘Tokens’ de acesso)
                     SessionManager.saveSession(
                         token = successResponse.accessToken,
                         refreshToken = successResponse.refreshToken,
@@ -110,7 +110,7 @@ class AuthRepository(
                     silentSignOut()
                     val msg = try {
                         response.body<Resposta>().message
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         "Erro no backend: ${response.status}"
                     }
                     return Result.failure(Exception(msg))

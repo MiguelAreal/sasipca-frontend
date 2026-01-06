@@ -13,12 +13,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.todayIn
 import sasipca.models.ProductGroup
 import sasipca.ui.theme.CardTitle
+import kotlin.time.Clock
 
 @Composable
 fun ProductGroupsTable(
@@ -33,7 +33,7 @@ fun ProductGroupsTable(
     ) {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             CardTitle("Stock por Validade")
-            Divider(
+            HorizontalDivider(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
                 modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
             )
@@ -72,12 +72,12 @@ fun ProductGroupsTable(
                         modifier = Modifier.weight(1f)
                     )
                 }
-                Divider()
+                HorizontalDivider()
 
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(groups.sortedBy { it.expiryDate }) { group ->
                         GroupRow(group, isBeneficiary)
-                        Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                     }
                 }
             }
@@ -112,12 +112,12 @@ fun GroupRow(
         modifier = Modifier
             .fillMaxWidth()
             .background(rowBackground) // Aplica o fundo vermelho se expirado
-            .padding(vertical = 12.dp, horizontal = 4.dp), // Padding extra horizontal para não colar
+            .padding(vertical = 12.dp, horizontal = 4.dp), // Padding extra-horizontal para não colar
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Formatação manual da data
-        val day = expiryDate.dayOfMonth.toString().padStart(2, '0')
+        val day = expiryDate.day.toString().padStart(2, '0')
         val month = expiryDate.month.number.toString().padStart(2, '0')
         val year = expiryDate.year
         val dateStr = "$day-$month-$year"

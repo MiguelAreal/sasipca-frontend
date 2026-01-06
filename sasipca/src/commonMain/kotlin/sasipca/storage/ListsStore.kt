@@ -46,20 +46,8 @@ object ListsStore {
     fun getCategoryName(id: Int): String =
         categoriestypes.firstOrNull { it.id == id }?.type ?: "Desconhecido"
 
-    fun getUnitName(id: Int): String =
-        unitTypes.firstOrNull { it.id == id }?.type ?: "Desconhecido"
-
-    fun getMovementTypeName(id: Int): String =
-        movementTypes.firstOrNull { it.id == id }?.type ?: "Desconhecido"
-
     fun getDeliveriesStatusName(id: Int): String =
         DeliveriesStatus.firstOrNull { it.id == id }?.status ?: "Desconhecido"
-
-    fun getReportTypeName(id: Int): String =
-        ReportTypes.firstOrNull { it.id == id }?.type ?: "Desconhecido"
-
-    fun getActiveCampaignName(id: Int): String =
-        ActiveCampaigns.firstOrNull { it.id == id }?.name ?: "Desconhecido"
 
     val isInitialized: Boolean
         get() = movementTypes.isNotEmpty() && unitTypes.isNotEmpty()

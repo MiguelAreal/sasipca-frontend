@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import sasipca.ui.theme.UnderlineError
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -18,11 +19,11 @@ import kotlin.time.Instant
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 fun ValidatedDateField(
+    modifier: Modifier = Modifier,
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
-    error: String? = null,
-    modifier: Modifier = Modifier
+    error: String? = null
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
@@ -60,7 +61,7 @@ fun ValidatedDateField(
 
     if (showDatePicker) {
         DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
+            onDismissRequest = { },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -69,21 +70,20 @@ fun ValidatedDateField(
                             val instant = Instant.fromEpochMilliseconds(millis)
                             val date = instant.toLocalDateTime(TimeZone.UTC).date
 
-                            // Construção manual da string "dd-MM-yyyy"
-                            val day = date.dayOfMonth.toString().padStart(2, '0')
-                            val month = date.monthNumber.toString().padStart(2, '0')
+                            // Construção manual da ‘string’ "dd-MM-yyyy"
+                            val day = date.day.toString().padStart(2, '0')
+                            val month = date.month.number.toString().padStart(2, '0')
                             val year = date.year
 
                             val formatted = "$day/$month/$year"
 
                             onValueChange(formatted)
                         }
-                        showDatePicker = false
                     }
                 ) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
+                TextButton(onClick = { }) {
                     Text("Cancelar")
                 }
             }

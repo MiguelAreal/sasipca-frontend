@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.number
 import sasipca.models.*
 import sasipca.repositories.DeliveryRepository
 import sasipca.screens.DeliveryProductToSend
@@ -30,9 +31,6 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
     // --- Estados de Dados ---
     private val _month = MutableStateFlow(YearMonth.now())
     val month: StateFlow<YearMonth> = _month
-
-    private val _selectedDate = MutableStateFlow(LocalDate.now())
-    val selectedDate: StateFlow<LocalDate> = _selectedDate
 
     private val _deliveries = MutableStateFlow<List<Delivery>>(emptyList())
     val deliveries: StateFlow<List<Delivery>> = _deliveries
@@ -179,10 +177,10 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
                         val expiryDate = groupDetails?.expiryDate
 
                         if (expiryDate != null && finalDate != null) {
-                            val expJava = LocalDate.of(expiryDate.year, expiryDate.monthNumber, expiryDate.dayOfMonth)
+                            val expJava = LocalDate.of(expiryDate.year, expiryDate.month.number, expiryDate.day)
 
                             if (expJava.isBefore(finalDate)) {
-                                errors["expiry_${product.barcode}"] = "O produto ${product.productName} contém lotes expirados (${expiryDate.dayOfMonth}/${expiryDate.monthNumber}/${expiryDate.year})."
+                                errors["expiry_${product.barcode}"] = "O produto ${product.productName} contém lotes expirados (${expiryDate.day}/${expiryDate.month.number}/${expiryDate.year})."
                             }
                         }
                     }
@@ -212,7 +210,7 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
                 if (isUpdate) {
                     val putBody = DeliveryPut(
                         scheduledDate = finalDate.toString(),
-                        note = if (note.isBlank()) null else note,
+                        note = note.ifBlank { null },
                         itemsToDeliver = itemsPayload,
                         newStatusId = if (!isScheduled) 2 else currentStatusId
                     )
@@ -228,7 +226,7 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
                     val postBody = DeliveryPost(
                         beneficiaryId = beneficiaryId!!,
                         scheduledDate = finalDate.toString(),
-                        note = if (note.isBlank()) null else note,
+                        note = note.ifBlank { null },
                         itemsToDeliver = itemsPayload
                     )
 
@@ -284,7 +282,4 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
         loadMonthDeliveries(m)
     }
 
-    fun selectDate(d: LocalDate) {
-        _selectedDate.value = d
-    }
 }

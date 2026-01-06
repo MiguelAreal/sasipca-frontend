@@ -14,7 +14,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -24,7 +23,7 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import sasipca.network.ApiClient // Importar ApiClient
 import sasipca.repositories.AuthRepository
-import sasipca.screens.navigation.SettingsScreen
+import sasipca.navigation.SettingsScreen
 import sasipca.storage.NotificationManager
 import sasipca.utils.SnackbarManager
 import sasipca.models.SnackbarType
@@ -77,7 +76,6 @@ fun LoginScreen(
                             if (isLoading) return@launch
                             isLoading = true
 
-                            // 1. Tenta Login
                             val loginResult = authRepository.loginMicrosoft()
 
                             loginResult.fold(
@@ -89,7 +87,6 @@ fun LoginScreen(
                                         // 3. Tudo OK -> Navega
                                         onLoginSuccess()
                                     } catch (e: Exception) {
-                                        // Falha ao carregar listas (mesmo com login ok)
                                         isLoading = false
                                         SnackbarManager.show("Login efetuado, mas falha ao carregar dados: ${e.message}", SnackbarType.ERROR)
                                         // Opcional: fazer logout se os dados forem críticos

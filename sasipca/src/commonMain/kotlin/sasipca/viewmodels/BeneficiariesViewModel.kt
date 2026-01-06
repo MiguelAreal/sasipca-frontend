@@ -36,7 +36,7 @@ class BeneficiariesViewModel(val repository: BeneficiaryRepository) : ViewModel(
     var orderBy by mutableStateOf("asc")
         private set
 
-    var currentPage by mutableStateOf(1)
+    var currentPage by mutableIntStateOf(1)
         private set
 
     private val pageSize = 10
@@ -64,7 +64,7 @@ class BeneficiariesViewModel(val repository: BeneficiaryRepository) : ViewModel(
                         orderBy = order
                     )
 
-                val mapped = PaginatedResponse<BeneficiaryItem>(
+                val mapped = PaginatedResponse(
                     data = response.data.map {
                         BeneficiaryItem(
                             beneficiaryId = it.beneficiaryId,
@@ -82,7 +82,7 @@ class BeneficiariesViewModel(val repository: BeneficiaryRepository) : ViewModel(
                 currentPage = page
                 searchTerm = search
                 orderBy = order
-            } catch (e: NotFoundException) {
+            } catch (_: NotFoundException) {
                 beneficiaries = PaginatedResponse(emptyList(), 1, pageSize, 0, 0)
             } catch (e: RepositoryException) {
                 SnackbarManager.show(e.message ?: "Erro de comunicação com o servidor.", SnackbarType.ERROR)
@@ -94,9 +94,4 @@ class BeneficiariesViewModel(val repository: BeneficiaryRepository) : ViewModel(
         }
     }
 
-
-
-    fun clearError() {
-        errorMessage = null
-    }
 }

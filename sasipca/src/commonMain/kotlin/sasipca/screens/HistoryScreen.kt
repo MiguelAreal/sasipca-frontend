@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.FileDownload
-import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -76,7 +75,7 @@ fun HistoryScreen(
         }
 
         // --- TABS ---
-        TabRow(
+        SecondaryTabRow(
             selectedTabIndex = viewModel.currentTab.ordinal,
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.primary
@@ -126,7 +125,7 @@ fun HistoryScreen(
                 Icon(Icons.Default.Refresh, contentDescription = "Atualizar", tint = Color.White)
             }
 
-            // Removi o LoadingWidget antigo daqui pois agora está no topo
+            // Removi o LoadingWidget antigo daqui, pois agora está no topo
         }
     }
 
@@ -149,11 +148,10 @@ fun HistoryScreen(
     if (showReportDialogForMovementId != null) {
         ReportCreationPopup(
             beneficiariesViewModel = beneficiariesViewModel,
-            onDismiss = { showReportDialogForMovementId = null },
+            onDismiss = { },
             presetMovementId = showReportDialogForMovementId,
             onGenerate = { type, format, name, start, end, movId, status, beneId ->
                 reportsViewModel.generateNewReport(type, format, name, start, end, movId, status, beneId)
-                showReportDialogForMovementId = null
             }
         )
     }
@@ -173,7 +171,7 @@ fun MovementsTable(movements: List<MovementHistory>, onRowClick: (Int) -> Unit) 
             MovSort.TYPE -> movements.sortedBy { getMovementTypeName(it.movementTypeId) }
             MovSort.USER -> movements.sortedBy { it.userName ?: "" }
             // CORREÇÃO MANTIDA: .toDouble() para evitar o erro de compilação
-            MovSort.TOTAL -> movements.sortedBy { it.totalQuantityAffected?.toDouble() ?: 0.0 }
+            MovSort.TOTAL -> movements.sortedBy { it.totalQuantityAffected ?: 0.0 }
         }
         if (sortDirection == SortDirection.DESCENDING) sorted.reversed() else sorted
     }
@@ -235,7 +233,7 @@ fun MovementsTable(movements: List<MovementHistory>, onRowClick: (Int) -> Unit) 
 
                         Text(item.userName ?: "-", Modifier.weight(1f), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
 
-                        val qtyColor = if (item.totalQuantityAffected != null && item.totalQuantityAffected!! < 0) Color(0xFFD32F2F) else MaterialTheme.colorScheme.primary
+                        val qtyColor = if (item.totalQuantityAffected != null && item.totalQuantityAffected < 0) Color(0xFFD32F2F) else MaterialTheme.colorScheme.primary
                         Text(
                             "${item.totalQuantityAffected ?: 0}",
                             Modifier.weight(0.7f),
@@ -368,12 +366,12 @@ fun toggleSort(current: SortDirection): SortDirection {
 fun formatDate(iso: String): String {
     return try {
         // yyyy-MM-ddTHH:mm:ss -> dd-MM-yyyy HH:mm
-        val year = iso.substring(0, 4)
+        val year = iso.take(4)
         val month = iso.substring(5, 7)
         val day = iso.substring(8, 10)
         val time = iso.substring(11, 16)
         "$day-$month-$year $time"
-    } catch (e: Exception) { iso.take(10) }
+    } catch (_: Exception) { iso.take(10) }
 }
 
 // --------------------------------------------------------

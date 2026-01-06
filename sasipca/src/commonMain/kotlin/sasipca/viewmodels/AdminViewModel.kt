@@ -1,6 +1,7 @@
 package sasipca.viewmodels
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -13,10 +14,10 @@ import kotlinx.coroutines.launch
 import sasipca.repositories.AdminRepository
 import sasipca.models.AdminUser
 
-// Estado para feedback de ações (Criar/Editar)
+// Estado para ‘feedback’ de ações (Criar/Editar)
 data class AdminUiState(
     val isLoading: Boolean = false,
-    val errors: Map<String, String> = emptyMap(), // chave -> mensagem (ex: "email" -> "Inválido")
+    val errors: Map<String, String> = emptyMap(),
     val lastErrorMessage: String? = null,
     val success: Boolean = false
 )
@@ -41,10 +42,10 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
     var searchQuery by mutableStateOf("")
         private set
 
-    var currentPage by mutableStateOf(1)
+    var currentPage by mutableIntStateOf(1)
         private set
 
-    var totalPages by mutableStateOf(1)
+    var totalPages by mutableIntStateOf(1)
         private set
 
     private val pageSize = 10
@@ -60,7 +61,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
      * Carrega lista paginada de administradores
      */
     fun loadAdmins(query: String = searchQuery, page: Int = currentPage) {
-        // Se mudarmos a pesquisa, resetamos para página 1, senão usamos a página pedida
+        // Se mudarmos a pesquisa, reset para página 1, senão usamos a página pedida
         val targetPage = if (query != searchQuery) 1 else page
 
         searchQuery = query
@@ -78,14 +79,10 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
                     search = searchQuery
                 )
 
-                if (response != null) {
-                    admins = response.data
-                    totalPages = response.totalPages
-                    // Sincroniza caso o servidor devolva uma página diferente (ex: fora dos limites)
-                    if (response.pageNumber > 0) currentPage = response.pageNumber
-                } else {
-                    errorMessageList = "Erro ao carregar lista de administradores."
-                }
+                admins = response.data
+                totalPages = response.totalPages
+                // Sincroniza caso o servidor devolva uma página diferente (ex: fora dos limites)
+                if (response.pageNumber > 0) currentPage = response.pageNumber
             } catch (e: Exception) {
                 errorMessageList = "Erro de conexão: ${e.message}"
             } finally {
@@ -95,7 +92,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
     }
 
     /**
-     * Valida e Cria um novo Administrador
+     * Valida e Cria um Administrador
      */
     fun createAdmin(email: String, contact: String) {
         viewModelScope.launch(Dispatchers.Default) {

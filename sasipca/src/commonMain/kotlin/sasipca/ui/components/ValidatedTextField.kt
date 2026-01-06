@@ -2,7 +2,6 @@ package sasipca.ui.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -15,6 +14,7 @@ import sasipca.ui.theme.UnderlineError
 
 @Composable
 fun ValidatedTextField(
+    modifier: Modifier = Modifier,
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
@@ -23,8 +23,7 @@ fun ValidatedTextField(
     singleLine: Boolean = true,
     keyboardType: KeyboardType = KeyboardType.Text,
     visualTransformation: VisualTransformation = VisualTransformation.None,
-    enabled: Boolean = true,
-    modifier: Modifier = Modifier
+    enabled: Boolean = true
 ) {
     Column(modifier = modifier) {
         OutlinedTextField(
@@ -64,7 +63,7 @@ fun formatPostalCode(input: String): String {
 
     // 3. Aplica a máscara xxxx-xxx
     return if (truncated.length > 4) {
-        "${truncated.substring(0, 4)}-${truncated.substring(4)}"
+        "${truncated.take(4)}-${truncated.substring(4)}"
     } else {
         truncated
     }

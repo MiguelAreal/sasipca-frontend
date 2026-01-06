@@ -27,13 +27,13 @@ import sasipca.ui.theme.CardTitle
 
 @Composable
 fun GroupsSection(
+    modifier: Modifier = Modifier,
     groups: List<GroupToEnter>,
     onAddGroup: () -> Unit,
     onGroupChange: (Int, GroupToEnter) -> Unit,
     onRemoveGroup: (Int) -> Unit,
     isWideScreen: Boolean,
-    errors: Map<String, String> = emptyMap(),
-    modifier: Modifier = Modifier
+    errors: Map<String, String> = emptyMap()
 ) {
     if (isWideScreen) {
         Column(

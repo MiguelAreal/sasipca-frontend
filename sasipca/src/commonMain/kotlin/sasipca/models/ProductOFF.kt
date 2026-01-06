@@ -16,17 +16,17 @@ data class ProductOFFResponse(
 
 @Serializable
 data class ProductOFF(
-    val product_name: String? = null,
-    var product_quantity: Int? = null,
-    var product_quantity_unit: String? = null,
-    val image_url: String? = null,
-    val image_ingredients_url: String? = null,
-    val image_packaging_url: String? = null,
+    val productName: String? = null,
+    var productQuantity: Int? = null,
+    var productQuantityUnit: String? = null,
+    val imageUrl: String? = null,
+    val imageIngredientsUrl: String? = null,
+    val imagePackagingUrl: String? = null,
     val brands: String? = null
 ) {
     // Lista de imagens que junta todas as imagens do objeto
     val images: List<String>
-        get() = listOfNotNull( image_url, image_ingredients_url, image_packaging_url)
+        get() = listOfNotNull( imageUrl, imageIngredientsUrl, imagePackagingUrl)
 }
 
 

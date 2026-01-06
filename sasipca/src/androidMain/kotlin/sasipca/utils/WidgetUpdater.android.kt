@@ -28,12 +28,12 @@ actual fun updateWidgets() {
                 val loggedInKey = booleanPreferencesKey("is_logged_in") // <--- Nova chave
                 val adminKey = booleanPreferencesKey("is_admin")       // <--- Nova chave
 
-                // Capturar estado ATUAL da App (Fonte da verdade)
+                // Capturar estado ATUAL da ‘App’ (Fonte da verdade)
                 val isUserLoggedIn = SessionManager.isLoggedInNow()
                 val isUserAdmin = SessionManager.isAdmin()
 
                 glanceIds.forEach { glanceId ->
-                    // 1. Injetar o estado da App nas preferências do Widget
+                    // 1. Injetar o estado da ‘App’ nas preferências do Widget
                     updateAppWidgetState(context, glanceId) { prefs ->
                         prefs[updateKey] = System.currentTimeMillis()
                         prefs[loggedInKey] = isUserLoggedIn

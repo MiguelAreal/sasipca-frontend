@@ -37,19 +37,19 @@ class NotificationRepository(private val client: HttpClient) {
                 method = HttpMethod.Get,
                 url = "${ApiConfig.baseUrl()}/notifications"
             )
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             emptyList()
         }
     }
 
-    // Obter contagem de não lidas (Badge)
+    // Obter contagem de não lidas (Distintivo)
     suspend fun getUnreadCount(): Int {
         return try {
             client.requestWithAuth<Int>(
                 method = HttpMethod.Get,
                 url = "${ApiConfig.baseUrl()}/notifications/unread-count"
             )
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             0
         }
     }
@@ -62,7 +62,7 @@ class NotificationRepository(private val client: HttpClient) {
                 url = "${ApiConfig.baseUrl()}/notifications/$id/read"
             )
             true
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }
@@ -75,7 +75,7 @@ class NotificationRepository(private val client: HttpClient) {
                 url = "${ApiConfig.baseUrl()}/notifications/$id"
             )
             true
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }

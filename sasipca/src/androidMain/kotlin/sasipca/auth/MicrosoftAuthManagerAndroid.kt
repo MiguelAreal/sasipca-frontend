@@ -67,7 +67,7 @@ class MicrosoftAuthManagerAndroid(private val context: Context) : MicrosoftAuthM
                             }
 
                             override fun onError(exception: MsalException) {
-                                // Se der erro no logout (ex: não havia conta), prossegue para login na mesma
+                                // Se der erro no logout (ex: não havia conta), prossegue para ‘login’ na mesma
                                 Log.w("MSAL_DEBUG", "Erro ao limpar sessão antiga (ignorável): ${exception.message}")
                                 startInteractiveLogin(app, activity, continuation)
                             }

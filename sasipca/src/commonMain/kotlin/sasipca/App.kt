@@ -12,13 +12,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.transitions.SlideTransition
+import coil3.ImageLoader
 import coil3.SingletonImageLoader
+import coil3.compose.setSingletonImageLoaderFactory
+import coil3.network.ktor3.KtorNetworkFetcherFactory
+import coil3.request.crossfade
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import sasipca.models.SnackbarMessage
 import sasipca.network.ApiClient
-import sasipca.screens.navigation.LoginScreen
-import sasipca.screens.navigation.MainScreen
+import sasipca.navigation.LoginScreen
+import sasipca.navigation.MainScreen
 import sasipca.storage.ListsStore
 import sasipca.storage.NotificationManager
 import sasipca.storage.SessionManager
@@ -27,11 +31,18 @@ import sasipca.ui.components.CustomSnackbarHost
 import sasipca.ui.components.LoadingWidget
 import sasipca.ui.theme.SasIpcaTheme
 import sasipca.utils.SnackbarManager
-import sasipca.utils.getAsyncImageLoader
 
 @Composable
 fun App(openCalendar: Boolean = false) {
-    SingletonImageLoader.setSafe { context -> getAsyncImageLoader(context) }
+
+    setSingletonImageLoaderFactory { context ->
+        ImageLoader.Builder(context)
+            .components {
+                add(KtorNetworkFetcherFactory())
+            }
+            .crossfade(true)
+            .build()
+    }
 
     val scope = rememberCoroutineScope()
     val snackbarState = remember { mutableStateOf<SnackbarMessage?>(null) }

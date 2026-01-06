@@ -22,7 +22,7 @@ actual fun Modifier.monthScroll(
         if (delta.absoluteValue > 2) { // ignora micro scrolls
             val direction = if (delta > 0) -1 else 1
             coroutineScope.launch {
-                // Sempre usa firstVisibleItemIndex + direction, mas snap para item
+                // Sempre usa firstVisibleItemIndex + direction, mas snap para ‘item’
                 val targetIndex = (listState.firstVisibleItemIndex + direction)
                     .coerceIn(0, listState.layoutInfo.totalItemsCount - 1)
                 listState.animateScrollToItem(targetIndex)

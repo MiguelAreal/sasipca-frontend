@@ -13,7 +13,7 @@ import sasipca.network.ApiClient
 object NotificationManager {
     private val scope = CoroutineScope(Dispatchers.IO)
 
-    // Estado do Badge (Bolinha vermelha)
+    // Estado do Distintivo (Bolinha vermelha)
     private val _unreadCount = MutableStateFlow(0)
     val unreadCount: StateFlow<Int> = _unreadCount
 

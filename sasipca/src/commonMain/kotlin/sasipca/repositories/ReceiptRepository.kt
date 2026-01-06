@@ -11,7 +11,7 @@ import sasipca.network.requestWithAuth
 
 class ReceiptRepository(private val client: HttpClient) {
     /**
-     * Executa receção de stock
+     * Executa receção de ‘estoque’
      */
     suspend fun postReceipt(body: ReceiptPost): Resposta {
         return client.requestWithAuth(

@@ -1,5 +1,4 @@
-package sasipca.ui.components.charts
-
+package sasipca.ui.components
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -23,16 +22,12 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import sasipca.models.ChartDataPoint
 import sasipca.storage.ScreenSizeManager.isLargeScreen
 import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
 
 // ==========================================
 // 1. GRÁFICO DE LINHAS INTERATIVO (Bezier + Tooltip)
@@ -234,10 +229,10 @@ fun InteractiveDonutChart(
 // Helper Matemático para detetar clique no Donut
 private fun getSliceIndexFromAngle(touchAngle: Float, slices: List<Pair<Float, Float>>): Int? {
     // Normalizar touchAngle para corresponder ao sistema de coordenadas do drawArc (-90 start)
-    // O nosso cálculo de atan2 retorna -180 a 180.
-    // O drawArc começa em -90 e vai somando.
+    // O nosso cálculo de atan2 retorna −180 a 180.
+    // O drawArc começa em −90 e vai a somar.
 
-    // Simplificação: Normalizar tudo para 0..360, onde 0 é o topo (-90 graus visual)
+    // Simplificação: Normalizar tudo para 0..360, onde 0 é o topo (-90 grau visual)
     var normalizedTouch = touchAngle + 90f
     if (normalizedTouch < 0) normalizedTouch += 360f
 

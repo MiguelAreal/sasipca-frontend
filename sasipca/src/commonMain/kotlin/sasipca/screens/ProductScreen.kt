@@ -47,7 +47,7 @@ fun ProductScreen(
     var history by remember { mutableStateOf<List<MovementHistory>>(emptyList()) }
     var isHistoryLoading by remember { mutableStateOf(false) }
 
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedTab by remember { mutableIntStateOf(0) }
 
     val anyLoading = isLoadingProduct || isHistoryLoading || isSaving
 
@@ -78,7 +78,7 @@ fun ProductScreen(
                     modifier = Modifier.fillMaxSize().padding(20.dp),
                     horizontalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    // Coluna 1: Edição + Imagem (Scroll interno)
+                    // Coluna 1: Edição + Imagem (‘Scroll’ interno)
                     Column(modifier = Modifier.weight(1.2f).fillMaxHeight()) {
                         productDetail?.let { detail ->
                             ProductEditForm(

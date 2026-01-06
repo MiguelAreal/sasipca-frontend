@@ -25,7 +25,7 @@ import sasipca.ui.components.Header
 import sasipca.models.SnackbarType
 import sasipca.utils.SnackbarManager
 import kotlinx.coroutines.launch
-import sasipca.screens.navigation.LoginScreen
+import sasipca.navigation.LoginScreen
 import sasipca.storage.SessionManager
 
 @Composable
@@ -96,7 +96,7 @@ fun SettingsScreen() {
                             scope.launch {
                                 try {
                                     authRepository.logout()
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     // Ignora erro de rede no logout, limpa sessão local na mesma
                                 }
                                 // Redireciona para o Login e limpa a pilha
@@ -122,7 +122,7 @@ fun SettingsScreen() {
     // --- DIALOG SERVER IP ---
     if (showIpDialog) {
         AlertDialog(
-            onDismissRequest = { showIpDialog = false },
+            onDismissRequest = { },
             title = { Text("Configurar Servidor", fontWeight = FontWeight.Bold) },
             text = {
                 Column {
@@ -152,7 +152,6 @@ fun SettingsScreen() {
                         if (tempIp.isNotBlank()) {
                             serverIp = tempIp
                             SettingsManager.setServerIp(tempIp)
-                            showIpDialog = false
                             SnackbarManager.show("Servidor atualizado: $tempIp", SnackbarType.SUCCESS)
                         } else {
                             SnackbarManager.show("Endereço não pode estar vazio", SnackbarType.ERROR)
@@ -161,7 +160,7 @@ fun SettingsScreen() {
                 ) { Text("Guardar") }
             },
             dismissButton = {
-                TextButton(onClick = { showIpDialog = false }) { Text("Cancelar") }
+                TextButton(onClick = { }) { Text("Cancelar") }
             },
             shape = RoundedCornerShape(16.dp)
         )

@@ -2,7 +2,6 @@ package sasipca.ui.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -13,7 +12,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import kotlinx.coroutines.delay
@@ -21,8 +19,8 @@ import sasipca.models.BeneficiaryItem
 import sasipca.models.ReportFormat
 import sasipca.models.ReportTypesEnum
 import sasipca.storage.ScreenSizeManager.isLargeScreen
-import sasipca.ui.components.ValidatedDateField
 import sasipca.viewmodels.BeneficiariesViewModel
+import kotlin.time.Clock
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +31,7 @@ fun ReportCreationPopup(
     // Parâmetros Opcionais para Contexto Específico
     presetMovementId: Int? = null
 ) {
-    // Se tivermos um ID predefinido, forçamos o tipo MovementDetails, senão default
+    // Se tivermos um ‘ID’ predefinido, forçamos o tipo MovementDetails, senão ‘default’
     val initialType = if (presetMovementId != null) ReportTypesEnum.MovementDetails else ReportTypesEnum.MovementHeaders
 
     var selectedType by remember { mutableStateOf(initialType) }
@@ -42,8 +40,8 @@ fun ReportCreationPopup(
     var selectedFormat by remember { mutableStateOf(ReportFormat.PDF) }
 
     // Nome sugerido automático
-    val defaultName = if(presetMovementId != null) "Movimento_${presetMovementId}_${kotlinx.datetime.Clock.System.now().epochSeconds}"
-    else "Relatorio_${kotlinx.datetime.Clock.System.now().epochSeconds}"
+    val defaultName = if(presetMovementId != null) "Movimento_${presetMovementId}_${Clock.System.now().epochSeconds}"
+    else "Relatorio_${Clock.System.now().epochSeconds}"
 
     var fileName by remember { mutableStateOf(defaultName) }
 
@@ -92,7 +90,9 @@ fun ReportCreationPopup(
                             value = selectedType.label(), onValueChange = {}, readOnly = true,
                             label = { Text("Tipo de Relatório") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeExpanded) },
-                            modifier = Modifier.menuAnchor().fillMaxWidth()
+                            modifier = Modifier
+                                .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
+                                .fillMaxWidth()
                         )
                         ExposedDropdownMenu(expanded = typeExpanded, onDismissRequest = { typeExpanded = false }) {
                             // Filtramos MovementDetails da lista geral, pois agora é acessível via histórico
@@ -147,7 +147,9 @@ fun ReportCreationPopup(
                                 readOnly = true,
                                 label = { Text("Estado da Entrega") },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = statusExpanded) },
-                                modifier = Modifier.menuAnchor().fillMaxWidth()
+                                modifier = Modifier
+                                    .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
+                                    .fillMaxWidth()
                             )
                             ExposedDropdownMenu(
                                 expanded = statusExpanded,
@@ -174,7 +176,10 @@ fun ReportCreationPopup(
                                 value = beneficiaryQuery,
                                 onValueChange = { beneficiaryQuery = it; beneficiaryFocusRequester.requestFocus() },
                                 label = { Text("Beneficiário (Opcional)") },
-                                modifier = Modifier.fillMaxWidth().menuAnchor().focusRequester(beneficiaryFocusRequester),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryEditable, enabled = true)
+                                    .focusRequester(beneficiaryFocusRequester),
                                 trailingIcon = { if (isBeneficiaryLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp)) else Icon(Icons.Default.Search, null) }
                             )
                             DropdownMenu(
@@ -194,7 +199,7 @@ fun ReportCreationPopup(
                     }
                 }
 
-                Divider()
+                HorizontalDivider()
 
                 // 4. FORMATO
                 Text("Formato", style = MaterialTheme.typography.labelMedium)

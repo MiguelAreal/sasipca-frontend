@@ -3,24 +3,18 @@ package sasipca.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.time.delay
-import sasipca.models.Campaign
 import sasipca.repositories.CampaignRepository
 import sasipca.repositories.ListsRepository
 import sasipca.ui.components.Header
@@ -61,7 +55,6 @@ fun CampaignsScreen(
     }
 
     // Estado local para Dialog
-    var selectedCampaign by remember { mutableStateOf<Campaign?>(null) }
 
     Column(
         modifier = Modifier

@@ -138,7 +138,7 @@ class BeneficiaryDetailViewModel(
             // 5. Enviar para API
             runCatching {
                 beneficiaryRepository.postProfile(dto)
-            }.onSuccess { response ->
+            }.onSuccess { _ ->
                 _uiState.value = BeneficiaryUIState(success = true)
             }.onFailure { t ->
                 _uiState.value = _uiState.value.copy(
@@ -172,7 +172,7 @@ class BeneficiaryDetailViewModel(
             }
 
             // NIF
-            if (body.nif != null && body.nif < 100000000) { // verificação simples de 9 digitos
+            if (body.nif != null && body.nif < 100000000) { // verificação simples de 9 dígitos
                 errors["nif"] = "NIF inválido" // descomentar se necessário
             }
 
@@ -183,7 +183,7 @@ class BeneficiaryDetailViewModel(
 
             runCatching {
                 beneficiaryRepository.putProfile(beneficiaryId, body)
-            }.onSuccess { response ->
+            }.onSuccess { _ ->
                 _uiState.value = BeneficiaryUIState(success = true)
             }.onFailure { t ->
                 _uiState.value = _uiState.value.copy(

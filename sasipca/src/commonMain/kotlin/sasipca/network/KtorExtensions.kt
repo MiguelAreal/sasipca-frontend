@@ -10,7 +10,7 @@ import io.ktor.util.*
 val RefreshTokenRequestKey = AttributeKey<Boolean>("RefreshTokenRequestKey")
 
 /**
- * Função de extensão que marca um pedido como sendo o de refresh.
+ * Função de extensão que marca um pedido de refresh.
  */
 fun HttpRequestBuilder.markAsRefreshTokenRequest() {
     attributes.put(RefreshTokenRequestKey, true)

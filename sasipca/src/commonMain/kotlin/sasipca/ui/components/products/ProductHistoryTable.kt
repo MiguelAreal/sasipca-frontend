@@ -13,7 +13,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,7 +61,7 @@ fun ProductHistoryTable(
 
             // Título
             CardTitle("Histórico de Movimentos")
-            Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), modifier = Modifier.padding(top = 8.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), modifier = Modifier.padding(top = 8.dp))
 
             Box(modifier = Modifier.weight(1f)) {
                 if (history.isEmpty() && !isLoading) {
@@ -124,7 +123,7 @@ fun ProductHistoryTable(
                                     else { sortColumn = col; sortDirection = HistorySortDirection.ASCENDING }
                                 }
                             }
-                            Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                         }
 
                         // LINHAS DA TABELA
@@ -134,7 +133,7 @@ fun ProductHistoryTable(
                                 isSelected = selectedMovement?.movementId == move.movementId,
                                 onClick = { selectedMovement = move }
                             )
-                            Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                         }
                     }
                 }
@@ -146,7 +145,7 @@ fun ProductHistoryTable(
 
             // PAINEL DE DETALHES (OBSERVAÇÕES)
             if (selectedMovement != null) {
-                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -233,12 +232,12 @@ fun HistoryRow(
         val dateStr = try {
             val iso = move.movementDate
             // yyyy-MM-ddTHH:mm:ss -> dd-MM-yyyy HH:mm
-            val year = iso.substring(0, 4)
+            val year = iso.take(4)
             val month = iso.substring(5, 7)
             val day = iso.substring(8, 10)
             val time = iso.substring(11, 16)
             "$day-$month-$year $time"
-        } catch (e: Exception) { move.movementDate.take(10) }
+        } catch (_: Exception) { move.movementDate.take(10) }
 
         Text(
             text = dateStr,
