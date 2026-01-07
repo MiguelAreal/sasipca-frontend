@@ -122,7 +122,7 @@ fun SettingsScreen() {
     // --- DIALOG SERVER IP ---
     if (showIpDialog) {
         AlertDialog(
-            onDismissRequest = { },
+            onDismissRequest = {showIpDialog = false },
             title = { Text("Configurar Servidor", fontWeight = FontWeight.Bold) },
             text = {
                 Column {
@@ -160,7 +160,7 @@ fun SettingsScreen() {
                 ) { Text("Guardar") }
             },
             dismissButton = {
-                TextButton(onClick = { }) { Text("Cancelar") }
+                TextButton(onClick = { showIpDialog = false }) { Text("Cancelar") }
             },
             shape = RoundedCornerShape(16.dp)
         )

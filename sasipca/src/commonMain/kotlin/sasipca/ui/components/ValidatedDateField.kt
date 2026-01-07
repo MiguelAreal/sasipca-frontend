@@ -61,7 +61,7 @@ fun ValidatedDateField(
 
     if (showDatePicker) {
         DatePickerDialog(
-            onDismissRequest = { },
+            onDismissRequest = { showDatePicker = false},
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -79,11 +79,12 @@ fun ValidatedDateField(
 
                             onValueChange(formatted)
                         }
+                        showDatePicker = false
                     }
                 ) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { }) {
+                TextButton(onClick = {showDatePicker = false }) {
                     Text("Cancelar")
                 }
             }

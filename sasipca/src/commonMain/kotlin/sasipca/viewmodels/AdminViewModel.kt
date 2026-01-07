@@ -58,6 +58,17 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
     }
 
     /**
+     * Limpa apenas as mensagens de erro/sucesso globais,
+     * mantendo os erros dos campos visíveis.
+     */
+    fun clearFeedbackMessages() {
+        _uiState.value = _uiState.value.copy(
+            lastErrorMessage = null,
+            success = false
+        )
+    }
+
+    /**
      * Carrega lista paginada de administradores
      */
     fun loadAdmins(query: String = searchQuery, page: Int = currentPage) {
@@ -108,8 +119,19 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
                 errors["email"] = "O email deve ser do domínio ipca.pt."
             }
 
+            // --- Validação de Contacto ---
+            // Regex: Começa com +, seguido de 1 a 3 dígitos de indicativo, e o resto números.
+            // Total máximo de 13 caracteres (ex: +351912345678)
+            val contactRegex = Regex("""^\+[0-9]{1,12}$""")
+
             if (contact.isBlank()) {
                 errors["contact"] = "O contacto é obrigatório."
+            } else if (!contact.startsWith("+")) {
+                errors["contact"] = "Deve incluir o indicativo (ex: +351)."
+            } else if (!contact.matches(contactRegex)) {
+                errors["contact"] = "Formato inválido ou demasiado longo."
+            } else if (contact.length > 13) {
+                errors["contact"] = "O contacto não pode exceder 13 caracteres."
             }
 
             // Se existirem erros, atualiza estado e aborta

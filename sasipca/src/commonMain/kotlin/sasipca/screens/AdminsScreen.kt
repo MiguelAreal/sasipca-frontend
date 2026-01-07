@@ -79,7 +79,7 @@ fun AdminsScreen(
     LaunchedEffect(uiState.lastErrorMessage) {
         uiState.lastErrorMessage?.let { msg ->
             SnackbarManager.show(msg, SnackbarType.ERROR)
-            viewModel.clearUiState()
+            viewModel.clearFeedbackMessages()
         }
     }
 
@@ -190,7 +190,11 @@ fun AdminsScreen(
 
         // --- FAB (FLOATING ACTION BUTTON) ---
         FloatingActionButton(
-            onClick = { showAddDialog = true },
+            onClick = {
+                newEmail = "";
+                newContact = "";
+                viewModel.clearUiState();
+                showAddDialog = true },
             containerColor = MaterialTheme.colorScheme.primary,
             shape = CircleShape,
             modifier = Modifier
@@ -206,7 +210,7 @@ fun AdminsScreen(
     // --- DIALOG PARA ADICIONAR ADMIN ---
     if (showAddDialog) {
         AlertDialog(
-            onDismissRequest = {},
+            onDismissRequest = {showAddDialog = false},
             title = { Text("Novo Administrador") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -233,6 +237,7 @@ fun AdminsScreen(
                         label = "Contacto",
                         error = uiState.errors["contact"],
                         singleLine = true,
+                        maxLength = 15,
                         keyboardType = KeyboardType.Phone
                     )
                 }
@@ -253,7 +258,7 @@ fun AdminsScreen(
             },
             dismissButton = {
                 TextButton(
-                    onClick = { },
+                    onClick = { showAddDialog = false},
                     enabled = !uiState.isLoading
                 ) {
                     Text("Cancelar")

@@ -95,7 +95,7 @@ fun ReportsScreen(reportsRepository : ReportsRepository, beneficiaryRepository :
     if (showDialog) {
         ReportCreationPopup(
             beneficiariesViewModel = beneficiariesViewModel,
-            onDismiss = { },
+            onDismiss = {showDialog = false },
             onGenerate = { type, format, name, start, end, movId, status, beneId ->
                 viewModel.generateNewReport(
                     type = type, format = format, fileName = name,

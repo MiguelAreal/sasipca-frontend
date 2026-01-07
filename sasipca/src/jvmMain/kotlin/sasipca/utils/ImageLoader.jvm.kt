@@ -11,9 +11,6 @@ import io.ktor.client.request.header
 
 actual fun getAsyncImageLoader(context: PlatformContext): ImageLoader {
     val client = HttpClient(Java) {
-        install(DefaultRequest) {
-            header(HttpHeaders.UserAgent, "SasIpcaApp/1.0")
-        }
         engine {
             protocolVersion = java.net.http.HttpClient.Version.HTTP_2
         }

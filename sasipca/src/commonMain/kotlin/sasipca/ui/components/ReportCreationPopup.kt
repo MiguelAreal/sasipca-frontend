@@ -223,6 +223,7 @@ fun ReportCreationPopup(
                         startDate.ifBlank { null }, endDate.ifBlank { null },
                         movementId.ifBlank { null }, selectedStatus, selectedBeneficiary?.beneficiaryId
                     )
+                    onDismiss()
                 },
                 enabled = fileName.isNotBlank() && (selectedType != ReportTypesEnum.MovementDetails || movementId.isNotBlank())
             ) { Text("Gerar") }

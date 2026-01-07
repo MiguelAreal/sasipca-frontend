@@ -98,7 +98,7 @@ fun CalendarScreen(
                 date = date,
                 deliveries = deliveriesForDate,
                 scheduledStatusId = scheduledStatusId,
-                onDismiss = { pickerState = null }, // Corrigido: Agora fecha o dialog
+                onDismiss = { pickerState = null },
                 onSelectExisting = { selected ->
                     safeNavigate(selected)
                 },

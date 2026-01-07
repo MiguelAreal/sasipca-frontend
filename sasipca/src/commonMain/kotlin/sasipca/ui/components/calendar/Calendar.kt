@@ -116,6 +116,7 @@ private fun CalendarList(
                 onEventClick = onEventClick,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(120.dp)
             )
         }
     }

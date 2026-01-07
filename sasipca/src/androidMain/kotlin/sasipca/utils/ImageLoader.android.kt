@@ -10,15 +10,9 @@ import io.ktor.http.HttpHeaders
 import io.ktor.client.request.header
 
 actual fun getAsyncImageLoader(context: PlatformContext): ImageLoader {
-    val client = HttpClient(OkHttp) {
-        install(DefaultRequest) {
-            header(HttpHeaders.UserAgent, "SasIpcaApp/1.0")
-        }
-    }
-
-    return ImageLoader.Builder(context)
+   return ImageLoader.Builder(context)
         .components {
-            add(KtorNetworkFetcherFactory(client))
+            add(KtorNetworkFetcherFactory(HttpClient(OkHttp)))
         }
         .build()
 }
