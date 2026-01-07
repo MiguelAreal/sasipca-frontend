@@ -1,6 +1,10 @@
 # SASIPCA - App Android & Desktop
 Esta é a aplicação para o sistema de gestão de inventário e apoio social do IPCA (SASIPCA).
 
+
+<img width="212" height="212" alt="image" src="https://github.com/user-attachments/assets/eead112f-f0c5-4a5c-a0be-6807d1274669" />
+
+
 Elaborada pelo Grupo 8, no contexto do projeto *'50+10'*
 * Miguel Areal - 29559
 * Paulo Costa  - 22934
