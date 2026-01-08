@@ -38,10 +38,10 @@ fun Header(
     val currentScreen = navigator.lastItem
     val isRootScreen = currentScreen is MainScreen || currentScreen is LoginScreen
     val showBackButton = navigator.canPop && !isRootScreen
-    val showSettings = currentScreen !is SettingsScreen
+    val showSettings = currentScreen !is SettingsScreen && currentScreen !is NotificationsScreen
+    val showNotifications = isLoggedIn.collectAsState().value && currentScreen !is NotificationsScreen && currentScreen !is SettingsScreen
 
     // 2. State Collection
-    val showNotifications by isLoggedIn.collectAsState()
     val unreadCount by NotificationManager.unreadCount.collectAsState()
 
     BoxWithConstraints(

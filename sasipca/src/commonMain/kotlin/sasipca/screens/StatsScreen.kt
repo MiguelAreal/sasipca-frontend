@@ -137,15 +137,20 @@ private fun StatsChartsSection(isWide: Boolean, viewModel: StatsViewModel) {
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
                 modifier = Modifier.height(IntrinsicSize.Min)
             ) {
+                val chartHeight = if (isWide) 280.dp else 250.dp // Reduzido ligeiramente para dar "ar"
+
                 DashboardCard("Entradas por Categoria", Icons.Outlined.DonutLarge, Modifier.weight(1f).fillMaxHeight()) {
                     if (viewModel.categoriesDataIn.isNotEmpty())
-                        InteractiveDonutChart(viewModel.categoriesDataIn, Modifier.fillMaxSize())
+                        InteractiveDonutChart(
+                            viewModel.categoriesDataIn,
+                            Modifier.fillMaxWidth().height(chartHeight).padding(16.dp) // Adicionado padding
+                        )
                     else EmptyStateMessage()
                 }
 
                 DashboardCard("Saídas por Categoria", Icons.Outlined.PieChart, Modifier.weight(1f).fillMaxHeight()) {
                     if (viewModel.categoriesDataOut.isNotEmpty())
-                        InteractiveDonutChart(viewModel.categoriesDataOut, Modifier.fillMaxSize())
+                        InteractiveDonutChart(viewModel.categoriesDataOut, Modifier.fillMaxWidth().height(chartHeight).padding(16.dp))
                     else EmptyStateMessage()
                 }
             }
@@ -224,22 +229,32 @@ fun ResponsiveKpiGrid(isWide: Boolean, items: List<Triple<String, String, ImageV
     }
 }
 
+
 @Composable
-fun DashboardCard(title: String, icon: ImageVector, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun DashboardCard(
+    title: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(1.dp),
+        elevation = CardDefaults.cardElevation(2.dp), // Aumentado ligeiramente para destaque
         shape = RoundedCornerShape(16.dp)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(24.dp)) { // Aumentado de 20 para 24
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp))
+                Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(12.dp))
                 Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
-            Spacer(Modifier.height(20.dp))
-            content()
+            Spacer(Modifier.height(24.dp)) // Espaço maior entre título e gráfico
+
+            // Container para o conteúdo para evitar que "suba" para o título
+            Box(modifier = Modifier.fillMaxWidth()) {
+                content()
+            }
         }
     }
 }

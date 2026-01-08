@@ -68,7 +68,7 @@ fun main() = application {
     Tray(
         state = trayState,
         icon = logoPainter,
-        tooltip = "SASIPCA",
+        tooltip = "SasIPCA",
         onAction = { isWindowVisible = true },
         menu = {
             Item("Abrir", onClick = { isWindowVisible = true })
@@ -83,6 +83,7 @@ fun main() = application {
     if (isWindowVisible) {
         Window(
             onCloseRequest = {
+                isWindowVisible = false
                 trayState.sendNotification(
                     Notification("SASIPCA", "A aplicação continua a correr em segundo plano.", Notification.Type.Info)
                 )

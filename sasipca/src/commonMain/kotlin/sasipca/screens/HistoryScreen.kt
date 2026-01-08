@@ -148,7 +148,7 @@ fun HistoryScreen(
     if (showReportDialogForMovementId != null) {
         ReportCreationPopup(
             beneficiariesViewModel = beneficiariesViewModel,
-            onDismiss = { },
+            onDismiss = { viewModel.closeDialog()},
             presetMovementId = showReportDialogForMovementId,
             onGenerate = { type, format, name, start, end, movId, status, beneId ->
                 reportsViewModel.generateNewReport(type, format, name, start, end, movId, status, beneId)
