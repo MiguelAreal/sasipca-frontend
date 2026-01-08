@@ -95,13 +95,6 @@ android {
         versionCode = appVersionCode
         versionName = appVersionName
     }
-
-    applicationVariants.all {
-        outputs.all {
-            val output = this as com.android.build.gradle.internal.api.ApkVariantOutputImpl
-            output.outputFileName = "sasipca-${appVersionName}.apk"
-        }
-    }
 }
 
 compose.desktop {
@@ -116,13 +109,16 @@ compose.desktop {
 }
 
 tasks.register("renameDesktopDistributables") {
+    val version = appVersionName
+    val packageDir = layout.buildDirectory.dir("compose/binaries/main")
+
     doLast {
-        val packageDir = layout.buildDirectory.dir("compose/binaries/main").get().asFile
+        val dir = packageDir.get().asFile
         val extensions = listOf("msi", "exe", "deb", "dmg", "pkg")
-        if (packageDir.exists()) {
-            packageDir.walkTopDown().forEach { file ->
-                if (file.extension in extensions && !file.name.contains(appVersionName)) {
-                    val newName = "sasipca-${appVersionName}.${file.extension}"
+        if (dir.exists()) {
+            dir.walkTopDown().forEach { file ->
+                if (file.extension in extensions && !file.name.contains(version)) {
+                    val newName = "sasipca-$version.${file.extension}"
                     file.renameTo(File(file.parent, newName))
                 }
             }
@@ -130,10 +126,31 @@ tasks.register("renameDesktopDistributables") {
     }
 }
 
+tasks.register<Copy>("copyAndRenameDebugApk") {
+    val debugDir = layout.buildDirectory.dir("outputs/apk/debug")
+    val version = appVersionName // captura o valor localmente
+
+    from(debugDir)
+    into(layout.buildDirectory.dir("outputs/final-apk"))
+    include("*.apk")
+
+    rename { fileName ->
+        if (fileName.endsWith(".apk")) "sasipca-$version.apk" else fileName
+    }
+}
+
 afterEvaluate {
-    tasks.forEach { task ->
-        if (task.name.contains("package") && task.name.contains("Distributable") && !task.name.contains("rename")) {
-            task.finalizedBy("renameDesktopDistributables")
-        }
+    // Para Desktop
+    tasks.matching {
+        it.name.contains("package") &&
+                it.name.contains("Distributable") &&
+                !it.name.contains("rename")
+    }.configureEach {
+        finalizedBy("renameDesktopDistributables")
+    }
+
+    // Para Android
+    tasks.matching { it.name == "assembleDebug" }.configureEach {
+        finalizedBy("copyAndRenameDebugApk")
     }
 }
