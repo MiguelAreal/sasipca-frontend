@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,7 +26,7 @@ import sasipca.ui.components.Header
 import sasipca.models.SnackbarType
 import sasipca.utils.SnackbarManager
 import kotlinx.coroutines.launch
-import sasipca.screens.navigation.LoginScreen
+import sasipca.navigation.LoginScreen
 import sasipca.storage.SessionManager
 
 @Composable
@@ -39,6 +40,7 @@ fun SettingsScreen() {
     var tempIp by remember { mutableStateOf(serverIp) }
 
     val scope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
     val authRepository = ApiClient.authRepository
 
     Column(
@@ -96,7 +98,7 @@ fun SettingsScreen() {
                             scope.launch {
                                 try {
                                     authRepository.logout()
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     // Ignora erro de rede no logout, limpa sessão local na mesma
                                 }
                                 // Redireciona para o Login e limpa a pilha
@@ -110,10 +112,20 @@ fun SettingsScreen() {
             // --- SOBRE ---
             SectionHeader("Sobre")
             SettingsCard {
-                SettingsTextItem(
+                SettingsClickableItem(
                     icon = Icons.Default.Info,
                     title = "Projeto SASIPCA",
-                    description = "Aplicação desenvolvida por: João Lopes Nº12168 | Júlio Faria Nº22920 | Paulo Costa Nº22934 | Miguel Areal Nº29559",
+                    description = "Visite o nosso website para mais informações",
+                    onClick = {
+                        uriHandler.openUri("https://sasipca.rapi4real.duckdns.org")
+                    }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                SettingsTextItem(
+                    icon = Icons.Default.Groups,
+                    title = "Grupo 8",
+                    description = "João Lopes | Júlio Faria | Paulo Costa | Miguel Areal"
                 )
             }
         }
@@ -122,7 +134,7 @@ fun SettingsScreen() {
     // --- DIALOG SERVER IP ---
     if (showIpDialog) {
         AlertDialog(
-            onDismissRequest = { showIpDialog = false },
+            onDismissRequest = {showIpDialog = false },
             title = { Text("Configurar Servidor", fontWeight = FontWeight.Bold) },
             text = {
                 Column {
@@ -152,7 +164,6 @@ fun SettingsScreen() {
                         if (tempIp.isNotBlank()) {
                             serverIp = tempIp
                             SettingsManager.setServerIp(tempIp)
-                            showIpDialog = false
                             SnackbarManager.show("Servidor atualizado: $tempIp", SnackbarType.SUCCESS)
                         } else {
                             SnackbarManager.show("Endereço não pode estar vazio", SnackbarType.ERROR)

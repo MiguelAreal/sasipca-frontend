@@ -1,4 +1,4 @@
-package sasipca.network
+package sasipca.models
 
 import kotlinx.serialization.Serializable
 

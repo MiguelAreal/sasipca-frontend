@@ -61,7 +61,7 @@ class StatsRepository(private val client: HttpClient) {
         )
     }
 
-    // 5. Resumo Mensal (Para a Homepage)
+    // 5. Resumo Mensal (Para a ‘Homepage’)
     suspend fun getMonthlySummary(month: Int, year: Int): MonthlySummary {
         return client.requestWithAuth(
             method = HttpMethod.Get,

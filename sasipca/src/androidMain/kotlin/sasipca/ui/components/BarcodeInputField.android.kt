@@ -55,10 +55,10 @@ actual fun BarcodeInputField(
     )
 
     LaunchedEffect(value, suggestions, showScanner) {
-        if (showScanner) {
-            expanded = false
+        expanded = if (showScanner) {
+            false
         } else {
-            expanded = value.isNotEmpty() && suggestions.isNotEmpty()
+            value.isNotEmpty() && suggestions.isNotEmpty()
         }
     }
 
@@ -72,7 +72,7 @@ actual fun BarcodeInputField(
                 onValueChange = { onValueChange(it) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(),
+                    .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryEditable, enabled = true),
                 label = { Text(label) },
                 placeholder = { Text(placeholder) },
                 trailingIcon = {
@@ -119,7 +119,7 @@ actual fun BarcodeInputField(
                             text = {
                                 Column {
                                     Text(
-                                        text = product.name ?: "Sem Nome",
+                                        text = product.name,
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )

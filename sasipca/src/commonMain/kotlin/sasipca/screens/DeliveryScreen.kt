@@ -32,10 +32,12 @@ import androidx.compose.ui.window.PopupProperties
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.delay
+import kotlinx.datetime.number
 import sasipca.network.ApiClient
 import sasipca.models.Delivery
 import sasipca.models.DeliveryItem
 import sasipca.models.BeneficiaryItem
+import sasipca.models.Product
 import sasipca.models.ProductGroup
 import sasipca.repositories.OFFRepository
 import sasipca.repositories.ProductRepository
@@ -85,7 +87,7 @@ fun recalculateStockDistribution(
     val result = mutableListOf<DeliveryItem>()
     val today = LocalDate.now()
 
-    // 1. Tentar preencher com o Grupo Prioritário (se existir e tiver stock, MESMO QUE ESTEJA EXPIRADO)
+    // 1. Tentar preencher com o Grupo Prioritário (se existir e tiver ‘estoque’, MESMO QUE ESTEJA EXPIRADO)
     if (priorityGroupId != null) {
         val priorityGroup = availableGroups.find { it.id == priorityGroupId }
         if (priorityGroup != null && priorityGroup.availableStock > 0) {
@@ -103,10 +105,9 @@ fun recalculateStockDistribution(
         // Filtra grupos cuja validade já passou
         .filter {
             val exp = it.expiryDate
-            if (exp == null) true
-            else {
+            run {
                 // Converte data do Kotlinx para Java para comparar
-                val expDateJava = LocalDate.of(exp.year, exp.monthNumber, exp.dayOfMonth)
+                val expDateJava = LocalDate.of(exp.year, exp.month.number, exp.day)
                 !expDateJava.isBefore(today)
             }
         }
@@ -158,7 +159,7 @@ fun DeliveryScreen(
     var scheduledDate by remember {
         mutableStateOf(
             if (existingDelivery != null) {
-                try { LocalDate.parse(existingDelivery.scheduledDate) } catch (e: Exception) { LocalDate.now() }
+                try { LocalDate.parse(existingDelivery.scheduledDate) } catch (_: Exception) { LocalDate.now() }
             } else {
                 initialScheduledDate
             }
@@ -201,12 +202,12 @@ fun DeliveryScreen(
                     } else {
                         beneficiaryQuery = ownerName
                         selectedBeneficiary = BeneficiaryItem(
-                            beneficiaryId = fullDetails.beneficiaryId ?: existingDelivery.beneficiaryId ?: 0,
+                            beneficiaryId = fullDetails.beneficiaryId ?: existingDelivery.beneficiaryId,
                             name = ownerName,
                             email = ""
                         )
                     }
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     beneficiaryQuery = ownerName
                 }
 
@@ -219,7 +220,7 @@ fun DeliveryScreen(
                             try {
                                 val productDetails = productRepository.getProduct(barcode)
                                 val totalQtyInThisDelivery = groupItems.sumOf { it.quantity }
-                                val apiGroups = productDetails.productGroups ?: emptyList()
+                                val apiGroups = productDetails.productGroups
 
                                 val adjustedGroups = apiGroups.map { apiGroup ->
                                     val qtyUsedByUs = groupItems
@@ -236,7 +237,7 @@ fun DeliveryScreen(
 
                                 val productToSend = DeliveryProductToSend(
                                     barcode = barcode,
-                                    productName = productDetails.name ?: "Produto",
+                                    productName = productDetails.name,
                                     quantityToDeliver = totalQtyInThisDelivery,
                                     availableGroups = adjustedGroups,
                                     selectedGroups = calculatedGroups,
@@ -273,7 +274,7 @@ fun DeliveryScreen(
         deliveryUiState.lastErrorMessage?.let { SnackbarManager.show(it, SnackbarType.ERROR) }
     }
 
-    // --- LOGICA DE INPUTS ---
+    // --- LÓGICA DE INPUTS ---
     LaunchedEffect(beneficiaryQuery) {
         if (selectedBeneficiary != null && beneficiaryQuery != selectedBeneficiary?.name) {
             selectedBeneficiary = null
@@ -325,7 +326,7 @@ fun DeliveryScreen(
     // --- PROCESSAR DETALHE PRODUTO (API) ---
     LaunchedEffect(productDetail) {
         if (productDetail != null && barcode.isNotEmpty()) {
-            val groups = productDetail.productGroups ?: emptyList()
+            val groups = productDetail.productGroups
             if (groups.isEmpty()) {
                 SnackbarManager.show("Produto sem stock.", SnackbarType.ERROR)
                 barcode = ""
@@ -334,7 +335,7 @@ fun DeliveryScreen(
                 val calculatedGroups = recalculateStockDistribution(initialQty, groups, barcode, null)
                 val newProduct = DeliveryProductToSend(
                     barcode = barcode,
-                    productName = productDetail.name ?: "Produto",
+                    productName = productDetail.name,
                     quantityToDeliver = initialQty,
                     availableGroups = groups,
                     selectedGroups = calculatedGroups,
@@ -493,7 +494,6 @@ fun DeliveryScreen(
                     itemsIndexed(productsToDeliver) { index, product ->
                         DeliveryProductCard(
                             product = product,
-                            index = index,
                             onRemove = { productsToDeliver = productsToDeliver.toMutableList().apply { removeAt(index) } },
                             onExpand = {
                                 val p = productsToDeliver[index]
@@ -612,7 +612,10 @@ fun BeneficiarySelectorCard(
                     onValueChange = onQueryChange,
                     label = { Text("Pesquisar") },
                     placeholder = { Text("Nome ou Email...") },
-                    modifier = Modifier.fillMaxWidth().menuAnchor().focusRequester(focusRequester),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryEditable, enabled = true) // Atualizado
+                        .focusRequester(focusRequester),
                     trailingIcon = {
                         if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                         else Icon(Icons.Default.Search, null)
@@ -653,8 +656,8 @@ fun BeneficiarySelectorCard(
 fun ProductAddCard(
     query: String,
     onQueryChange: (String) -> Unit,
-    suggestions: List<sasipca.models.Product>,
-    onSuggestionSelected: (sasipca.models.Product) -> Unit
+    suggestions: List<Product>,
+    onSuggestionSelected: (Product) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -792,7 +795,6 @@ fun DeliveryProductsListSection(
                 itemsIndexed(products) { index, product ->
                     DeliveryProductCard(
                         product = product,
-                        index = index,
                         onRemove = { onProductRemove(index) },
                         onExpand = { onProductExpanded(index) },
                         onUpdateQuantity = { qty -> onUpdateQuantity(index, qty) },
@@ -808,7 +810,6 @@ fun DeliveryProductsListSection(
 @Composable
 fun DeliveryProductCard(
     product: DeliveryProductToSend,
-    index: Int,
     onRemove: () -> Unit,
     onExpand: () -> Unit,
     onUpdateQuantity: (Int) -> Unit,
@@ -852,7 +853,7 @@ fun DeliveryProductCard(
 
                     val selectionText = if (selectedGroup != null) {
                         val date = selectedGroup.expiryDate
-                        val dateStr = if(date != null) "${date.dayOfMonth}/${date.monthNumber}/${date.year}" else "S/D"
+                        val dateStr = "${date.day}/${date.month.number}/${date.year}"
                         "$dateStr (${selectedGroup.availableStock} un)"
                     } else {
                         "Automático"
@@ -870,7 +871,9 @@ fun DeliveryProductCard(
                             onValueChange = {},
                             readOnly = true,
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
-                            modifier = Modifier.fillMaxWidth().menuAnchor(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
                             textStyle = MaterialTheme.typography.bodyMedium
                         )
                         ExposedDropdownMenu(
@@ -889,10 +892,10 @@ fun DeliveryProductCard(
                                     dropdownExpanded = false
                                 }
                             )
-                            Divider()
+                            HorizontalDivider()
                             product.availableGroups.sortedBy { it.expiryDate }.forEach { group ->
                                 val date = group.expiryDate
-                                val dateStr = if(date != null) "${date.dayOfMonth}/${date.monthNumber}/${date.year}" else "S/D"
+                                val dateStr = "${date.day}/${date.month.number}/${date.year}"
 
                                 DropdownMenuItem(
                                     text = { Text("$dateStr - Stock: ${group.availableStock}") },
@@ -928,12 +931,12 @@ fun DeliveryProductCard(
                         product.selectedGroups.forEach { item ->
                             val groupInfo = product.availableGroups.find { it.id == item.groupId }
                             val date = groupInfo?.expiryDate
-                            val formattedDate = if(date != null) "${date.dayOfMonth}/${date.monthNumber}/${date.year}" else "N/A"
+                            val formattedDate = if(date != null) "${date.day}/${date.month.number}/${date.year}" else "N/A"
 
                             // Verifica se o lote está expirado
                             val isExpired = if (date != null) {
                                 // Converte para Java LocalDate para usar isBefore com a data atual (Java)
-                                val dateJava = LocalDate.of(date.year, date.monthNumber, date.dayOfMonth)
+                                val dateJava = LocalDate.of(date.year, date.month.number, date.day)
                                 dateJava.isBefore(LocalDate.now())
                             } else false
 

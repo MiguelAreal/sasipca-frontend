@@ -14,12 +14,10 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import sasipca.models.Delivery
 import java.time.LocalDate
-import java.time.YearMonth
 
 @Composable
 fun WeekRow(
     startOfWeek: LocalDate,
-    focusedMonth: YearMonth, // Usado apenas para lógica de navegação/scroll se necessário
     deliveries: List<Delivery>,
     onDayClick: (LocalDate, List<Delivery>) -> Unit,
     onEventClick: (Delivery) -> Unit,
@@ -32,19 +30,22 @@ fun WeekRow(
         days.forEach { day ->
             key(day.toEpochDay()) {
                 val deliveriesForDay by rememberUpdatedState(
-                    deliveries.filter { LocalDate.parse(it.scheduledDate) == day }
+                    deliveries.filter {
+                        val scheduled = LocalDate.parse(it.scheduledDate)
+                        scheduled.year == day.year && scheduled.dayOfYear == day.dayOfYear
+                    }
                 )
 
-                val isToday = day == today
+                val isToday = day.year == today.year && day.dayOfYear == today.dayOfYear
 
-                // Lógica corrigida: A cor baseia-se no Mês REAL do sistema, não no scroll
+                // Lógica corrigida: A cor baseia-se no Mês REAL do sistema, não no ‘scroll’
                 val isRealCurrentMonth = day.month == today.month && day.year == today.year
 
                 // Cores ajustadas para Tema Light e Dark
                 val containerColor = if (isRealCurrentMonth) {
                     MaterialTheme.colorScheme.surface // Branco no Light, Cinza escuro no Dark
                 } else {
-                    // Mês passado ou futuro real -> Cor de fundo ligeiramente diferente
+                    // Mês passado ou futuro real ⇾ Cor de fundo ligeiramente diferente
                     MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f)
                 }
 

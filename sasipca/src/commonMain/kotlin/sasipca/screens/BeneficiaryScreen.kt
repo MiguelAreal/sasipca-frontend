@@ -19,14 +19,13 @@ import sasipca.utils.SnackbarManager
 import sasipca.viewmodels.BeneficiaryDetailViewModel
 import sasipca.viewmodels.DeliveriesViewModel
 
-@Suppress("UnusedBoxWithConstraintsScope")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BeneficiaryScreen(
     beneficiaryId: Int,
     repository: BeneficiaryRepository,
     deliveryRepository: DeliveryRepository,
-    isReadOnly: Boolean = false // <--- PARAM
+    isReadOnly: Boolean = false
 ) {
     val navigator = LocalNavigator.currentOrThrow
     val beneficiaryViewModel = remember { BeneficiaryDetailViewModel(repository) }
@@ -38,9 +37,9 @@ fun BeneficiaryScreen(
     val isLoading by remember { beneficiaryViewModel::isLoading }
     val deliveries by deliveriesViewModel.deliveries.collectAsState()
 
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedTab by remember { mutableIntStateOf(0) }
 
-    // Carrega dados iniciais
+    // Efeitos de carregamento e navegação permanecem iguais...
     LaunchedEffect(beneficiaryId) {
         beneficiaryViewModel.loadBeneficiary(beneficiaryId)
         deliveriesViewModel.loadBeneficiaryDeliveries(beneficiaryId)
@@ -51,9 +50,8 @@ fun BeneficiaryScreen(
             beneficiaryViewModel.clearUiState()
             if (!isReadOnly) navigator.pop()
         }
-
-        if (uiState.lastErrorMessage != null) {
-            SnackbarManager.show(uiState.lastErrorMessage!!, SnackbarType.ERROR)
+        uiState.lastErrorMessage?.let {
+            SnackbarManager.show(it, SnackbarType.ERROR)
         }
     }
 
@@ -63,7 +61,9 @@ fun BeneficiaryScreen(
             subTitle = beneficiary?.name ?: ""
         )
 
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        // REMOVIDO: BoxWithConstraints.
+        // USADO: Box simples para ocupar o resto do ecrã
+        Box(modifier = Modifier.fillMaxSize()) {
             if (isLargeScreen()) {
                 Row(
                     modifier = Modifier
@@ -71,7 +71,6 @@ fun BeneficiaryScreen(
                         .padding(20.dp),
                     horizontalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    // Coluna da esquerda
                     Box(modifier = Modifier.weight(1f)) {
                         BeneficiaryEditForm(
                             beneficiary = beneficiary,
@@ -82,11 +81,10 @@ fun BeneficiaryScreen(
                                     scope.launch { beneficiaryViewModel.updateBeneficiary(beneficiaryId, body) }
                                 }
                             },
-                            isReadOnly = isReadOnly // <--- Passar flag
+                            isReadOnly = isReadOnly
                         )
                     }
 
-                    // Coluna da direita
                     Box(modifier = Modifier.weight(1f)) {
                         DeliveriesTable(
                             deliveries = deliveries,
@@ -95,11 +93,10 @@ fun BeneficiaryScreen(
                     }
                 }
             } else {
-                // Mobile
+                // Layout Mobile
                 Column(modifier = Modifier.fillMaxSize()) {
-
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp),
                         horizontalArrangement = Arrangement.Center,
                     ) {
                         FilterChip(

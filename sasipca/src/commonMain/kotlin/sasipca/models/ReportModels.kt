@@ -8,10 +8,6 @@ enum class ReportTypesEnum(val value: Int) {
     MovementDetails(2), // Requer ID
     DeliveryHeaders(3);
 
-    companion object {
-        fun fromInt(value: Int) = entries.firstOrNull { it.value == value } ?: MovementHeaders
-    }
-
     fun label(): String {
         return when(this) {
             MovementHeaders -> "Resumo de Movimentos"
@@ -24,10 +20,6 @@ enum class ReportTypesEnum(val value: Int) {
 enum class ReportFormat(val value: Int) {
     PDF(1),
     CSV(2);
-
-    companion object {
-        fun fromInt(value: Int) = entries.firstOrNull { it.value == value } ?: PDF
-    }
 }
 
 // DTO para GET (Listagem)

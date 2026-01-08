@@ -78,7 +78,7 @@ fun BeneficiariesScreen(
                 IconButton(
                     onClick = { showFilters = !showFilters },
                     modifier = Modifier
-                        .size(56.dp) // Alinhado com a altura do input (60dp visualmente aproximado com padding interno)
+                        .size(56.dp) // Alinhado com a altura do ‘input’ (60dp visualmente aproximado com padding interno)
                         .clip(RoundedCornerShape(12.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {

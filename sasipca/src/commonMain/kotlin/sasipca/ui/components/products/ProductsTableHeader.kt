@@ -1,11 +1,8 @@
 package sasipca.ui.components.products
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
@@ -17,12 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import sasipca.models.Product
-import sasipca.storage.ListsStore
-
 
 
 @Composable
@@ -57,57 +50,3 @@ fun ProductsTableHeader(
 }
 
 
-@Composable
-fun ProductRow(
-    product: Product,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                else MaterialTheme.colorScheme.surface
-            )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = product.name,
-            modifier = Modifier.weight(0.25f),
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            text = ListsStore.getCategoryName(product.categoryId),
-            modifier = Modifier.weight(0.2f),
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            text = (product.totalQuantity ?: 0).toString(),
-            modifier = Modifier.weight(0.18f),
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Text(
-            text = (product.reservedQuantity ?: 0).toString(),
-            modifier = Modifier.weight(0.18f),
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Text(
-            text = (product.availableStock ?: 0).toString(),
-            modifier = Modifier.weight(0.19f),
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-    }
-}

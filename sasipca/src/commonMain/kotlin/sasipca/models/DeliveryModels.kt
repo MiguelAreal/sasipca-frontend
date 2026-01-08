@@ -65,7 +65,7 @@ data class DeliveryDetail(
 )
 
 /**
- * Item individual da entrega (vindo do Backend)
+ * ‘Item’ individual da entrega (vindo do Backend)
  */
 @Serializable
 data class DeliveryItemGetDTO(

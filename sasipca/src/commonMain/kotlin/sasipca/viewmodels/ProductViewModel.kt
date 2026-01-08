@@ -18,7 +18,7 @@ import sasipca.storage.ListsStore
 
 data class ProductUiState(
     val isLoading: Boolean = false,
-    val errors: Map<String, String> = emptyMap(), // chave -> mensagem (ex: "barcode" -> "Obrigatório")
+    val errors: Map<String, String> = emptyMap(), // chave → mensagem (ex: "barcode" ⇾ "Obrigatório")
     val lastErrorMessage: String? = null,
     val success: Boolean = false
 )
@@ -51,11 +51,11 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
     var selectedCategoryId by mutableStateOf<Int?>(null)
         private set
 
-    var currentPage by mutableStateOf(1)
+    var currentPage by mutableIntStateOf(1)
         private set
 
     var pageSize: Int = 10
-    var totalPages by mutableStateOf(1)
+    var totalPages by mutableIntStateOf(1)
         private set
 
     /**
@@ -168,10 +168,10 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
                         // Produto novo → tudo vem do OFF
                         ProductDetail(
                             barcode = offResponse.code,
-                            name = offProduct.product_name ?: "",
-                            unitSize = offProduct.product_quantity,
+                            name = offProduct.productName ?: "",
+                            unitSize = offProduct.productQuantity,
                             categoryId = null,
-                            unitId = units.find { it.type.equals(offProduct.product_quantity_unit, ignoreCase = true) }?.id,
+                            unitId = units.find { it.type.equals(offProduct.productQuantityUnit, ignoreCase = true) }?.id,
                             totalQuantity = null,
                             reservedQuantity = null,
                             availableStock = null,
@@ -198,7 +198,7 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
      * Carrega lista de produtos e aplica filtros (Texto e Categoria) e Paginação Local
      */
     fun loadProducts(search: String = searchQuery) {
-        // Se mudarmos a pesquisa de texto, resetamos a página
+        // Se mudarmos a pesquisa de texto, reset à página
         if (search != searchQuery) {
             currentPage = 1
         }
@@ -288,8 +288,8 @@ class ProductViewModel(private val productRepository: ProductRepository) : ViewM
             _uiState.value = _uiState.value.copy(isLoading = true)
             runCatching {
                 productRepository.putProduct(barcode,body)
-            }.onSuccess { response ->
-                // considera sucesso — volta atrás na navegação
+            }.onSuccess { _ ->
+                // considera sucesso — volta na navegação
                 _uiState.value = ProductUiState(success = true)
 
             }.onFailure { t ->

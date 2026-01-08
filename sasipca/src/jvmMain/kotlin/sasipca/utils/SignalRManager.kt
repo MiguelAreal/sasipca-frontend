@@ -5,11 +5,9 @@ import com.microsoft.signalr.HubConnectionBuilder
 import com.microsoft.signalr.HubConnectionState
 import io.reactivex.rxjava3.core.Single
 import kotlinx.coroutines.*
-import sasipca.network.ApiClient
 import sasipca.network.ApiConfig
 import sasipca.storage.NotificationManager
 import sasipca.storage.SessionManager
-import kotlin.coroutines.coroutineContext
 
 class SignalRManager(
     private val onNotificationReceived: (String, String) -> Unit
@@ -21,8 +19,8 @@ class SignalRManager(
         // Se já estiver conectado, não faz nada
         if (hubConnection?.connectionState == HubConnectionState.CONNECTED) return
 
-        // Usamos Single.defer para que a função lambda seja executada a cada tentativa de conexão.
-        // Assim, obtemos sempre o token mais recente do SessionManager.
+        // Usamos ‘Single’.defer para que a função lambda seja executada a cada tentativa de conexão.
+        // Assim, obtemos sempre o ‘token’ mais recente do SessionManager.
         val tokenProvider = Single.defer {
             val currentToken = SessionManager.getAccessToken()
             if (currentToken != null) {
@@ -46,7 +44,7 @@ class SignalRManager(
                         hubConnection?.start()?.blockingAwait()
                         println("SignalR: reconectado!")
                         break
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         delay(3000)
                     }
                 }
@@ -58,8 +56,8 @@ class SignalRManager(
             onNotificationReceived(title, msg)
         }, String::class.java, String::class.java)
 
-        // Loop de Tentativa de Conexão Inicial
-        while (coroutineContext.isActive) {
+        // ‘Loop’ de Tentativa de Conexão Inicial
+        while (currentCoroutineContext().isActive) {
             // Verifica se o token existe antes de tentar (evita spam de erro se fez logout)
             if (SessionManager.getAccessToken() == null) return
 
@@ -72,7 +70,7 @@ class SignalRManager(
                 println("SignalR: Falha ao conectar (${e.message}). Nova tentativa em 5s...")
                 try {
                     delay(5000)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     break
                 }
             }

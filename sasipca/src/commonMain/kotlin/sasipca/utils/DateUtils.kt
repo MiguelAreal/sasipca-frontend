@@ -9,7 +9,7 @@ import kotlin.time.ExperimentalTime
 
 /**
  * Retorna data atual no formato '(dia da semana), (mês curto). (ano)'.
- * - Ex: Terça-Feira, 28 Out. 2025
+ * - Ex: quarta-feira, 28 out. 2025
  */
 @OptIn(ExperimentalTime::class)
 fun getFormattedDatePt(): String {
@@ -18,20 +18,10 @@ fun getFormattedDatePt(): String {
 }
 
 /**
- * Retorna mês atual, em português
- * - Ex: Outubro
- */
-@OptIn(ExperimentalTime::class)
-fun getCurrentMonthPt(): String {
-    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-    return convertMonthPt(today.month.number)
-}
-
-/**
  * Retorna uma saudação com base na hora atual do sistema.
- * - 06:00 - 12:00 => "Bom dia"
- * - 12:00 - 19:00 => "Boa tarde"
- * - 19:00 - 06:00 => "Boa noite"
+ * - 06:00 - 12:00 → "Bom dia"
+ * - 12:00 - 19:00 → "Boa tarde"
+ * - 19:00 - 06:00 → "Boa noite"
  */
 @OptIn(ExperimentalTime::class)
 fun getGreetingPt(): String {
@@ -66,15 +56,15 @@ fun convertMonthPt(month: Int, short: Boolean = false): String {
         else -> ""
     }
 
-    return if (short && monthPt.length >= 3) monthPt.substring(0, 3) else monthPt
+    return if (short && monthPt.length >= 3) monthPt.take(3) else monthPt
 }
 
 /**
  * Função auxiliar. Retorna apenas o mês atual em português.
- * @param dayofWeek Enum de dia da semana
+ * @param dayOfWeek Enum de dia da semana
  */
-private fun convertWeekdayPt(dayofWeek: DayOfWeek): String {
-    val dayofWeekPt = when (dayofWeek) {
+private fun convertWeekdayPt(dayOfWeek: DayOfWeek): String {
+    val dayOfWeekPt = when (dayOfWeek) {
         DayOfWeek.MONDAY -> "Segunda-Feira"
         DayOfWeek.TUESDAY -> "Terça-Feira"
         DayOfWeek.WEDNESDAY -> "Quarta-Feira"
@@ -84,6 +74,6 @@ private fun convertWeekdayPt(dayofWeek: DayOfWeek): String {
         DayOfWeek.SUNDAY -> "Domingo"
     }
 
-    return dayofWeekPt
+    return dayOfWeekPt
 }
 

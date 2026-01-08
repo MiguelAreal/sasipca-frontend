@@ -21,8 +21,7 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -81,7 +80,7 @@ fun DeliveriesTable(
 
                 CardTitle("Histórico de Entregas")
 
-                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
             }
 
 
@@ -173,7 +172,7 @@ fun DeliveriesTable(
             }
 
             if (selectedDelivery != null) {
-                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -260,7 +259,7 @@ fun DeliveryRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = delivery.scheduledDate ?: "N/A",
+            text = delivery.scheduledDate,
             modifier = Modifier.weight(0.35f),
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurface

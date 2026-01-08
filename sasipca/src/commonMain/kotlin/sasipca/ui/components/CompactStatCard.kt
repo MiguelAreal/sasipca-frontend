@@ -20,7 +20,6 @@ fun RowScope.CompactStatCard(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
-    // --- NOVOS PARÂMETROS ADICIONADOS ---
     containerColor: Color = MaterialTheme.colorScheme.surface,
     contentColor: Color = MaterialTheme.colorScheme.onSurface
 ) {

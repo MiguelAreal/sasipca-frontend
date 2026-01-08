@@ -17,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -63,7 +62,7 @@ fun AdminsScreen(
         viewModel.loadAdmins(query = searchTerm, page = 1)
     }
 
-    // 3. Gestão de Feedback (Sucesso na criação)
+    // 3. Gestão de ‘Feedback’ (Sucesso na criação)
     LaunchedEffect(uiState.success) {
         if (uiState.success) {
             SnackbarManager.show("Administrador criado com sucesso!", SnackbarType.SUCCESS)
@@ -80,7 +79,7 @@ fun AdminsScreen(
     LaunchedEffect(uiState.lastErrorMessage) {
         uiState.lastErrorMessage?.let { msg ->
             SnackbarManager.show(msg, SnackbarType.ERROR)
-            viewModel.clearUiState()
+            viewModel.clearFeedbackMessages()
         }
     }
 
@@ -191,7 +190,11 @@ fun AdminsScreen(
 
         // --- FAB (FLOATING ACTION BUTTON) ---
         FloatingActionButton(
-            onClick = { showAddDialog = true },
+            onClick = {
+                newEmail = "";
+                newContact = "";
+                viewModel.clearUiState();
+                showAddDialog = true },
             containerColor = MaterialTheme.colorScheme.primary,
             shape = CircleShape,
             modifier = Modifier
@@ -207,9 +210,7 @@ fun AdminsScreen(
     // --- DIALOG PARA ADICIONAR ADMIN ---
     if (showAddDialog) {
         AlertDialog(
-            onDismissRequest = {
-                if (!uiState.isLoading) showAddDialog = false
-            },
+            onDismissRequest = {showAddDialog = false},
             title = { Text("Novo Administrador") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -219,7 +220,7 @@ fun AdminsScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    // Campo de Email
+                    // Campo de Endereço eletrónico
                     ValidatedTextField(
                         value = newEmail,
                         onValueChange = { newEmail = it },
@@ -236,6 +237,7 @@ fun AdminsScreen(
                         label = "Contacto",
                         error = uiState.errors["contact"],
                         singleLine = true,
+                        maxLength = 15,
                         keyboardType = KeyboardType.Phone
                     )
                 }
@@ -256,7 +258,7 @@ fun AdminsScreen(
             },
             dismissButton = {
                 TextButton(
-                    onClick = { showAddDialog = false },
+                    onClick = { showAddDialog = false},
                     enabled = !uiState.isLoading
                 ) {
                     Text("Cancelar")

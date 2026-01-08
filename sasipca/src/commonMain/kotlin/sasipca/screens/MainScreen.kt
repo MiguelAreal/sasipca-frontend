@@ -10,7 +10,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabNavigator
-import sasipca.screens.navigation.*
+import sasipca.navigation.BeneficiariesTab
+import sasipca.navigation.CalendarTab
+import sasipca.navigation.HomeTab
+import sasipca.navigation.MyProfileTab
+import sasipca.navigation.ProductsTab
+import sasipca.navigation.ViewOnlyProductsTab
 import sasipca.storage.SessionManager
 
 @Composable
@@ -52,7 +57,7 @@ fun MainScreenContent(openCalendar: Boolean = false) {
             }
         }
 
-        // Sincronização: Swipe -> Tab
+        // Sincronização: Swipe → Tab
         LaunchedEffect(pagerState.currentPage) {
             if (!isProgrammaticScroll) {
                 if (pagerState.currentPage < tabs.size) {
@@ -64,7 +69,7 @@ fun MainScreenContent(openCalendar: Boolean = false) {
             }
         }
 
-        // Sincronização: Tab -> Swipe
+        // Sincronização: Tab → Swipe
         LaunchedEffect(tabNavigator.current) {
             val targetIndex = tabs.indexOf(tabNavigator.current)
             if (targetIndex >= 0 && pagerState.currentPage != targetIndex) {

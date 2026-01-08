@@ -29,14 +29,14 @@ fun CampaignStatusBadge(
     modifier: Modifier = Modifier
 ) {
     // Cores personalizadas
-    val GreenBack = Color(0xFFE6F4EA)
-    val GreenText = Color(0xFF1E8E3E)
-    val RedBack = Color(0xFFFCE8E6)
-    val RedText = Color(0xFFC5221F)
-    val BlueBack = Color(0xFFE3F2FD) // Azul para "Brevemente"
-    val BlueText = Color(0xFF1565C0)
-    val OrangeBack = Color(0xFFFFF3E0)
-    val OrangeText = Color(0xFFE65100)
+    val greenBack = Color(0xFFE6F4EA)
+    val greenText = Color(0xFF1E8E3E)
+    val redBack = Color(0xFFFCE8E6)
+    val redText = Color(0xFFC5221F)
+    val blueBack = Color(0xFFE3F2FD) // Azul para "Brevemente"
+    val blueText = Color(0xFF1565C0)
+    val orangeBack = Color(0xFFFFF3E0)
+    val orangeText = Color(0xFFE65100)
 
     val badgeState = remember(startDateStr, endDateStr) {
         try {
@@ -49,23 +49,23 @@ fun CampaignStatusBadge(
                 now.isBefore(start) -> {
                     val daysToStart = ChronoUnit.DAYS.between(now, start)
                     val text = if (daysToStart == 1L) "Inicia amanhã" else "Inicia em $daysToStart dias"
-                    Triple(BlueBack, BlueText, text)
+                    Triple(blueBack, blueText, text)
                 }
                 // 2. Já acabou (Passado)
                 now.isAfter(end) -> {
-                    Triple(RedBack, RedText, "Terminada")
+                    Triple(redBack, redText, "Terminada")
                 }
                 // 3. A decorrer (Presente)
                 else -> {
                     val daysToEnd = ChronoUnit.DAYS.between(now, end)
                     when {
-                        daysToEnd == 0L -> Triple(OrangeBack, OrangeText, "Termina hoje")
-                        daysToEnd <= 3 -> Triple(RedBack, RedText, "Termina em $daysToEnd dias") // Urgente
-                        else -> Triple(GreenBack, GreenText, "$daysToEnd dias restantes") // Normal
+                        daysToEnd == 0L -> Triple(orangeBack, orangeText, "Termina hoje")
+                        daysToEnd <= 3 -> Triple(redBack, redText, "Termina em $daysToEnd dias") // Urgente
+                        else -> Triple(greenBack, greenText, "$daysToEnd dias restantes") // Normal
                     }
                 }
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // Fallback caso as datas estejam inválidas ou vazias durante a edição
             Triple(Color.LightGray, Color.DarkGray, "--")
         }

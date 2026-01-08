@@ -21,7 +21,7 @@ data class CampaignFormState(
     val endDate: String = "",   // Formato API: yyyy-MM-dd
     val description: String = "",
     val imageUrl: String? = null,         // URL existente
-    val newImageBytes: ByteArray? = null, // Nova imagem selecionada
+    val newImageBytes: List<Byte>? = null, // Nova imagem selecionada
     val removeImage: Boolean = false,     // Flag para apagar a imagem no backend
     val errors: Map<String, String> = emptyMap()
 )
@@ -54,10 +54,10 @@ class CampaignViewModel(
         private set
     var searchQuery by mutableStateOf("")
         private set
-    var currentPage by mutableStateOf(1)
+    var currentPage by mutableIntStateOf(1)
         private set
     private val pageSize = 10
-    var totalPages by mutableStateOf(1)
+    var totalPages by mutableIntStateOf(1)
         private set
     var isLoading by mutableStateOf(false)
         private set
@@ -132,7 +132,7 @@ class CampaignViewModel(
     }
 
     /**
-     * Prepara o formulário para uma nova campanha (datas default).
+     * Prepara o formulário para uma nova campanha (datas ‘default’).
      */
     fun startNewCampaign() {
         val today = LocalDate.now().toString()
@@ -155,7 +155,7 @@ class CampaignViewModel(
 
     fun onNameChange(newName: String) {
         formState = formState.copy(name = newName)
-        validateField("name", newName)
+        validateField(newName)
     }
 
     fun onLocationChange(newLocation: String) {
@@ -181,7 +181,7 @@ class CampaignViewModel(
 
     // --- Gestão de Imagens ---
 
-    fun onImagePicked(bytes: ByteArray?) {
+    fun onImagePicked(bytes: List<Byte>?) {
         if (bytes != null) {
             // Se escolheu uma nova imagem, guardamos os bytes e garantimos que NÃO removemos
             formState = formState.copy(newImageBytes = bytes, removeImage = false)
@@ -269,12 +269,12 @@ class CampaignViewModel(
     // VALIDAÇÕES E UTILITÁRIOS
     // =========================================================================
 
-    private fun validateField(field: String, value: String) {
+    private fun validateField(value: String) {
         val newErrors = formState.errors.toMutableMap()
-        if (field == "name") {
-            if (value.isBlank()) newErrors["name"] = "Obrigatório"
-            else newErrors.remove("name")
-        }
+
+        if (value.isBlank()) newErrors["name"] = "Obrigatório"
+        else newErrors.remove("name")
+
         formState = formState.copy(errors = newErrors)
     }
 
@@ -302,7 +302,7 @@ class CampaignViewModel(
     }
 
     private fun validateAll(): Boolean {
-        validateField("name", formState.name)
+        validateField(formState.name)
         val datesValid = validateDates()
         return formState.errors.isEmpty() && datesValid
     }
@@ -313,6 +313,6 @@ class CampaignViewModel(
         return try {
             val parts = uiDate.split("/")
             if (parts.size == 3) "${parts[2]}-${parts[1]}-${parts[0]}" else uiDate
-        } catch (e: Exception) { uiDate }
+        } catch (_: Exception) { uiDate }
     }
 }

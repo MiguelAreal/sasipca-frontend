@@ -11,7 +11,7 @@ class ReportsRepository(private val client: HttpClient) {
 
     /**
      * Lista os relatórios gerados.
-     * T -> List<ReportGetDTO> (Parse de JSON)
+     * T ⇾ List<ReportGetDTO> (Parse de JSON)
      */
     suspend fun getGeneratedReports(type: Int? = null): List<ReportGetDTO> {
         return client.requestWithAuth(
@@ -25,8 +25,8 @@ class ReportsRepository(private val client: HttpClient) {
 
     /**
      * Gera um novo relatório e retorna os bytes.
-     * T -> ByteArray (Leitura de binário)
-     * * Como usamos requestWithAuth, se o token expirou a meio,
+     * T ⇾ ByteArray (Leitura de binário)
+     * * Como usamos requestWithAuth, se o ‘token’ expirou a meio,
      * ele faz refresh e tenta gerar o relatório novamente sozinho.
      */
     suspend fun generateReport(request: ReportRequestDTO): ByteArray {
@@ -40,8 +40,8 @@ class ReportsRepository(private val client: HttpClient) {
     }
 
     /**
-     * Faz download de um relatório existente.
-     * T -> ByteArray (Leitura de binário)
+     * Faz ‘download’ de um relatório existente.
+     * T ⇾ ByteArray (Leitura de binário)
      */
     suspend fun downloadReport(id: Int): ByteArray {
         return client.requestWithAuth<ByteArray>(

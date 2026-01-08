@@ -36,7 +36,7 @@ class ReceiptsViewModel(private val receiptRepository: ReceiptRepository) : View
         return try {
             val localDate = LocalDate.parse(input, inputDateFormatter)
             localDate.toString() // Retorna yyyy-MM-dd
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
     }
@@ -83,12 +83,10 @@ class ReceiptsViewModel(private val receiptRepository: ReceiptRepository) : View
                 // Valida Data
                 if (l.expiryDate.isBlank()) {
                     errors["$prefix.expiryDate"] = "Obrigatória"
-                    groupValid = false
                 } else {
                     val iso = dateToIsoZeroUtcOrNull(l.expiryDate)
                     if (iso == null) {
                         errors["$prefix.expiryDate"] = "Inválida"
-                        groupValid = false
                     } else if (groupValid) {
                         // Só adiciona se tudo estiver válido
                         validatedGroups.add(ReceiptGroupItem(quantity = qty!!, expiryDate = iso))

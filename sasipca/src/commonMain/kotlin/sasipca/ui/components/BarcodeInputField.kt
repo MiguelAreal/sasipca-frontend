@@ -12,6 +12,6 @@ expect fun BarcodeInputField(
     placeholder: String = "Nome ou Código de Barras",
     error: String? = null,
     suggestions: List<Product> = emptyList(), // Lista filtrada do ViewModel
-    onSuggestionSelected: (Product) -> Unit, // Callback ao clicar num item
+    onSuggestionSelected: (Product) -> Unit, // Callback ao clicar num ‘item’
     modifier: Modifier = Modifier
 )

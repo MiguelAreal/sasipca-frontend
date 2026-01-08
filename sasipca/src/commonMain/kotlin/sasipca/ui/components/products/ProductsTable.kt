@@ -9,8 +9,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -170,7 +168,7 @@ private fun DesktopTableView(
                 ProductsTableHeader("Disponível", ProductSortColumn.AVAILABLE_STOCK, sortColumn, sortDirection, Modifier.weight(0.2f)) { onSortChange(ProductSortColumn.AVAILABLE_STOCK) }
             }
 
-            Divider(color = MaterialTheme.colorScheme.outlineVariant)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
             // Linhas
             LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -201,7 +199,7 @@ private fun DesktopTableView(
                             color = if(avail > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                         )
                     }
-                    Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 }
             }
         }

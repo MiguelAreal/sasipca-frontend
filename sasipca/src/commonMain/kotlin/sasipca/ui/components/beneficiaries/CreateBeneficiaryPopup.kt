@@ -4,22 +4,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import kotlinx.coroutines.launch
-import sasipca.models.BeneficiaryPost
 import sasipca.repositories.BeneficiaryRepository
 import sasipca.ui.components.ValidatedTextField
 import sasipca.ui.components.formatPostalCode
@@ -36,7 +30,7 @@ fun CreateBeneficiaryPopup(
 ) {
     val viewModel = remember { BeneficiaryDetailViewModel(repository) }
     val uiState by viewModel.uiState.collectAsState()
-    val scope = rememberCoroutineScope()
+    rememberCoroutineScope()
 
     // --- ESTADOS ---
     var name by remember { mutableStateOf("") }
@@ -98,7 +92,7 @@ fun CreateBeneficiaryPopup(
                     )
                 }
 
-                Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
                 // CONTEÚDO COM SCROLL
                 Column(
@@ -247,7 +241,7 @@ fun CreateBeneficiaryPopup(
                     }
                 }
 
-                Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
                 // --- RODAPÉ ---
                 Row(

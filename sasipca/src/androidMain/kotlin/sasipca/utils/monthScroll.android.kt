@@ -11,25 +11,18 @@ actual fun Modifier.monthScroll(
     listState: LazyListState,
     coroutineScope: CoroutineScope
 ): Modifier = pointerInput(Unit) {
-    var dragOffset = 0f
+    val dragOffset = 0f
     detectVerticalDragGestures(
-        onVerticalDrag = { _, dragAmount ->
-            dragOffset += dragAmount
+        onVerticalDrag = { _, _ ->
         },
         onDragEnd = {
             val threshold = 80f // ajusta sensibilidade
-            if (dragOffset > threshold) {
-                coroutineScope.launch {
-                    val targetIndex = (listState.firstVisibleItemIndex - 1).coerceAtLeast(0)
-                    listState.animateScrollToItem(targetIndex)
-                }
-            } else if (dragOffset < -threshold) {
+            if (dragOffset < -threshold) {
                 coroutineScope.launch {
                     val targetIndex = (listState.firstVisibleItemIndex + 1)
                     listState.animateScrollToItem(targetIndex)
                 }
             }
-            dragOffset = 0f
         }
     )
 }

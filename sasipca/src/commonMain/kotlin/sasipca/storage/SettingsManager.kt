@@ -56,11 +56,4 @@ object SettingsManager {
     }
     // -------------------------------
 
-    // Reset to defaults
-    fun resetToDefaults() {
-        if (::settings.isInitialized) {
-            settings.putString(KEY_SERVER_IP, DEFAULT_SERVER_IP)
-            setDarkTheme(false)
-        }
-    }
 }

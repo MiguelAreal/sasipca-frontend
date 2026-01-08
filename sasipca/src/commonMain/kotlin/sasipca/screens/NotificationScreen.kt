@@ -8,13 +8,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material3.*
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -99,7 +98,6 @@ fun NotificationsScreen(notificationRepository: NotificationRepository) {
             ) {
                 items(notifications, key = { it.id }) { notif ->
                     SwipeToArchiveItem(
-                        item = notif,
                         onArchive = { handleArchive(notif.id) },
                         content = {
                             NotificationItemRow(
@@ -117,45 +115,46 @@ fun NotificationsScreen(notificationRepository: NotificationRepository) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SwipeToArchiveItem(
-    item: Notification,
     onArchive: () -> Unit,
     content: @Composable () -> Unit
 ) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = {
-            if (it == SwipeToDismissBoxValue.EndToStart) {
-                onArchive()
-                true
-            } else {
-                false
-            }
+    val dismissState = rememberSwipeToDismissBoxState()
+
+    // Observamos a mudança de estado de forma reativa
+    LaunchedEffect(dismissState.currentValue) {
+        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) {
+            onArchive()
+            // Reset o estado para que o ‘item’ não fique "vazio" se a lista demorar a atualizar
+            dismissState.snapTo(SwipeToDismissBoxValue.Settled)
         }
-    )
+    }
 
     SwipeToDismissBox(
         state = dismissState,
+        enableDismissFromStartToEnd = false, // Desativa o swipe para a direita
         backgroundContent = {
-            val isSwipingToEnd = dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart
+            val isSwipingToStart = dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart
 
+            // Cor de fundo animada baseada no progresso do swipe
             val color by animateColorAsState(
-                if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart)
-                    MaterialTheme.colorScheme.errorContainer
-                else MaterialTheme.colorScheme.surface
+                when (dismissState.targetValue) {
+                    SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
+                    else -> Color.Transparent
+                }
             )
+
             val scale by animateFloatAsState(
                 if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) 1.2f else 0.8f
             )
 
-            val backgroundColor = if (isSwipingToEnd) color else Color.Transparent
-
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(backgroundColor)
+                    .background(color)
                     .padding(horizontal = 20.dp),
                 contentAlignment = Alignment.CenterEnd
             ) {
-                if (isSwipingToEnd) {
+                if (isSwipingToStart) {
                     Icon(
                         imageVector = Icons.Default.DeleteSweep,
                         contentDescription = "Eliminar",

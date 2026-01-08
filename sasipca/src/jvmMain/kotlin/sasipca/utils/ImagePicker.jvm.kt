@@ -7,7 +7,6 @@ import kotlinx.coroutines.launch
 import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
-import javax.swing.SwingUtilities
 
 actual class ImagePickerLauncher(
     private val onLaunch: () -> Unit

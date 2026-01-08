@@ -88,7 +88,7 @@ class MainActivity : ComponentActivity() {
         }
 
         // 5. Verificar se viemos do Widget (Intent)
-        // Fazemos isto APÓS as inicializações para garantir que o App tem tudo pronto
+        // Fazemos isto APÓS as inicializações para garantir que o ‘App’ tem tudo pronto
         val openCalendarFromWidget = intent?.extras?.getBoolean("OPEN_CALENDAR") == true
 
         setContent {
@@ -120,7 +120,7 @@ class MainActivity : ComponentActivity() {
         val openCalendar = intent.extras?.getBoolean("OPEN_CALENDAR") == true
 
         if (openCalendar) {
-            // Reinicia a UI com a flag ativa para forçar a navegação
+            // Reinicia a UI com a ‘flag’ ativa para forçar a navegação
             setContent {
                 if (::msAuthManager.isInitialized) {
                     msAuthManager.currentActivity = this

@@ -28,10 +28,10 @@ import sasipca.viewmodels.ProductViewModel
 fun ProductsScreen(
     productRepository: ProductRepository,
     onOpenProduct: (String) -> Unit,
-    isReadOnly: Boolean = false // <--- NOVO PARÂMETRO
+    isReadOnly: Boolean = false
 ) {
     val productViewModel = remember { ProductViewModel(productRepository) }
-    val focusManager = LocalFocusManager.current
+    LocalFocusManager.current
 
     // Carregar Inicial
     LaunchedEffect(Unit) {
@@ -129,7 +129,7 @@ fun ProductsScreen(
                             }
                         )
 
-                        Divider()
+                        HorizontalDivider()
 
                         ListsStore.categoriestypes.forEach { category ->
                             DropdownMenuItem(

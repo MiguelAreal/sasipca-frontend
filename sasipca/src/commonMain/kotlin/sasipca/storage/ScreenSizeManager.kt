@@ -12,7 +12,6 @@ object ScreenSizeManager {
     private val _screenWidth = MutableStateFlow(0.dp)
     val screenWidth: StateFlow<Dp> get() = _screenWidth
     private val _screenHeight = MutableStateFlow(0.dp)
-    val screenHeight: StateFlow<Dp> get() = _screenHeight
 
     fun updateSize(widthDp: Dp, heightDp: Dp) {
         _screenWidth.value = widthDp

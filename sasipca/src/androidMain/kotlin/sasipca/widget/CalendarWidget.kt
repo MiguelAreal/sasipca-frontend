@@ -25,7 +25,6 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
-import androidx.glance.unit.ColorProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import sasipca.MainActivity
@@ -161,7 +160,7 @@ class CalendarWidget : GlanceAppWidget() {
                 Text("‹", style = TextStyle(fontSize = 28.sp, color = GlanceTheme.colors.primary, fontWeight = FontWeight.Bold))
             }
 
-            val monthName = currentMonth.month.getDisplayName(JavaTextStyle.FULL, Locale("pt", "PT"))
+            val monthName = currentMonth.month.getDisplayName(JavaTextStyle.FULL, Locale.forLanguageTag("PT"))
                 .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
 
             Text(
@@ -180,7 +179,7 @@ class CalendarWidget : GlanceAppWidget() {
     fun DaysOfWeekHeader() {
         Row(modifier = GlanceModifier.fillMaxWidth()) {
             val days = (1..7).map { dayOfWeek ->
-                DayOfWeek.of(dayOfWeek).getDisplayName(JavaTextStyle.NARROW, Locale("pt", "PT"))
+                DayOfWeek.of(dayOfWeek).getDisplayName(JavaTextStyle.NARROW, Locale.forLanguageTag("PT"))
             }
             days.forEach { day ->
                 Box(modifier = GlanceModifier.defaultWeight(), contentAlignment = Alignment.Center) {
@@ -213,7 +212,7 @@ class CalendarWidget : GlanceAppWidget() {
                         } else {
                             val date = yearMonth.atDay(dayCounter)
                             val hasDelivery = deliveries.any {
-                                try { LocalDate.parse(it.scheduledDate) == date } catch (e: Exception) { false }
+                                try { LocalDate.parse(it.scheduledDate) == date } catch (_: Exception) { false }
                             }
                             val isToday = date == LocalDate.now()
 

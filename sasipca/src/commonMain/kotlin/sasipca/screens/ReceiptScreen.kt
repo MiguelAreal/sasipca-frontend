@@ -161,7 +161,7 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                             .fillMaxHeight(),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Barcode input (Atualizado)
+                        // Barcode ‘input’ (Atualizado)
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
@@ -187,7 +187,7 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                                     suggestions = productSearchResults,
                                     onSuggestionSelected = { product ->
                                         barcode = product.barcode
-                                        productQuery = product.name ?: product.barcode
+                                        productQuery = product.name
                                         focusManager.clearFocus()
                                     }
                                 )
@@ -300,7 +300,7 @@ fun ReceiptScreen(productRepository: ProductRepository, receiptRepository: Recei
                                     suggestions = productSearchResults,
                                     onSuggestionSelected = { product ->
                                         barcode = product.barcode
-                                        productQuery = product.name ?: product.barcode
+                                        productQuery = product.name
                                         focusManager.clearFocus()
                                     }
                                 )

@@ -9,7 +9,7 @@ import app.sasipca.R
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-class MicrosoftAuthManagerAndroid(private val context: Context) : MicrosoftAuthManager {
+class MicrosoftAuthManagerAndroid(private val context: Context) : sasipca.models.auth.MicrosoftAuthManager {
 
     private var mSingleAccountApp: ISingleAccountPublicClientApplication? = null
 
@@ -67,7 +67,7 @@ class MicrosoftAuthManagerAndroid(private val context: Context) : MicrosoftAuthM
                             }
 
                             override fun onError(exception: MsalException) {
-                                // Se der erro no logout (ex: não havia conta), prossegue para login na mesma
+                                // Se der erro no logout (ex: não havia conta), prossegue para ‘login’ na mesma
                                 Log.w("MSAL_DEBUG", "Erro ao limpar sessão antiga (ignorável): ${exception.message}")
                                 startInteractiveLogin(app, activity, continuation)
                             }

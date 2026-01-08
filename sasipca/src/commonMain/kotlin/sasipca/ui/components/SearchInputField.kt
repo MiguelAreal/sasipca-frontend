@@ -14,15 +14,15 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun SearchInputField(
+    modifier: Modifier = Modifier,
     query: String,
     onQueryChange: (String) -> Unit,
     placeholder: String = "Pesquisar...",
-    modifier: Modifier = Modifier
 ) {
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
-        modifier = modifier.height(60.dp), // Altura fixa consistente com o design
+        modifier = modifier.height(60.dp), // Altura fixa consistente com o ‘design’
         placeholder = { Text(placeholder) },
         leadingIcon = {
             Icon(Icons.Default.Search, contentDescription = "Pesquisar")

@@ -10,13 +10,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.delay
+import kotlinx.datetime.number
 import sasipca.models.ProductGroup
 import sasipca.models.SnackbarType
 import sasipca.network.ApiClient
@@ -66,7 +66,7 @@ fun StockAdjustmentScreen(
     // Estado dropdown Grupos
     var isGroupDropdownExpanded by remember { mutableStateOf(false) }
 
-    // --- 1. Feedback UI (Sucesso/Erro do Ajuste) ---
+    // --- 1. ‘Feedback’ UI (Sucesso/Erro do Ajuste) ---
     LaunchedEffect(uiState) {
         if (uiState.success) {
             viewModel.clearState()
@@ -135,7 +135,7 @@ fun StockAdjustmentScreen(
                             suggestions = productSearchResults,
                             onSuggestionSelected = { product ->
                                 barcode = product.barcode
-                                productQuery = product.name ?: product.barcode
+                                productQuery = product.name
                                 focusManager.clearFocus()
                             },
                             // O componente BarcodeInputField já trata do Scanner (Android)
@@ -157,7 +157,7 @@ fun StockAdjustmentScreen(
                             CardTitle("Selecionar Validade")
                             Spacer(Modifier.height(8.dp))
 
-                            val groups = productDetail.productGroups ?: emptyList()
+                            val groups = productDetail.productGroups
 
                             if (groups.isEmpty()) {
                                 Text("Este produto não tem grupos em stock.", color = MaterialTheme.colorScheme.error)
@@ -169,7 +169,7 @@ fun StockAdjustmentScreen(
                                     val groupText = selectedGroup?.let {
                                         // Formatar Data (dd/MM/yyyy)
                                         val date = it.expiryDate
-                                        val dateStr = "${date.dayOfMonth.toString().padStart(2,'0')}/${date.monthNumber.toString().padStart(2,'0')}/${date.year}"
+                                        val dateStr = "${date.day.toString().padStart(2,'0')}/${date.month.number.toString().padStart(2,'0')}/${date.year}"
                                         "Validade: $dateStr (Disp: ${it.availableStock})"
                                     } ?: "Selecione um Grupo..."
 
@@ -179,7 +179,9 @@ fun StockAdjustmentScreen(
                                         readOnly = true,
                                         label = { Text("Grupo / Validade") },
                                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isGroupDropdownExpanded) },
-                                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
                                         colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
                                     )
 
@@ -189,7 +191,7 @@ fun StockAdjustmentScreen(
                                     ) {
                                         groups.forEach { group ->
                                             val date = group.expiryDate
-                                            val dateStr = "${date.dayOfMonth.toString().padStart(2,'0')}/${date.monthNumber.toString().padStart(2,'0')}/${date.year}"
+                                            val dateStr = "${date.day.toString().padStart(2,'0')}/${date.month.number.toString().padStart(2,'0')}/${date.year}"
 
                                             DropdownMenuItem(
                                                 text = {

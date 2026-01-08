@@ -20,13 +20,12 @@ import sasipca_app.sasipca.generated.resources.plusjakartasans_italic
 // PALETA DE CORES IPCA
 // -------------------------------
 val IPCAGreen = Color(0xFF24804F)           // Verde IPCA principal
-private val IPCAGreenDark = Color(0xFF15492F)       // Verde escuro IPCA
+private val IPCAGreenDark = Color(0xFF15492F)       // Verde-escuro IPCA
 private val IPCAGreenLight = Color(0xFF3FA66D)      // Verde claro
-private val IPCAGreenLighter = Color(0xFFE8F5E9)    // Verde muito claro (backgrounds)
+private val IPCAGreenLighter = Color(0xFFE8F5E9)    // Verde muito claro (formações de base)
 
 private val IPCAGray = Color(0xFF6B7280)            // Cinza neutro
 private val IPCAGrayLight = Color(0xFFF3F4F6)       // Cinza claro
-private val IPCAGrayDark = Color(0xFF374151)        // Cinza escuro
 
 // -------------------------------
 // LIGHT COLOR SCHEME

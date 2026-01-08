@@ -10,6 +10,8 @@ import io.ktor.http.*
 import io.ktor.http.content.PartData
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import sasipca.models.ApiErrorResponse
+import sasipca.models.SasipcaApiException
 import sasipca.storage.SessionManager
 
 // Mutex para impedir refresh simultâneo (Race Condition)
@@ -17,7 +19,7 @@ import sasipca.storage.SessionManager
 val refreshMutex = Mutex()
 
 /**
- * Faz uma requisição com autenticação JWT e tenta renovar o token automaticamente.
+ * Faz uma requisição com autenticação JWT e tenta renovar automaticamente.
  */
 suspend inline fun <reified T> HttpClient.requestWithAuth(
     method: HttpMethod,
@@ -26,12 +28,10 @@ suspend inline fun <reified T> HttpClient.requestWithAuth(
     formData: List<PartData>? = null
 ): T {
     val currentToken = SessionManager.getAccessToken() ?: throw Exception("Token ausente")
-
-    var response: HttpResponse
-    try {
-        response = executeRequest(this, method, url, currentToken, body, formData)
+    val response: HttpResponse = try {
+        executeRequest(this, method, url, currentToken, body, formData)
     } catch (e: ClientRequestException) {
-        response = e.response
+        e.response
     }
 
     // 1. Se der 401, entra na lógica de Refresh Sincronizada
@@ -64,7 +64,7 @@ suspend inline fun <reified T> HttpClient.requestWithAuth(
             }
         }
 
-        // 2. Tenta novamente (Retry) com o token novo
+        // 2. Tenta novamente (Retry) com o novo
         val retryResponse = executeRequest(this, method, url, newToken, body, formData)
 
         if (retryResponse.status.isSuccess()) {
@@ -112,11 +112,11 @@ suspend fun parseErrorBody(response: HttpResponse): String {
         // Tenta ler como JSON do nosso modelo
         val errorObj = response.body<ApiErrorResponse>()
         errorObj.message ?: errorObj.error ?: "Erro desconhecido (${response.status})"
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         try {
             // Se falhar o JSON, lê como texto simples
             response.bodyAsText()
-        } catch (e2: Exception) {
+        } catch (_: Exception) {
             "Erro de conexão: ${response.status}"
         }
     }

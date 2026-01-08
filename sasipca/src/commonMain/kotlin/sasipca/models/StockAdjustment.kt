@@ -6,6 +6,6 @@ import kotlinx.serialization.Serializable
 data class StockAdjustment(
     val barcode: String,
     val groupId: Int,
-    val quantityAdjustment: Int, // Positivo para adicionar, Negativo para remover
+    val quantityAdjustment: Int,
     val note: String
 )

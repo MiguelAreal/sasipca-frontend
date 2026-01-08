@@ -5,8 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -25,7 +24,7 @@ fun ImageCarouselPopup(
     images: List<String>,
     onDismiss: () -> Unit
 ) {
-    var currentIndex by remember { mutableStateOf(0) }
+    var currentIndex by remember { mutableIntStateOf(0) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -93,7 +92,7 @@ fun ImageCarouselPopup(
                             )
                     ) {
                         Icon(
-                            Icons.Filled.KeyboardArrowLeft,
+                            Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                             contentDescription = "Imagem anterior",
                             tint = if (currentIndex > 0)
                                 MaterialTheme.colorScheme.onPrimaryContainer
@@ -117,7 +116,7 @@ fun ImageCarouselPopup(
                             )
                     ) {
                         Icon(
-                            Icons.Filled.KeyboardArrowRight,
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
                             contentDescription = "Próxima imagem",
                             tint = if (currentIndex < images.lastIndex)
                                 MaterialTheme.colorScheme.onPrimaryContainer

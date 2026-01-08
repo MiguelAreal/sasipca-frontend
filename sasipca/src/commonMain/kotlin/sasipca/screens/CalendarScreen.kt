@@ -28,8 +28,6 @@ import sasipca.ui.components.calendar.Calendar
 import sasipca.ui.components.calendar.WeekCalendarController
 import java.time.LocalDate
 import java.time.YearMonth
-
-@Suppress("UnusedBoxWithConstraintsScope")
 @Composable
 fun CalendarScreen(
     deliveryRepository: DeliveryRepository,
@@ -44,7 +42,6 @@ fun CalendarScreen(
     var pickerState by remember { mutableStateOf<Pair<LocalDate, List<Delivery>>?>(null) }
     var showFutureDeliveries by remember { mutableStateOf(false) }
 
-    // --- LÓGICA SIMPLIFICADA: Obter ID de "Agendada" ---
     val scheduledStatusId = remember {
         ListsStore.DeliveriesStatus.find {
             it.status.equals("Agendada", ignoreCase = true)
@@ -59,9 +56,8 @@ fun CalendarScreen(
         deliveriesViewModel.loadMonthDeliveries(month)
     }
 
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
 
-        // Apenas permite navegar se o estado for igual a "Agendada"
         val safeNavigate: (Delivery) -> Unit = { delivery ->
             if (scheduledStatusId != null && delivery.statusId == scheduledStatusId) {
                 onNavigateToDelivery(null, true, delivery)
@@ -73,26 +69,22 @@ fun CalendarScreen(
                 month = month,
                 deliveries = deliveries,
                 futureDeliveries = futureDeliveries,
-                pickerState = pickerState,
                 onPickerStateChange = { pickerState = it },
                 onEventClick = safeNavigate,
-                onNewDelivery = { date -> onNavigateToDelivery(date, true, null) },
                 showFutureDeliveries = showFutureDeliveries,
                 onMonthChange = { deliveriesViewModel.selectMonth(it) },
-                onShowFutureDeliveriesChange = { showFutureDeliveries = it },
-                scheduledStatusId = scheduledStatusId // Passamos o ID "Agendada"
+                onShowFutureDeliveriesChange = { showFutureDeliveries = it }, // Corrigido: Agora atualiza o estado
+                scheduledStatusId = scheduledStatusId
             )
         } else {
             WideLayout(
                 month = month,
                 deliveries = deliveries,
                 futureDeliveries = futureDeliveries,
-                pickerState = pickerState,
                 onPickerStateChange = { pickerState = it },
                 onEventClick = safeNavigate,
-                onNewDelivery = { date -> onNavigateToDelivery(date, true, null) },
                 onMonthChange = { deliveriesViewModel.selectMonth(it) },
-                scheduledStatusId = scheduledStatusId // Passamos o ID "Agendada"
+                scheduledStatusId = scheduledStatusId
             )
         }
 
@@ -108,11 +100,9 @@ fun CalendarScreen(
                 scheduledStatusId = scheduledStatusId,
                 onDismiss = { pickerState = null },
                 onSelectExisting = { selected ->
-                    pickerState = null
                     safeNavigate(selected)
                 },
                 onNewDelivery = {
-                    pickerState = null
                     onNavigateToDelivery(date, true, null)
                 }
             )
@@ -125,10 +115,8 @@ fun CompactLayout(
     month: YearMonth,
     deliveries: List<Delivery>,
     futureDeliveries: List<Delivery>,
-    pickerState: Pair<LocalDate, List<Delivery>>?,
     onPickerStateChange: (Pair<LocalDate, List<Delivery>>?) -> Unit,
     onEventClick: (Delivery) -> Unit,
-    onNewDelivery: (LocalDate) -> Unit,
     showFutureDeliveries: Boolean,
     onMonthChange: (YearMonth) -> Unit,
     onShowFutureDeliveriesChange: (Boolean) -> Unit,
@@ -193,10 +181,8 @@ fun WideLayout(
     month: YearMonth,
     deliveries: List<Delivery>,
     futureDeliveries: List<Delivery>,
-    pickerState: Pair<LocalDate, List<Delivery>>?,
     onPickerStateChange: (Pair<LocalDate, List<Delivery>>?) -> Unit,
     onEventClick: (Delivery) -> Unit,
-    onNewDelivery: (LocalDate) -> Unit,
     onMonthChange: (YearMonth) -> Unit,
     scheduledStatusId: Int?
 ) {

@@ -41,7 +41,7 @@ fun BarcodeScannerView(
                 val cameraProvider = cameraProviderFuture.get()
 
                 val preview = Preview.Builder().build().apply {
-                    setSurfaceProvider(previewView.surfaceProvider)
+                    surfaceProvider = previewView.surfaceProvider
                 }
 
                 val analysis = ImageAnalysis.Builder()
@@ -60,7 +60,6 @@ fun BarcodeScannerView(
                             .addOnSuccessListener { barcodes ->
                                 barcodes.firstOrNull()?.rawValue?.let { value ->
                                     if (value != lastScanned) {
-                                        lastScanned = value
                                         onBarcodeDetected(value)
                                     }
                                 }
@@ -84,7 +83,7 @@ fun BarcodeScannerView(
                         preview,
                         analysis
                     )
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     SnackbarManager.show("Erro ao iniciar a câmara", SnackbarType.ERROR)
                 }
             }, ContextCompat.getMainExecutor(ctx))

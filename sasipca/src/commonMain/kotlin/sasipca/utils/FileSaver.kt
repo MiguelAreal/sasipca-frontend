@@ -1,7 +1,7 @@
 package sasipca.utils
 
 /**
- * Interface que define funções de guardar dados.
+ * ‘Interface’ que define funções de guardar dados.
  */
 interface FileSaver {
     suspend fun saveFile(fileName: String, data: ByteArray, openFile: Boolean = false)

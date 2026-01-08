@@ -17,12 +17,6 @@ data class ChartDataPoint(
     val series: String? = null
 )
 
-// Filtro opcional para enviar ao backend
-data class DateRangeFilter(
-    val dateFrom: String? = null, // yyyy-MM-dd
-    val dateTo: String? = null
-)
-
 @Serializable
 data class MonthlySummary(
     val month: Int,

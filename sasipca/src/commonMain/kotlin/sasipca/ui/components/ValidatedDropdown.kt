@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
@@ -33,13 +34,13 @@ interface NamedItem {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun <T : NamedItem> ValidatedDropdown(
+    modifier: Modifier = Modifier,
     label: String,
     items: List<T>,
     selectedItem: T?,
     onSelect: (T?) -> Unit,
     error: String? = null,
-    enabled: Boolean = true,
-    modifier: Modifier = Modifier
+    enabled: Boolean = true
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -53,7 +54,9 @@ fun <T : NamedItem> ValidatedDropdown(
             }
         ) {
             OutlinedTextField(
-                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                modifier = Modifier
+                    .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
+                    .fillMaxWidth(),
                 value = selectedItem?.name ?: "",
                 onValueChange = {},
                 readOnly = true,
@@ -85,7 +88,7 @@ fun <T : NamedItem> ValidatedDropdown(
                 )
             )
 
-            // Só renderiza o menu se estiver ativado (segurança extra)
+            // Só renderiza o menu se ativado (segurança extra)
             if (enabled) {
                 ExposedDropdownMenu(
                     expanded = expanded,

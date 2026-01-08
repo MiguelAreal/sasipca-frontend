@@ -34,18 +34,6 @@ class CampaignRepository(private val client: HttpClient) {
     }
 
     /**
-     * GET: Detalhe de uma campanha.
-     */
-    suspend fun getCampaign(id: Int): Campaign {
-        return client.requestWithAuth(
-            method = HttpMethod.Get,
-            url = URLBuilder(ApiConfig.baseUrl()).apply {
-                appendPathSegments("campaigns", "$id")
-            }.buildString()
-        )
-    }
-
-    /**
      * POST: Criar Campanha.
      */
     suspend fun createCampaign(
@@ -54,7 +42,7 @@ class CampaignRepository(private val client: HttpClient) {
         location: String?,
         startDate: String,
         endDate: String,
-        imageBytes: ByteArray?,
+        imageBytes: List<Byte>?,
         imageFileName: String?
     ): Resposta {
         val data = formData {
@@ -65,7 +53,7 @@ class CampaignRepository(private val client: HttpClient) {
             if (location != null) append("Location", location)
 
             if (imageBytes != null && imageFileName != null) {
-                append("ImageFile", imageBytes, Headers.build {
+                append("ImageFile", imageBytes.toByteArray(), Headers.build {
                     append(HttpHeaders.ContentType, "image/jpeg")
                     append(HttpHeaders.ContentDisposition, "filename=\"$imageFileName\"")
                 })
@@ -91,7 +79,7 @@ class CampaignRepository(private val client: HttpClient) {
         location: String?,
         startDate: String?,
         endDate: String?,
-        newImageBytes: ByteArray?,
+        newImageBytes: List<Byte>?,
         newImageFileName: String?,
         removeImage: Boolean
     ): Resposta {
@@ -105,7 +93,7 @@ class CampaignRepository(private val client: HttpClient) {
             append("RemoveImage", removeImage.toString())
 
             if (newImageBytes != null && newImageFileName != null) {
-                append("NewImageFile", newImageBytes, Headers.build {
+                append("NewImageFile", newImageBytes.toByteArray(), Headers.build {
                     append(HttpHeaders.ContentType, "image/jpeg")
                     append(HttpHeaders.ContentDisposition, "filename=\"$newImageFileName\"")
                 })
