@@ -9,15 +9,18 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.kotlinSerialization)
+    kotlin("plugin.serialization") version "1.9.0"
     id("com.google.gms.google-services")
 }
 
-//noinspection UseTomlInstead
 kotlin {
+    // Toolchain garante que o Gradle use o JDK 21 completo para compilar e empacotar
+    jvmToolchain(21)
+
     androidTarget {
         compilerOptions { jvmTarget.set(JvmTarget.JVM_11) }
     }
+
     jvm()
 
     sourceSets {
@@ -58,11 +61,12 @@ kotlin {
             implementation(libs.multiplatform.settings)
             implementation(libs.kotlinx.datetime)
 
-            // Hardcoded to fix "Unresolved reference voyager"
-            implementation("cafe.adriel.voyager:voyager-navigator:1.1.0-beta03")
-            implementation("cafe.adriel.voyager:voyager-transitions:1.1.0-beta03")
-            implementation("cafe.adriel.voyager:voyager-screenmodel:1.1.0-beta03")
-            implementation("cafe.adriel.voyager:voyager-tab-navigator:1.1.0-beta03")
+            // Voyager (Navegação)
+            val voyagerVersion = "1.1.0-beta03"
+            implementation("cafe.adriel.voyager:voyager-navigator:$voyagerVersion")
+            implementation("cafe.adriel.voyager:voyager-transitions:$voyagerVersion")
+            implementation("cafe.adriel.voyager:voyager-screenmodel:$voyagerVersion")
+            implementation("cafe.adriel.voyager:voyager-tab-navigator:$voyagerVersion")
 
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
         }
@@ -95,18 +99,46 @@ android {
         versionCode = appVersionCode
         versionName = appVersionName
     }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
 }
 
 compose.desktop {
     application {
         mainClass = "sasipca.MainKt"
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe)
+            // Inclui RPM para suporte nativo ao Fedora
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe, TargetFormat.Rpm)
             packageName = "sasipca"
             packageVersion = appVersionName
+            description = "SASIPCA"
+            vendor = "G8 IPCA"
+
+            // ESSENCIAL: Resolve erro de jlink (Exit code 2) e problemas de certificados SSL/HTTPS
+            includeAllModules = true
+
+            macOS {
+                iconFile.set(project.file("src/jvmMain/resources/icons/icon512x512.icns"))
+            }
+
+            windows {
+                iconFile.set(project.file("src/jvmMain/resources/icons/icon512x512.ico"))
+                shortcut = true
+            }
+
+            linux {
+                iconFile.set(project.file("src/jvmMain/resources/icons/icon512x512.png"))
+                shortcut = true
+                menuGroup = "Utility"
+            }
         }
     }
 }
+
+// --- Tasks de Organização de Ficheiros Finais ---
 
 tasks.register("renameDesktopDistributables") {
     val version = appVersionName
@@ -114,7 +146,7 @@ tasks.register("renameDesktopDistributables") {
 
     doLast {
         val dir = packageDir.get().asFile
-        val extensions = listOf("msi", "exe", "deb", "dmg", "pkg")
+        val extensions = listOf("msi", "exe", "deb", "dmg", "pkg", "rpm")
         if (dir.exists()) {
             dir.walkTopDown().forEach { file ->
                 if (file.extension in extensions && !file.name.contains(version)) {
@@ -128,7 +160,7 @@ tasks.register("renameDesktopDistributables") {
 
 tasks.register<Copy>("copyAndRenameDebugApk") {
     val debugDir = layout.buildDirectory.dir("outputs/apk/debug")
-    val version = appVersionName // captura o valor localmente
+    val version = appVersionName
 
     from(debugDir)
     into(layout.buildDirectory.dir("outputs/final-apk"))
@@ -140,17 +172,15 @@ tasks.register<Copy>("copyAndRenameDebugApk") {
 }
 
 afterEvaluate {
-    // Para Desktop
+    // Desktop: Executa o rename após qualquer task de packaging
     tasks.matching {
-        it.name.contains("package") &&
-                it.name.contains("Distributable") &&
-                !it.name.contains("rename")
+        it.name.contains("package") && !it.name.contains("rename")
     }.configureEach {
         finalizedBy("renameDesktopDistributables")
     }
 
-    // Para Android
-    tasks.matching { it.name == "assembleDebug" }.configureEach {
+    // Android: Executa o copy após o assembleDebug
+    tasks.named("assembleDebug") {
         finalizedBy("copyAndRenameDebugApk")
     }
 }
