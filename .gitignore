@@ -17,3 +17,4 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+OpenJDK21U-jdk_x64_linux_hotspot_21.0.5_11.tar.gz

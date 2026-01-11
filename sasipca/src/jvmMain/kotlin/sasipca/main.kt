@@ -1,13 +1,11 @@
 package sasipca
 
 import androidx.compose.runtime.*
-import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import androidx.compose.ui.window.rememberTrayState
-import androidx.compose.ui.window.Notification
+import com.kdroid.composetray.tray.impl.LinuxTrayInitializer
+import com.kdroid.composetray.tray.impl.WindowsTrayInitializer
 import com.russhwolf.settings.PreferencesSettings
-import com.russhwolf.settings.Settings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
@@ -19,42 +17,71 @@ import sasipca.utils.ObserveScreenSize
 import sasipca.utils.SignalRManager
 import sasipca_app.sasipca.generated.resources.Res
 import sasipca_app.sasipca.generated.resources.icon512x512
+import java.io.File
 import java.util.prefs.Preferences
+import kotlin.system.exitProcess
 
 /**
- * Envia notificações nativas. No Linux, usa o notify-send para integração perfeita com o KDE.
+ * Notificações via sistema.
  */
-fun sendSmartNotification(trayState: androidx.compose.ui.window.TrayState, title: String, msg: String) {
+fun sendSmartNotification(title: String, msg: String) {
     val os = System.getProperty("os.name").lowercase()
     if (os.contains("linux")) {
         try {
-            ProcessBuilder("notify-send", "-a", "SASIPCA", "-i", "dialog-information", title, msg).start()
-        } catch (e: Exception) {
-            trayState.sendNotification(Notification(title, msg, Notification.Type.Info))
-        }
-    } else {
-        trayState.sendNotification(Notification(title, msg, Notification.Type.Info))
+            ProcessBuilder("notify-send", "-a", "SASIPCA", title, msg).start()
+        } catch (_: Exception) {}
     }
 }
+/**
+ * Extrai o ícone dos recursos para um ficheiro temporário.
+ */
+fun getTrayIconPath(): String {
+    val tempDir = System.getProperty("java.io.tmpdir")
+    val iconFile = File(tempDir, "sasipca_tray_icon.png")
+
+    try {
+        // Tenta os caminhos comuns de recursos processados pelo Compose Multiplatform
+        val resourcePaths = listOf(
+            "composeResources/sasipca_app.sasipca.generated.resources/drawable/icon32x32.png",
+            "drawable/icon32x32.png"
+        )
+
+        var inputStream: java.io.InputStream? = null
+        for (path in resourcePaths) {
+            inputStream = Thread.currentThread().contextClassLoader.getResourceAsStream(path)
+            if (inputStream != null) break
+        }
+
+        if (inputStream != null) {
+            inputStream.use { input ->
+                iconFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            println("[DEBUG] Ícone extraído com sucesso para: ${iconFile.absolutePath} (${iconFile.length()} bytes)")
+        } else {
+            println("[ERROR] Não foi possível encontrar o recurso do ícone nos ClassLoaders.")
+        }
+    } catch (e: Exception) {
+        println("[ERROR] Falha ao extrair ícone: ${e.message}")
+    }
+
+    return iconFile.absolutePath
+}
+
+var isWindowVisibleGlobal by mutableStateOf(true)
 
 fun main() {
     val os = System.getProperty("os.name").lowercase()
 
     if (os.contains("linux")) {
-        // ESSENCIAL: Força o backend X11 no Linux para que o Tray Menu funcione via XWayland.
-        // O Wayland nativo muitas vezes bloqueia popups de aplicações AWT/Swing (Java).
         System.setProperty("jdk.gtk.version", "3")
-        System.setProperty("compose.interop.blending.enabled", "true")
-
-        // Esta linha ajuda o KDE a mapear o menu de contexto corretamente
         System.setProperty("java.awt.headless", "false")
     }
 
-    application {
-        // 1. Inicializações e Persistência
-        val desktopSettings: Settings = remember {
-            PreferencesSettings(Preferences.userRoot().node("sasipca"))
-        }
+    androidx.compose.ui.window.application {
+        val desktopSettings = remember { PreferencesSettings(Preferences.userRoot().node("sasipca")) }
+        val windowIcon = painterResource(Res.drawable.icon512x512)
 
         LaunchedEffect(Unit) {
             SessionManager.init(desktopSettings)
@@ -63,70 +90,55 @@ fun main() {
 
         val msAuthManager = remember { MicrosoftAuthManagerDesktop() }
         remember { ApiClient.init(msAuthManager) }
+        val signalR = remember { SignalRManager { t, m -> sendSmartNotification(t, m) } }
 
-        // 2. Estado da UI
-        var isWindowVisible by remember { mutableStateOf(true) }
-        val trayState = rememberTrayState()
-
-        // Nota: O ícone de 512px será redimensionado automaticamente,
-        // mas se o menu falhar, tente usar um recurso de 32x32 apenas para o tray.
-        val logoPainter = painterResource(Res.drawable.icon512x512)
-
-        // 3. Gestão de SignalR
-        val signalR = remember {
-            SignalRManager(
-                onNotificationReceived = { title, msg ->
-                    sendSmartNotification(trayState, title, msg)
-                }
-            )
+        val isLoggedIn by SessionManager.isLoggedIn.collectAsState()
+        LaunchedEffect(isLoggedIn) {
+            if (isLoggedIn) launch(Dispatchers.IO) { signalR.start() } else signalR.stop()
         }
 
-    // 4. Lógica Reativa: Observar Login para arrancar/parar SignalR
-    // Convertemos o StateFlow do SessionManager para um State do Compose
-    val isLoggedIn by SessionManager.isLoggedIn.collectAsState()
+        // --- INICIALIZAÇÃO KDROID COM CAMINHO DINÂMICO ---
+        DisposableEffect(Unit) {
+            val iconPath = getTrayIconPath()
+            val trayTooltip = "SASIPCA"
 
-    LaunchedEffect(isLoggedIn) {
-        if (isLoggedIn) {
-            // Se o utilizador entrou (ou abriu a app já logado), arranca o serviço.
-            // O SignalRManager.start() deve ter o loop de retry que fizemos antes.
-            launch(Dispatchers.IO) {
-                signalR.start()
+            if (os.contains("linux")) {
+                LinuxTrayInitializer.initialize(
+                    iconPath = iconPath,
+                    tooltip = trayTooltip,
+                    onLeftClick = { isWindowVisibleGlobal = true },
+                    menuContent = {
+                        Item("Abrir") { isWindowVisibleGlobal = true }
+                        Divider()
+                        Item("Sair") { exitProcess(0) }
+                    }
+                )
+            } else if (os.contains("windows")) {
+                WindowsTrayInitializer.initialize(
+                    iconPath = iconPath,
+                    tooltip = trayTooltip,
+                    onLeftClick = { isWindowVisibleGlobal = true },
+                    menuContent = {
+                        Item("Abrir") { isWindowVisibleGlobal = true }
+                        Divider()
+                        Item("Sair") { exitProcess(0) }
+                    }
+                )
             }
-        } else {
-            // Se o utilizador fez logout, desliga o serviço.
-            signalR.stop()
+            onDispose {
+                if (os.contains("linux")) LinuxTrayInitializer.dispose()
+                else if (os.contains("windows")) WindowsTrayInitializer.dispose()
+            }
         }
-    }
 
-    // 5. Tray e Janela (Mantêm-se iguais)
-    Tray(
-        state = trayState,
-        icon = logoPainter,
-        tooltip = "SASIPCA",
-        onAction = { isWindowVisible = true },
-        menu = {
-            Item("Abrir", onClick = { isWindowVisible = true })
-            Separator()
-            Item("Sair", onClick = {
-                signalR.stop()
-                exitApplication()
-            })
-        }
-    )
-
-        // 5. Janela Principal
-        if (isWindowVisible) {
+        if (isWindowVisibleGlobal) {
             Window(
                 onCloseRequest = {
-                    isWindowVisible = false
-                    sendSmartNotification(
-                        trayState,
-                        "SASIPCA",
-                        "A aplicação continua a correr na barra de tarefas."
-                    )
+                    isWindowVisibleGlobal = false
+                    sendSmartNotification("SASIPCA", "A correr em segundo plano.")
                 },
                 title = "Serviços de Ação Social IPCA",
-                icon = logoPainter
+                icon = windowIcon
             ) {
                 ObserveScreenSize(window)
                 App()
