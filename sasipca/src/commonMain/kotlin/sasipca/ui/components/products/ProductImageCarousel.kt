@@ -56,7 +56,7 @@ fun ProductImagesCarousel(
     if (showPopup) {
         ImageCarouselPopup(
             images = images,
-            onDismiss = { }
+            onDismiss = { showPopup = false}
         )
     }
 }

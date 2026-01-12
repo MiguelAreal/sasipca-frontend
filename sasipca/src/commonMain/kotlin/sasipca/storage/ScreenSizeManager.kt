@@ -21,12 +21,12 @@ object ScreenSizeManager {
     @Composable
     fun isLargeScreen(): Boolean {
         val width by screenWidth.collectAsState()
-        return width >= 800.dp
+        return width >= 600.dp
     }
 
     @Composable
     fun isSmallScreen(): Boolean {
         val width by screenWidth.collectAsState()
-        return width < 800.dp
+        return width < 600.dp
     }
 }

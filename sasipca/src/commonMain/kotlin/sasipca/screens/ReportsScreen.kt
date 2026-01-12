@@ -1,8 +1,10 @@
 package sasipca.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -26,13 +28,11 @@ import sasipca.viewmodels.BeneficiariesViewModel
 import sasipca.viewmodels.ReportsViewModel
 
 @Composable
-fun ReportsScreen(reportsRepository : ReportsRepository, beneficiaryRepository : BeneficiaryRepository) {
-    // Inicialização dos ViewModels
+fun ReportsScreen(reportsRepository: ReportsRepository, beneficiaryRepository: BeneficiaryRepository) {
     val viewModel = remember { ReportsViewModel(reportsRepository, PlatformFileSaver()) }
     val beneficiariesViewModel = remember { BeneficiariesViewModel(beneficiaryRepository) }
 
     val uiState by viewModel.uiState.collectAsState()
-
     var showDialog by remember { mutableStateOf(false) }
 
     // Gestão de Snackbars
@@ -50,32 +50,51 @@ fun ReportsScreen(reportsRepository : ReportsRepository, beneficiaryRepository :
     }
 
     Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.background,
+        // Posiciona o botão flutuante no canto inferior direito
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showDialog = true },
-                containerColor = MaterialTheme.colorScheme.primary
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = CircleShape,
+                modifier = Modifier.padding(16.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Novo Relatório", tint = Color.White)
+                Icon(Icons.Default.Add, contentDescription = "Novo")
             }
-        }
-    ) { padding ->
+        },
+        floatingActionButtonPosition = FabPosition.End
+    ) { paddingValues ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(bottom = paddingValues.calculateBottomPadding())
         ) {
+            // Header no topo
             Header("Relatórios", "Histórico e Geração")
 
-            Box(modifier = Modifier.fillMaxSize()) {
+            // --- Conteúdo Principal ---
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 20.dp)
+            ) {
                 if (uiState.reports.isEmpty() && !uiState.isLoading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Nenhum relatório gerado ainda.", color = Color.Gray)
+                        Text(
+                            "Nenhum relatório gerado ainda.",
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                        )
                     }
                 }
 
                 LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    // bottom padding de 80dp para evitar que o FAB cubra o último item
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxSize()
                 ) {
                     items(uiState.reports.sortedByDescending { it.createdAt }) { report ->
                         ReportItemCard(
@@ -95,7 +114,7 @@ fun ReportsScreen(reportsRepository : ReportsRepository, beneficiaryRepository :
     if (showDialog) {
         ReportCreationPopup(
             beneficiariesViewModel = beneficiariesViewModel,
-            onDismiss = {showDialog = false },
+            onDismiss = { showDialog = false },
             onGenerate = { type, format, name, start, end, movId, status, beneId ->
                 viewModel.generateNewReport(
                     type = type, format = format, fileName = name,
@@ -116,8 +135,9 @@ fun ReportItemCard(report: ReportGetDTO, onDownload: () -> Unit) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
     ) {
         Row(
             modifier = Modifier
@@ -133,14 +153,30 @@ fun ReportItemCard(report: ReportGetDTO, onDownload: () -> Unit) {
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(report.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(report.reportTypeName, fontSize = 12.sp, color = Color.Gray)
-                Text("Gerado por: ${report.creatorName} em ${report.createdAt.take(10)}", fontSize = 12.sp)
+                Text(
+                    text = report.name,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = report.reportTypeName,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "Gerado por: ${report.creatorName} em ${report.createdAt.take(10)}",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                )
             }
             IconButton(onClick = onDownload) {
-                Icon(Icons.Default.Download, contentDescription = "Transferir")
+                Icon(
+                    Icons.Default.Download,
+                    contentDescription = "Transferir",
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
 }
-

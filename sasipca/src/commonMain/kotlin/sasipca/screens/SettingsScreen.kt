@@ -1,5 +1,6 @@
 package sasipca.screens
 
+import sasipca.AppConfig
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -128,8 +129,28 @@ fun SettingsScreen() {
                     description = "João Lopes | Júlio Faria | Paulo Costa | Miguel Areal"
                 )
             }
+
         }
-    }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Versão ${AppConfig.VERSION}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                fontWeight = FontWeight.Normal
+            )
+            Text(
+                text = "SASIPCA © 2026",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+            )
+        }
+
 
     // --- DIALOG SERVER IP ---
     if (showIpDialog) {
@@ -178,8 +199,7 @@ fun SettingsScreen() {
         )
     }
 }
-
-// ... (Resto dos componentes auxiliares SettingsCard, SectionHeader, etc. mantêm-se iguais) ...
+}
 @Composable
 fun SectionHeader(title: String) {
     Text(

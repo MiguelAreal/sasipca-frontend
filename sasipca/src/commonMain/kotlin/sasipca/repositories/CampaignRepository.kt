@@ -21,16 +21,20 @@ class CampaignRepository(private val client: HttpClient) {
         searchTerm: String = ""
     ): PaginatedResponse<Campaign> {
 
-        return client.requestWithAuth(
+        val url = URLBuilder(ApiConfig.baseUrl()).apply {
+            appendPathSegments("campaigns")
+            parameters.append("pageNumber", pageNumber.toString())
+            parameters.append("pageSize", pageSize.toString())
+            parameters.append("orderBy", orderBy)
+            parameters.append("searchTerm", searchTerm)
+        }.buildString()
+
+        val response: PaginatedResponse<Campaign> = client.requestWithAuth(
             method = HttpMethod.Get,
-            url = URLBuilder(ApiConfig.baseUrl()).apply {
-                appendPathSegments("campaigns")
-                parameters.append("pageNumber", pageNumber.toString())
-                parameters.append("pageSize", pageSize.toString())
-                parameters.append("orderBy", orderBy)
-                parameters.append("searchTerm", searchTerm)
-            }.buildString()
+            url = url
         )
+
+        return response
     }
 
     /**

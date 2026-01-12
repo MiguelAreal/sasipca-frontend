@@ -1,8 +1,8 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.*
 
-val appVersionName = "2.1.1"
-val appVersionCode = 3
+val appVersionName = "2.1.2"
+val appVersionCode = 4
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -11,6 +11,16 @@ plugins {
     alias(libs.plugins.composeCompiler)
     kotlin("plugin.serialization") version "1.9.0"
     id("com.google.gms.google-services")
+    id("com.codingfeline.buildkonfig") version "0.17.1"
+}
+
+buildkonfig {
+    packageName = "sasipca"
+    objectName = "AppConfig"
+
+    defaultConfigs {
+        buildConfigField(com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING, "VERSION", appVersionName)
+    }
 }
 
 kotlin {
@@ -78,7 +88,6 @@ kotlin {
             implementation("org.slf4j:slf4j-simple:2.0.17")
             implementation("com.microsoft.signalr:signalr:10.0.1")
             implementation("io.reactivex.rxjava3:rxjava:3.1.12")
-
             implementation("io.github.kdroidfilter:composenativetray:1.0.4")
         }
     }

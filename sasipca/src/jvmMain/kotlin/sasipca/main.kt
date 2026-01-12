@@ -16,13 +16,15 @@ import sasipca.storage.SettingsManager
 import sasipca.utils.ObserveScreenSize
 import sasipca.utils.SignalRManager
 import sasipca_app.sasipca.generated.resources.Res
-import sasipca_app.sasipca.generated.resources.icon512x512
+import sasipca_app.sasipca.generated.resources.icon16x16
+import java.awt.*
 import java.io.File
 import java.util.prefs.Preferences
 import kotlin.system.exitProcess
+import org.jetbrains.compose.resources.ExperimentalResourceApi
 
 /**
- * Notificações via sistema.
+ * Notificações nativas.
  */
 fun sendSmartNotification(title: String, msg: String) {
     val os = System.getProperty("os.name").lowercase()
@@ -30,43 +32,53 @@ fun sendSmartNotification(title: String, msg: String) {
         try {
             ProcessBuilder("notify-send", "-a", "SASIPCA", title, msg).start()
         } catch (_: Exception) {}
+    } else if (os.contains("windows")) {
+        try {
+            if (SystemTray.isSupported()) {
+                val tray = SystemTray.getSystemTray()
+                val image = Toolkit.getDefaultToolkit().createImage(ByteArray(0))
+                val trayIcon = TrayIcon(image, "SASIPCA")
+                tray.add(trayIcon)
+                trayIcon.displayMessage(title, msg, TrayIcon.MessageType.INFO)
+                tray.remove(trayIcon)
+            }
+        } catch (e: Exception) {
+            println("[ERROR] Notificação falhou: ${e.message}")
+        }
     }
 }
+
 /**
- * Extrai o ícone dos recursos para um ficheiro temporário.
+ * Extração robusta com verificação de integridade.
  */
-fun getTrayIconPath(): String {
-    val tempDir = System.getProperty("java.io.tmpdir")
-    val iconFile = File(tempDir, "sasipca_tray_icon.png")
+@OptIn(ExperimentalResourceApi::class)
+suspend fun getTrayIconPath(): String {
+    val os = System.getProperty("os.name").lowercase()
+    val userHome = System.getProperty("user.home")
+    // Pasta sem ponto inicial para evitar que o Windows oculte ou bloqueie o acesso
+    val storageDir = File(userHome, "SASIPCA_Assets").apply { if (!exists()) mkdirs() }
 
-    try {
-        // Tenta os caminhos comuns de recursos processados pelo Compose Multiplatform
-        val resourcePaths = listOf(
-            "composeResources/sasipca_app.sasipca.generated.resources/drawable/icon32x32.png",
-            "drawable/icon32x32.png"
-        )
-
-        var inputStream: java.io.InputStream? = null
-        for (path in resourcePaths) {
-            inputStream = Thread.currentThread().contextClassLoader.getResourceAsStream(path)
-            if (inputStream != null) break
-        }
-
-        if (inputStream != null) {
-            inputStream.use { input ->
-                iconFile.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            }
-            println("[DEBUG] Ícone extraído com sucesso para: ${iconFile.absolutePath} (${iconFile.length()} bytes)")
-        } else {
-            println("[ERROR] Não foi possível encontrar o recurso do ícone nos ClassLoaders.")
-        }
-    } catch (e: Exception) {
-        println("[ERROR] Falha ao extrair ícone: ${e.message}")
+    // Lógica de seleção de ficheiro
+    val (resourceName, fileName) = if (os.contains("windows")) {
+        "drawable/icon16x16.ico" to "tray_icon.ico"
+    } else {
+        "drawable/icon32x32.png" to "tray_icon.png"
     }
 
-    return iconFile.absolutePath
+    val iconFile = File(storageDir, fileName)
+
+    return try {
+        val bytes = Res.readBytes(resourceName)
+        iconFile.writeBytes(bytes)
+
+        // canonicalPath resolve qualquer ambiguidade de caminho no Windows
+        val path = iconFile.canonicalPath
+        println("[DEBUG] Ícone extraído com sucesso: $path (${iconFile.length()} bytes)")
+        path
+    } catch (e: Exception) {
+        println("[ERROR] Falha ao extrair $resourceName: ${e.message}")
+        ""
+    }
 }
 
 var isWindowVisibleGlobal by mutableStateOf(true)
@@ -79,13 +91,15 @@ fun main() {
         System.setProperty("java.awt.headless", "false")
     }
 
-    androidx.compose.ui.window.application {
+    application {
         val desktopSettings = remember { PreferencesSettings(Preferences.userRoot().node("sasipca")) }
-        val windowIcon = painterResource(Res.drawable.icon512x512)
+        val windowIcon = painterResource(Res.drawable.icon16x16)
+        var trayPath by remember { mutableStateOf("") }
 
         LaunchedEffect(Unit) {
             SessionManager.init(desktopSettings)
             SettingsManager.init(desktopSettings)
+            trayPath = getTrayIconPath()
         }
 
         val msAuthManager = remember { MicrosoftAuthManagerDesktop() }
@@ -97,37 +111,42 @@ fun main() {
             if (isLoggedIn) launch(Dispatchers.IO) { signalR.start() } else signalR.stop()
         }
 
-        // --- INICIALIZAÇÃO KDROID COM CAMINHO DINÂMICO ---
-        DisposableEffect(Unit) {
-            val iconPath = getTrayIconPath()
-            val trayTooltip = "SASIPCA"
+        // --- INICIALIZAÇÃO DO TRAY ---
+        if (trayPath.isNotEmpty()) {
+            DisposableEffect(trayPath) {
+                val tooltip = "SASIPCA"
+                try {
+                    if (os.contains("linux")) {
+                        LinuxTrayInitializer.initialize(
+                            iconPath = trayPath,
+                            tooltip = tooltip,
+                            onLeftClick = { isWindowVisibleGlobal = true },
+                            menuContent = {
+                                Item("Abrir") { isWindowVisibleGlobal = true }
+                                Divider()
+                                Item("Sair") { exitProcess(0) }
+                            }
+                        )
+                    } else if (os.contains("windows")) {
+                        WindowsTrayInitializer.initialize(
+                            iconPath = trayPath,
+                            tooltip = tooltip,
+                            onLeftClick = { isWindowVisibleGlobal = true },
+                            menuContent = {
+                                Item("Abrir") { isWindowVisibleGlobal = true }
+                                Divider()
+                                Item("Sair") { exitProcess(0) }
+                            }
+                        )
+                    }
+                } catch (e: Exception) {
+                    println("[ERROR] Erro ao carregar ícone no Tray: ${e.message}")
+                }
 
-            if (os.contains("linux")) {
-                LinuxTrayInitializer.initialize(
-                    iconPath = iconPath,
-                    tooltip = trayTooltip,
-                    onLeftClick = { isWindowVisibleGlobal = true },
-                    menuContent = {
-                        Item("Abrir") { isWindowVisibleGlobal = true }
-                        Divider()
-                        Item("Sair") { exitProcess(0) }
-                    }
-                )
-            } else if (os.contains("windows")) {
-                WindowsTrayInitializer.initialize(
-                    iconPath = iconPath,
-                    tooltip = trayTooltip,
-                    onLeftClick = { isWindowVisibleGlobal = true },
-                    menuContent = {
-                        Item("Abrir") { isWindowVisibleGlobal = true }
-                        Divider()
-                        Item("Sair") { exitProcess(0) }
-                    }
-                )
-            }
-            onDispose {
-                if (os.contains("linux")) LinuxTrayInitializer.dispose()
-                else if (os.contains("windows")) WindowsTrayInitializer.dispose()
+                onDispose {
+                    if (os.contains("linux")) LinuxTrayInitializer.dispose()
+                    else if (os.contains("windows")) WindowsTrayInitializer.dispose()
+                }
             }
         }
 
