@@ -91,14 +91,18 @@ fun main() {
         System.setProperty("java.awt.headless", "false")
     }
 
+    val prefs = Preferences.userRoot().node("sasipca")
+    val desktopSettings = PreferencesSettings(prefs)
+
+    // Inicializar managers de forma global/estática antes da UI
+    SessionManager.init(desktopSettings)
+    SettingsManager.init(desktopSettings)
+
     application {
-        val desktopSettings = remember { PreferencesSettings(Preferences.userRoot().node("sasipca")) }
         val windowIcon = painterResource(Res.drawable.icon16x16)
         var trayPath by remember { mutableStateOf("") }
 
         LaunchedEffect(Unit) {
-            SessionManager.init(desktopSettings)
-            SettingsManager.init(desktopSettings)
             trayPath = getTrayIconPath()
         }
 

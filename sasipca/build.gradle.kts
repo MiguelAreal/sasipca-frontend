@@ -2,7 +2,7 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.*
 
 val appVersionName = "2.1.2"
-val appVersionCode = 4
+val appVersionCode = 5
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)

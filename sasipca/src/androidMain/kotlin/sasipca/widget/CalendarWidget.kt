@@ -231,19 +231,20 @@ class CalendarWidget : GlanceAppWidget() {
 
     @Composable
     fun RowScope.DayCell(day: Int, hasDelivery: Boolean, isToday: Boolean) {
-        var bgModifier = GlanceModifier.cornerRadius(100.dp)
-        var textColor = GlanceTheme.colors.onSurface
-        var fontWeight = FontWeight.Normal
-
-        if (isToday) {
-            bgModifier = bgModifier.background(GlanceTheme.colors.primary)
-            textColor = GlanceTheme.colors.onPrimary
-            fontWeight = FontWeight.Bold
-        } else if (hasDelivery) {
-            bgModifier = bgModifier.background(GlanceTheme.colors.tertiary)
-            textColor = GlanceTheme.colors.onTertiary
-            fontWeight = FontWeight.Bold
+        // Definimos as cores e estilos base
+        val backgroundColor = when {
+            isToday -> GlanceTheme.colors.primary
+            hasDelivery -> GlanceTheme.colors.tertiary
+            else -> null
         }
+
+        val textColor = when {
+            isToday -> GlanceTheme.colors.onPrimary
+            hasDelivery -> GlanceTheme.colors.onTertiary
+            else -> GlanceTheme.colors.onSurface
+        }
+
+        val fontWeight = if (isToday || hasDelivery) FontWeight.Bold else FontWeight.Normal
 
         Box(
             modifier = GlanceModifier
@@ -251,23 +252,38 @@ class CalendarWidget : GlanceAppWidget() {
                 .fillMaxHeight(),
             contentAlignment = Alignment.Center
         ) {
-            if (isToday || hasDelivery) {
+            // Se houver fundo, desenhamos o círculo
+            backgroundColor?.let { color ->
                 Box(
                     modifier = GlanceModifier
-                        .size(32.dp)
-                        .then(bgModifier)
-                ){}
+                        .size(28.dp)
+                        .background(color)
+                        .cornerRadius(14.dp)
+                ) {}
             }
 
+            // O texto é desenhado por cima de tudo
             Text(
                 text = day.toString(),
                 style = TextStyle(
                     color = textColor,
                     fontWeight = fontWeight,
-                    fontSize = 13.sp,
+                    fontSize = 12.sp,
                     textAlign = TextAlign.Center
                 )
             )
+
+            if (isToday && hasDelivery) {
+                Column(modifier = GlanceModifier.fillMaxHeight(), verticalAlignment = Alignment.Bottom) {
+                    Box(
+                        modifier = GlanceModifier
+                            .size(4.dp)
+                            .background(GlanceTheme.colors.onPrimary)
+                            .cornerRadius(2.dp)
+                    ) {}
+                    Spacer(modifier = GlanceModifier.height(2.dp))
+                }
+            }
         }
     }
 }
