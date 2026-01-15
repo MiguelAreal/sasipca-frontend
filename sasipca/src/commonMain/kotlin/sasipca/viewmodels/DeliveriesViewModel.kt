@@ -245,6 +245,32 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
         }
     }
 
+    fun completeDelivery(deliveryId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _uiState.value = DeliveryUiState(isLoading = true)
+            try {
+                // Criamos o DTO apenas com o novo status
+                val putBody = DeliveryPut(
+                    newStatusId = 2
+                )
+
+                val response = deliveryRepository.putDelivery(deliveryId, putBody)
+
+                _uiState.value = DeliveryUiState(
+                    success = true,
+                    isLoading = false,
+                    successMessage = response.message
+                )
+
+                loadFutureDeliveries()
+                updateWidgets()
+
+            } catch (e: Exception) {
+                handleException(e)
+            }
+        }
+    }
+
     fun deleteDelivery(deliveryId: Int) {
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.value = DeliveryUiState(isLoading = true)
@@ -261,6 +287,8 @@ class DeliveriesViewModel(private val deliveryRepository: DeliveryRepository) : 
             }
         }
     }
+
+
 
     private suspend fun handleException(e: Exception) {
         val msg = when (e) {

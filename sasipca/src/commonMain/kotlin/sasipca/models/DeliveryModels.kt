@@ -15,7 +15,7 @@ data class DeliveryPut(
     val scheduledDate: String? = null,
     val newStatusId: Int,
     val note: String? = null,
-    val itemsToDeliver: List<DeliveryItem> // Obrigatório
+    val itemsToDeliver: List<DeliveryItem>? = null
 )
 
 @Serializable

@@ -452,12 +452,24 @@ fun DeliveryScreen(
                         )
                         if (existingDelivery != null) {
                             Spacer(Modifier.height(8.dp))
-                            OutlinedButton(
-                                onClick = { deliveriesViewModel.deleteDelivery(existingDelivery.deliveryId) },
+                            Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Text("Eliminar Entrega")
+                                OutlinedButton(
+                                    onClick = { deliveriesViewModel.deleteDelivery(existingDelivery.deliveryId) },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                                ) {
+                                    Text("Eliminar")
+                                }
+
+                                Button(
+                                    onClick = { deliveriesViewModel.completeDelivery(existingDelivery.deliveryId) },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Concluir")
+                                }
                             }
                         }
                     }
@@ -557,12 +569,25 @@ fun DeliveryScreen(
                     }
                     if (existingDelivery != null) {
                         item {
-                            OutlinedButton(
-                                onClick = { deliveriesViewModel.deleteDelivery(existingDelivery.deliveryId) },
+                            Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Text("Eliminar Entrega")
+                                OutlinedButton(
+                                    onClick = { deliveriesViewModel.deleteDelivery(existingDelivery.deliveryId) },
+                                    modifier = Modifier.weight(1f).height(48.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                                ) {
+                                    Text("Eliminar")
+                                }
+
+                                Button(
+                                    onClick = { deliveriesViewModel.completeDelivery(existingDelivery.deliveryId) },
+                                    modifier = Modifier.weight(1f).height(48.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                                ) {
+                                    Text("Concluir")
+                                }
                             }
                         }
                     }
