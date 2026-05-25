@@ -24,7 +24,7 @@ class OFFRepository(private val client: HttpClient) {
             val response: HttpResponse = client.get("${oofUrl}/$barcode")
 
             if (response.status == HttpStatusCode.OK) {
-                val body = response.bodyAsText()
+                val body = response.bodyAsText()    
                 val productResponse = json.decodeFromString<ProductOFFResponse>(body)
 
                 productResponse.product?.let { p ->

@@ -129,13 +129,11 @@ class AuthRepository(
         val fcmToken = SettingsManager.getFcmToken() ?: return
 
         try {
-            val accessToken = SessionManager.getAccessToken() ?: return
-
-            client.post("${ApiConfig.baseUrl()}/notifications/device") {
-                header(HttpHeaders.Authorization, "Bearer $accessToken")
-                contentType(ContentType.Application.Json)
-                setBody(DeviceTokenDto(fcmToken))
-            }
+            client.requestWithAuth<Resposta>(
+                method = HttpMethod.Post,
+                url = "${ApiConfig.baseUrl()}/notifications/device",
+                body = DeviceTokenDto(fcmToken)
+            )
             println("AuthRepo: Token FCM enviado com sucesso após login.")
         } catch (e: Exception) {
             println("AuthRepo: Aviso - Falha ao registar dispositivo FCM: ${e.message}")

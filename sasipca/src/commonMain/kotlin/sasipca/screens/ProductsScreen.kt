@@ -49,23 +49,8 @@ fun ProductsScreen(
     // Estado Local para Menu
     var showFilterMenu by remember { mutableStateOf(false) }
 
-    Scaffold(
-        // SÓ MOSTRA O FAB SE NÃO FOR MODO DE LEITURA (Admin/Staff)
-        floatingActionButton = {
-            if (!isReadOnly) {
-                FloatingActionButton(
-                    onClick = {
-                        // Lógica para criar novo produto (ex: navigator.push(CreateProductScreen))
-                        onOpenProduct("new")
-                    },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Novo Produto")
-                }
-            }
-        }
-    ) { paddingValues ->
+    Scaffold{
+        paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

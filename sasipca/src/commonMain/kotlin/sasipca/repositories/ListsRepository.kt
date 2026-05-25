@@ -6,10 +6,12 @@ import io.ktor.client.plugins.*
 import io.ktor.client.request.get
 import io.ktor.http.*
 import sasipca.models.Lists
+import sasipca.models.SasipcaApiException
 import sasipca.network.ApiConfig
 import sasipca.storage.ListsStore
 import sasipca.utils.NotFoundException
 import sasipca.utils.RepositoryException
+import sasipca.network.requestWithAuth
 
 class ListsRepository(private val client: HttpClient) {
 
@@ -18,7 +20,10 @@ class ListsRepository(private val client: HttpClient) {
      */
     suspend fun loadLists() {
         try {
-            val result: Lists = client.get("${ApiConfig.baseUrl()}/lists").body()
+            val result: Lists = client.requestWithAuth(
+                method = HttpMethod.Get,
+                url = "${ApiConfig.baseUrl()}/lists"
+            )
 
             // Guardar globalmente
             ListsStore.load(
@@ -30,14 +35,10 @@ class ListsRepository(private val client: HttpClient) {
                 activeCampaigns = result.activeCampaigns
             )
 
-        } catch (e: ClientRequestException) {
-            if (e.response.status == HttpStatusCode.NotFound) {
-                throw NotFoundException("Listas não encontradas.")
-            } else {
-                throw RepositoryException("Erro ao carregar listas: ${e.response.status}")
-            }
-
+        } catch (e: SasipcaApiException) {
+            throw e
         } catch (e: Exception) {
+            // Outros erros de rede ou parsing
             throw RepositoryException("Erro ao carregar listas: ${e.message}")
         }
     }

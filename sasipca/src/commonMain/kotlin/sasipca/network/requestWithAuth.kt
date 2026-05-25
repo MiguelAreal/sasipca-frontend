@@ -28,10 +28,12 @@ suspend inline fun <reified T> HttpClient.requestWithAuth(
     formData: List<PartData>? = null
 ): T {
     val currentToken = SessionManager.getAccessToken() ?: throw Exception("Token ausente")
+
     val response: HttpResponse = try {
         executeRequest(this, method, url, currentToken, body, formData)
-    } catch (e: ClientRequestException) {
-        e.response
+    } catch (e: Exception) {
+        // Se der erro de rede (sem internet, timeout), lida aqui
+        throw SasipcaApiException("Erro de ligação à rede: ${e.message}")
     }
 
     // 1. Se der 401, entra na lógica de Refresh Sincronizada
@@ -95,6 +97,7 @@ suspend fun executeRequest(
 ): HttpResponse {
     return client.request(url) {
         this.method = method
+        this.expectSuccess = false
         header(HttpHeaders.Authorization, "Bearer $token")
 
         if (formData != null) {
