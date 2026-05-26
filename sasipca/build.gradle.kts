@@ -1,8 +1,8 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.*
 
-val appVersionName = "2.1.4"
-val appVersionCode = 6
+val appVersionName = "2.1.5"
+val appVersionCode = 7
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -109,6 +109,16 @@ android {
         versionName = appVersionName
     }
 
+    // Força o build de release a usar a assinatura de debug
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("debug")
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -140,11 +150,9 @@ compose.desktop {
             }
 
             linux {
-                // No Linux, o iconFile deve estar acessível durante o packaging
                 iconFile.set(project.file("src/jvmMain/resources/icons/icon512x512.png"))
                 shortcut = true
                 menuGroup = "Utility"
-                // Importante para o KDE associar o processo ao ícone da tray
                 appRelease = "1"
                 appCategory = "Office"
             }
@@ -181,7 +189,20 @@ tasks.register<Copy>("copyAndRenameDebugApk") {
     include("*.apk")
 
     rename { fileName ->
-        if (fileName.endsWith(".apk")) "sasipca-$version.apk" else fileName
+        if (fileName.endsWith(".apk")) "sasipca-$version-debug.apk" else fileName
+    }
+}
+
+tasks.register<Copy>("copyAndRenameReleaseApk") {
+    val releaseDir = layout.buildDirectory.dir("outputs/apk/release")
+    val version = appVersionName
+
+    from(releaseDir)
+    into(layout.buildDirectory.dir("outputs/final-apk"))
+    include("*.apk")
+
+    rename { fileName ->
+        if (fileName.endsWith(".apk")) "sasipca-$version-release.apk" else fileName
     }
 }
 
@@ -196,5 +217,9 @@ afterEvaluate {
 
     tasks.named("assembleDebug") {
         finalizedBy("copyAndRenameDebugApk")
+    }
+
+    tasks.named("assembleRelease") {
+        finalizedBy("copyAndRenameReleaseApk")
     }
 }

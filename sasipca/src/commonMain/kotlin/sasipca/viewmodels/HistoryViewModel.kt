@@ -6,7 +6,9 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import sasipca.models.*
 import sasipca.repositories.HistoryRepository
 
@@ -16,6 +18,10 @@ class HistoryViewModel(private val repository: HistoryRepository) : ViewModel() 
         private set
 
     var currentTab by mutableStateOf(HistoryTab.MOVEMENTS)
+        private set
+
+    // Controla a visibilidade do Dialog
+    var isDialogOpen by mutableStateOf(false)
         private set
 
     // Listas
@@ -44,14 +50,22 @@ class HistoryViewModel(private val repository: HistoryRepository) : ViewModel() 
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 if (currentTab == HistoryTab.MOVEMENTS) {
-                    movementsList = repository.getMovements()
+                    val movements = repository.getMovements()
+                    withContext(Dispatchers.Main) {
+                        movementsList = movements
+                    }
                 } else {
-                    deliveriesList = repository.getDeliveriesHistory()
+                    val deliveries = repository.getDeliveriesHistory()
+                    withContext(Dispatchers.Main) {
+                        deliveriesList = deliveries
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
-                isLoading = false
+                withContext(Dispatchers.Main) {
+                    isLoading = false
+                }
             }
         }
     }
@@ -60,11 +74,17 @@ class HistoryViewModel(private val repository: HistoryRepository) : ViewModel() 
         isLoading = true
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                selectedMovementDetail = repository.getMovementDetails(id)
+                val detail = repository.getMovementDetails(id)
+                withContext(Dispatchers.Main) {
+                    selectedMovementDetail = detail
+                    isDialogOpen = true // Abre o dialog ao carregar os dados
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
-                isLoading = false
+                withContext(Dispatchers.Main) {
+                    isLoading = false
+                }
             }
         }
     }
@@ -73,16 +93,23 @@ class HistoryViewModel(private val repository: HistoryRepository) : ViewModel() 
         isLoading = true
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                selectedDeliveryDetail = repository.getDeliveryDetails(id)
+                val detail = repository.getDeliveryDetails(id)
+                withContext(Dispatchers.Main) {
+                    selectedDeliveryDetail = detail
+                    isDialogOpen = true // Abre o dialog ao carregar os dados
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
-                isLoading = false
+                withContext(Dispatchers.Main) {
+                    isLoading = false
+                }
             }
         }
     }
 
     fun closeDialog() {
+        isDialogOpen = false
         selectedMovementDetail = null
         selectedDeliveryDetail = null
     }
